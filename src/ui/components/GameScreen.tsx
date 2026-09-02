@@ -6,12 +6,14 @@ import { GameCanvas } from './GameCanvas';
 import { GameHud } from './GameHud';
 import { PauseOverlay } from './PauseOverlay';
 import { TouchControls } from './TouchControls';
+import { useSettingsStore } from '@ui/store/settings-store';
 
 interface GameScreenProps {
   appState: AppState;
   gameplay: GameplayController;
   inputState: GameInputState;
   onPauseToggle: () => void;
+  onLevelCompleted: () => void;
   onReady: () => void;
   onReturnToMenu: () => void;
 }
@@ -21,9 +23,11 @@ export function GameScreen({
   gameplay,
   inputState,
   onPauseToggle,
+  onLevelCompleted,
   onReady,
   onReturnToMenu,
 }: GameScreenProps) {
+  const reducedMotion = useSettingsStore((state) => state.reducedMotion);
   useEffect(() => gameplay.setPaused(appState === 'paused'), [appState, gameplay]);
 
   return (
@@ -32,11 +36,14 @@ export function GameScreen({
         gameplay={gameplay}
         inputState={inputState}
         onPauseRequested={onPauseToggle}
+        onLevelCompleted={onLevelCompleted}
         onReady={onReady}
+        reducedMotion={reducedMotion}
       />
       <GameHud gameplay={gameplay} />
       <div className="control-hint" aria-hidden="true">
-        A/D — бег · W/Space — прыжок · ЛКМ/J — атака · Q/K — магия · T — checkpoint
+        A/D — бег · Space — прыжок · J — атака · Shift — рывок · Q — защита · F — магия · R — фаза ·
+        X — приём
       </div>
       <TouchControls inputState={inputState} />
       {appState === 'loading-level' ? (

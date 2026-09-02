@@ -54,11 +54,30 @@ export function TouchControls({ inputState }: TouchControlsProps) {
       </div>
       <div className="touch-actions">
         <TouchButton action="switch-cat" inputState={inputState} label="Сменить кота" symbol="↔" />
+        <TouchButton action="mobility-ability" inputState={inputState} label="Рывок" symbol="➤" />
         <TouchButton
           action="support-ability"
           inputState={inputState}
           label="Особая способность"
           symbol="ϟ"
+        />
+        <TouchButton
+          action="special-ability"
+          inputState={inputState}
+          label="Сильная атака"
+          symbol="ϟ"
+        />
+        <TouchButton
+          action="change-phase"
+          inputState={inputState}
+          label="Сменить фазу"
+          symbol="☯"
+        />
+        <TouchButton
+          action="ultimate"
+          inputState={inputState}
+          label="Объятие затмения"
+          symbol="✺"
         />
         <TouchButton
           action="primary-ability"

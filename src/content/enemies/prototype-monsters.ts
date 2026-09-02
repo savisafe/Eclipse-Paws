@@ -19,8 +19,18 @@ export const LIGHT_WISP_CONFIG: EnemyConfig = {
   telegraphMs: 480,
 };
 
+export const TWILIGHT_GOLEM_CONFIG: EnemyConfig = {
+  id: 'twilight-golem',
+  health: 120,
+  contactDamage: 1,
+  movement: 'ground',
+  speed: 28,
+  telegraphMs: 820,
+};
+
 export const PROTOTYPE_MONSTERS: Readonly<Record<string, EnemyConfig>> = {
   [SHADEFANG_CONFIG.id]: SHADEFANG_CONFIG,
   [SPORE_BEAST_CONFIG.id]: SPORE_BEAST_CONFIG,
   [LIGHT_WISP_CONFIG.id]: LIGHT_WISP_CONFIG,
+  [TWILIGHT_GOLEM_CONFIG.id]: TWILIGHT_GOLEM_CONFIG,
 };

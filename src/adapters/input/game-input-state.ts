@@ -2,6 +2,7 @@ import type { GameAction } from './game-action';
 
 const ONE_SHOT_ACTIONS = new Set<GameAction>([
   'primary-ability',
+  'special-ability',
   'jump',
   'mobility-ability',
   'support-ability',
@@ -9,6 +10,7 @@ const ONE_SHOT_ACTIONS = new Set<GameAction>([
   'change-phase',
   'switch-cat',
   'restart-checkpoint',
+  'ultimate',
   'pause',
 ]);
 

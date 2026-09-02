@@ -5,6 +5,7 @@ import { PROTOTYPE_CONTENT } from '@content/index';
 import { BootScreen } from '@ui/components/BootScreen';
 import { GameScreen } from '@ui/components/GameScreen';
 import { MainMenu } from '@ui/components/MainMenu';
+import { LevelResult } from '@ui/components/LevelResult';
 import { useAppController } from '@ui/hooks/use-app-controller';
 import { useSessionStore } from '@ui/store/session-store';
 
@@ -39,9 +40,13 @@ export function App() {
   const levelReady = useCallback(() => appController.levelReady(), [appController]);
   const togglePause = useCallback(() => appController.togglePause(), [appController]);
   const returnToMenu = useCallback(() => appController.returnToMenu(), [appController]);
+  const completeLevel = useCallback(() => appController.completeLevel(), [appController]);
 
   if (appState === 'boot') return <BootScreen />;
   if (appState === 'main-menu') return <MainMenu onNewGame={startNewGame} />;
+  if (appState === 'level-result') {
+    return <LevelResult onMenu={returnToMenu} onReplay={startNewGame} />;
+  }
 
   return (
     <GameScreen
@@ -49,6 +54,7 @@ export function App() {
       gameplay={gameplay}
       inputState={inputState}
       onPauseToggle={togglePause}
+      onLevelCompleted={completeLevel}
       onReady={levelReady}
       onReturnToMenu={returnToMenu}
     />

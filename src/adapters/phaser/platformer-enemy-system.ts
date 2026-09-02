@@ -39,10 +39,19 @@ export class PlatformerEnemySystem {
         .setDepth(5)
         .setCollideWorldBounds(false);
       const scale =
-        spawn.configId === 'spore-beast' ? 0.54 : spawn.configId === 'light-wisp' ? 0.48 : 0.56;
+        spawn.configId === 'twilight-golem'
+          ? 0.78
+          : spawn.configId === 'spore-beast'
+            ? 0.54
+            : spawn.configId === 'light-wisp'
+              ? 0.48
+              : 0.56;
       sprite
         .setScale(scale)
-        .setSize(spawn.configId === 'spore-beast' ? 170 : 155, 120)
+        .setSize(
+          spawn.configId === 'twilight-golem' ? 190 : spawn.configId === 'spore-beast' ? 170 : 155,
+          120,
+        )
         .setOffset(50, 112);
       if (config.movement === 'flying') arcadeBody(sprite).setAllowGravity(false);
       else scene.physics.add.collider(sprite, platforms);

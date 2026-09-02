@@ -20,6 +20,60 @@ describe('GameSession', () => {
     );
   });
 
+  it('enforces cooldowns before another attack', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT);
+
+    expect(session.attack('shadefang-1')).not.toBeNull();
+    expect(session.attack('shadefang-1')).toBeNull();
+    session.update(420);
+    expect(session.attack('shadefang-1')).not.toBeNull();
+  });
+
+  it('fills the Eclipse meter and spends 50 on a manual phase change', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT);
+
+    for (const enemyId of ['shadefang-1', 'shadefang-2']) {
+      session.attack(enemyId);
+      session.update(420);
+      session.attack(enemyId);
+      session.update(420);
+    }
+
+    expect(session.snapshot().eclipseMeter).toBeGreaterThanOrEqual(50);
+    expect(session.manualChangePhase()).toBe(true);
+    expect(session.snapshot().phase).toBe('night');
+    expect(session.snapshot().eclipseMeter).toBeLessThan(50);
+  });
+
+  it('uses a support shield before shared health', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT);
+
+    expect(session.useSupport()).not.toBeNull();
+    expect(session.snapshot().shieldCharges).toBe(1);
+    session.takeDamage(1);
+    expect(session.snapshot().bondHealth).toBe(3);
+    expect(session.snapshot().shieldCharges).toBe(0);
+    session.takeDamage(1);
+    expect(session.snapshot().bondHealth).toBe(2);
+  });
+
+  it('spends a full meter on the shared Eclipse ultimate', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT);
+    const targets = ['shadefang-1', 'light-wisp-1', 'spore-beast-1', 'shadefang-2'];
+
+    targets.forEach((enemyId) => {
+      while ((session.snapshot().enemies.find((enemy) => enemy.id === enemyId)?.health ?? 0) > 0) {
+        session.attack(enemyId);
+        session.update(420);
+      }
+    });
+
+    expect(session.snapshot().eclipseMeter).toBe(100);
+    expect(session.useUltimate(['twilight-golem-1'])).toBe(true);
+    expect(session.snapshot().eclipseMeter).toBe(0);
+    expect(session.snapshot().shieldCharges).toBe(1);
+  });
+
   it('shares damage and quickly restores the current checkpoint after defeat', () => {
     const session = new GameSession(PROTOTYPE_CONTENT);
 

@@ -151,6 +151,73 @@
   text-align: right;
 }
 
+.eclipse-meter {
+  position: fixed;
+  top: max(4.25rem, calc(env(safe-area-inset-top) + 4.25rem));
+  left: 50%;
+  width: min(16rem, calc(100vw - 2rem));
+  height: 1.15rem;
+  overflow: hidden;
+  translate: -50% 0;
+  border: 1px solid rgb(255 240 190 / 48%);
+  border-radius: 999px;
+  background: rgb(17 18 46 / 88%);
+}
+
+.eclipse-meter span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #63ddec, #8863d8, #ffd269);
+  transition: width 140ms linear;
+}
+
+.eclipse-meter strong {
+  position: relative;
+  display: block;
+  color: #fff7df;
+  font-size: 0.6rem;
+  line-height: 1rem;
+  text-align: center;
+}
+
+.ability-cooldowns {
+  position: fixed;
+  top: max(4.1rem, calc(env(safe-area-inset-top) + 4.1rem));
+  left: max(0.8rem, env(safe-area-inset-left));
+  display: flex;
+  gap: 0.35rem;
+}
+
+.ability-chip {
+  position: relative;
+  display: grid;
+  width: 2.3rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 0.75rem;
+  color: #171735;
+  background: rgb(255 239 193 / 92%);
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.ability-chip i {
+  position: absolute;
+  inset: 0;
+  transform-origin: bottom;
+  background: rgb(23 22 55 / 74%);
+}
+
+.ability-chip span {
+  z-index: 1;
+}
+
+.ability-chip.is-cooling {
+  color: #fff;
+}
+
 .hud-status {
   display: grid;
   justify-items: end;
@@ -326,9 +393,10 @@
 }
 
 .touch-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 2.75rem);
   align-items: end;
-  gap: 0.75rem;
+  gap: 0.35rem;
 }
 
 .touch-button--support-ability {
@@ -337,8 +405,8 @@
 }
 
 .touch-actions .touch-button:last-child {
-  width: 4.3rem;
-  min-height: 4.3rem;
+  width: 3.6rem;
+  min-height: 3.6rem;
   color: #25234e;
   background: rgb(255 219 124 / 88%);
   font-size: 1.5rem;
@@ -390,6 +458,19 @@
     translate: -50% 0;
   }
 
+  .eclipse-meter {
+    top: max(6.2rem, calc(env(safe-area-inset-top) + 6.2rem));
+    width: 10rem;
+  }
+
+  .ability-cooldowns {
+    top: max(3.5rem, calc(env(safe-area-inset-top) + 3.5rem));
+  }
+
+  .ability-chip {
+    width: 1.9rem;
+  }
+
   .hud-status {
     grid-column: 2;
     grid-row: 1;
@@ -420,4 +501,57 @@
   .level-loading__orb {
     animation-duration: 2.4s;
   }
+}
+
+.level-result {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 1.5rem;
+  color: var(--cream);
+  background:
+    radial-gradient(circle at 50% 35%, rgb(255 212 101 / 28%), transparent 24%),
+    linear-gradient(145deg, #315f70, #1c1a48 65%, #11132d);
+}
+
+.result-card {
+  display: grid;
+  width: min(32rem, 100%);
+  gap: 1rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border: 1px solid rgb(255 227 158 / 45%);
+  border-radius: 2rem;
+  background: rgb(21 22 55 / 88%);
+  box-shadow: 0 2rem 6rem rgb(4 6 22 / 56%);
+  text-align: center;
+}
+
+.result-card__eyebrow {
+  margin: 0;
+  color: var(--turquoise);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.result-card h1,
+.result-card p {
+  margin: 0;
+}
+
+.result-shard {
+  color: var(--gold);
+  font-size: 5rem;
+  filter: drop-shadow(0 0 1.5rem rgb(255 205 91 / 75%));
+}
+
+.result-card__secondary {
+  min-height: 3rem;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 1rem;
+  color: var(--cream);
+  background: #29294f;
+  font-weight: 800;
+  cursor: pointer;
 }

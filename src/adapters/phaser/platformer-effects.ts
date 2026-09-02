@@ -30,6 +30,23 @@ function targetsInFront(
   return inFront;
 }
 
+function targetsInRadius(
+  actor: Phaser.Physics.Arcade.Sprite,
+  targets: readonly EffectTarget[],
+  range: number,
+): EffectTarget[] {
+  const candidates = targets.filter(
+    ({ sprite }) =>
+      sprite.active && Phaser.Math.Distance.Between(actor.x, actor.y, sprite.x, sprite.y) <= range,
+  );
+  candidates.sort(
+    (first, second) =>
+      Phaser.Math.Distance.Between(actor.x, actor.y, first.sprite.x, first.sprite.y) -
+      Phaser.Math.Distance.Between(actor.x, actor.y, second.sprite.x, second.sprite.y),
+  );
+  return candidates;
+}
+
 function fadeGraphics(
   scene: Phaser.Scene,
   graphics: Phaser.GameObjects.Graphics,
@@ -43,6 +60,34 @@ function fadeGraphics(
   });
 }
 
+function showHitFeedback(
+  scene: Phaser.Scene,
+  target: EffectTarget,
+  damage: number,
+  empowered: boolean,
+): void {
+  target.sprite.setTintFill(empowered ? 0xffffff : 0x8c899a);
+  scene.time.delayedCall(90, () => target.sprite.clearTint());
+  const label = scene.add
+    .text(target.sprite.x, target.sprite.y - 60, `${Math.round(damage)}`, {
+      color: empowered ? '#fff0a6' : '#c7c5d4',
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: empowered ? '22px' : '15px',
+      fontStyle: 'bold',
+      stroke: '#17152f',
+      strokeThickness: 4,
+    })
+    .setOrigin(0.5)
+    .setDepth(20);
+  scene.tweens.add({
+    targets: label,
+    y: label.y - 34,
+    alpha: 0,
+    duration: 420,
+    onComplete: () => label.destroy(),
+  });
+}
+
 export function playPrimaryAttack(
   scene: Phaser.Scene,
   gameplay: GameplayController,
@@ -50,6 +95,7 @@ export function playPrimaryAttack(
   catId: CatId,
   facing: number,
   targets: readonly EffectTarget[],
+  _reducedMotion = false,
 ): void {
   const config = PROTOTYPE_ABILITIES[catId];
   const empowered = dominantCatForPhase(gameplay.getSnapshot().phase) === catId;
@@ -65,16 +111,20 @@ export function playPrimaryAttack(
     facing > 0 ? 0.9 : 4.05,
   );
   graphics.strokePath();
-  fadeGraphics(scene, graphics, 180);
+  fadeGraphics(scene, graphics, _reducedMotion ? 1 : 180);
 
   const target = targetsInFront(actor, targets, facing, config.range)[0];
-  if (target) gameplay.attackEnemy(target.id);
+  if (target) {
+    const result = gameplay.attackEnemy(target.id);
+    if (result) showHitFeedback(scene, target, result.damage, empowered);
+  }
 }
 
 function drawLightning(
   scene: Phaser.Scene,
   actor: Phaser.Physics.Arcade.Sprite,
   target: Phaser.Physics.Arcade.Sprite,
+  reducedMotion: boolean,
 ): void {
   const graphics = scene.add.graphics().setDepth(14);
   graphics.lineStyle(8, 0xffef9b, 1);
@@ -103,7 +153,7 @@ function drawLightning(
     duration: 360,
     onComplete: () => paintedLightning.destroy(),
   });
-  scene.cameras.main.flash(90, 255, 233, 130, false);
+  if (!reducedMotion) scene.cameras.main.flash(90, 255, 233, 130, false);
 }
 
 function drawShadowSpike(scene: Phaser.Scene, x: number, y: number, index: number): void {
@@ -129,15 +179,27 @@ export function playSpecialAbility(
   catId: CatId,
   facing: number,
   targets: readonly EffectTarget[],
+  reducedMotion = false,
 ): void {
   const config = PROTOTYPE_SPECIAL_ABILITIES[catId];
-  const inRange = targetsInFront(actor, targets, facing, config.range);
+  const inRange =
+    catId === 'luma'
+      ? targetsInRadius(actor, targets, config.range)
+      : targetsInFront(actor, targets, facing, config.range);
 
   if (catId === 'luma') {
     const target = inRange[0];
     if (!target) return;
-    drawLightning(scene, actor, target.sprite);
-    gameplay.useSpecialAbility(target.id);
+    drawLightning(scene, actor, target.sprite, reducedMotion);
+    const result = gameplay.useSpecialAbility(target.id);
+    if (result) {
+      showHitFeedback(
+        scene,
+        target,
+        result.damage,
+        dominantCatForPhase(gameplay.getSnapshot().phase) === catId,
+      );
+    }
     return;
   }
 
@@ -145,6 +207,16 @@ export function playSpecialAbility(
   for (let index = 0; index < 5; index += 1) {
     drawShadowSpike(scene, actor.x + facing * (55 + index * 52), groundY, index);
   }
-  inRange.slice(0, 3).forEach((target) => gameplay.useSpecialAbility(target.id));
-  scene.cameras.main.shake(180, 0.006);
+  inRange.slice(0, 3).forEach((target) => {
+    const result = gameplay.useSpecialAbility(target.id);
+    if (result) {
+      showHitFeedback(
+        scene,
+        target,
+        result.damage,
+        dominantCatForPhase(gameplay.getSnapshot().phase) === catId,
+      );
+    }
+  });
+  if (!reducedMotion) scene.cameras.main.shake(180, 0.006);
 }

@@ -14,6 +14,9 @@ const HAZARDS = [
   { x: 1690, y: 610, activePhase: 'night' },
   { x: 2220, y: 610, activePhase: 'day' },
   { x: 2670, y: 610, activePhase: 'night' },
+  { x: 3560, y: 610, activePhase: 'day' },
+  { x: 4160, y: 610, activePhase: 'night' },
+  { x: 4680, y: 610, activePhase: 'day' },
 ] as const satisfies readonly Omit<HazardView, 'graphics'>[];
 
 export class PlatformerHazardSystem {
@@ -21,16 +24,19 @@ export class PlatformerHazardSystem {
   readonly #gameplay: GameplayController;
   readonly #hazards: HazardView[];
   readonly #scene: Phaser.Scene;
+  readonly #reducedMotion: boolean;
   #damageCooldownMs = 0;
 
   constructor(
     scene: Phaser.Scene,
     gameplay: GameplayController,
     actors: Record<CatId, Phaser.Physics.Arcade.Sprite>,
+    reducedMotion: boolean,
   ) {
     this.#scene = scene;
     this.#gameplay = gameplay;
     this.#actors = actors;
+    this.#reducedMotion = reducedMotion;
     this.#hazards = HAZARDS.map((hazard) => ({ ...hazard, graphics: this.#draw(hazard) }));
   }
 
@@ -38,16 +44,15 @@ export class PlatformerHazardSystem {
     this.#damageCooldownMs = Math.max(0, this.#damageCooldownMs - deltaMs);
     const phase = this.#gameplay.getSnapshot().phase;
     this.#hazards.forEach((hazard) => {
-      const active = hazard.activePhase === phase;
-      hazard.graphics.setAlpha(active ? 0.95 : 0.18);
-      if (!active || this.#damageCooldownMs > 0) return;
-      const hit = Object.values(this.#actors).some(
-        (actor) => Phaser.Math.Distance.Between(actor.x, actor.y, hazard.x, hazard.y) < 62,
-      );
+      const hazardActive = hazard.activePhase === phase;
+      hazard.graphics.setAlpha(hazardActive ? 0.95 : 0.18);
+      if (!hazardActive || this.#damageCooldownMs > 0) return;
+      const activeCat = this.#actors[this.#gameplay.getSnapshot().activeCat];
+      const hit = Phaser.Math.Distance.Between(activeCat.x, activeCat.y, hazard.x, hazard.y) < 62;
       if (hit) {
         this.#damageCooldownMs = 1250;
         this.#gameplay.takeDamage(1);
-        this.#scene.cameras.main.flash(80, 214, 42, 86, false);
+        if (!this.#reducedMotion) this.#scene.cameras.main.flash(80, 214, 42, 86, false);
       }
     });
   }

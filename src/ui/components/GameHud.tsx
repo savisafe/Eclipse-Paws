@@ -1,6 +1,7 @@
 import type { GameplayController } from '@application/index';
 import { dominantCatForPhase } from '@core/index';
 import { useGameplaySnapshot } from '@ui/hooks/use-gameplay-snapshot';
+import { AbilityCooldowns } from './AbilityCooldowns';
 
 interface GameHudProps {
   gameplay: GameplayController;
@@ -51,6 +52,13 @@ export function GameHud({ gameplay }: GameHudProps) {
         <strong>{seconds}</strong>
       </div>
 
+      <div className="eclipse-meter" aria-label={`Затмение: ${Math.round(snapshot.eclipseMeter)}%`}>
+        <span style={{ width: `${snapshot.eclipseMeter}%` }} />
+        <strong>
+          {snapshot.eclipseMeter >= snapshot.maxEclipseMeter ? 'X · ОБЪЯТИЕ' : 'R · 50%'}
+        </strong>
+      </div>
+
       <div className="hud-status">
         <div
           className="bond-health"
@@ -74,6 +82,7 @@ export function GameHud({ gameplay }: GameHudProps) {
           Связь восстановлена у контрольной точки
         </p>
       ) : null}
+      <AbilityCooldowns activeCat={snapshot.activeCat} cooldowns={snapshot.cooldowns} />
     </header>
   );
 }

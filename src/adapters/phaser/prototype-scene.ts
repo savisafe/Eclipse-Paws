@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
 import { PROTOTYPE_SPAWNS } from '@content/index';
-import { dominantCatForPhase, type CatId, type Phase } from '@core/index';
+import type { CatId, Phase } from '@core/index';
 import {
   drawArena,
   drawCheckpoints,
@@ -10,11 +10,13 @@ import {
   preloadEnvironment,
 } from './arena-decoration';
 import { createArenaTextures } from './arena-textures';
-import { CompanionTether } from './companion-tether';
+import { updateCatAnimation } from './cat-animation';
+import { CombatAbilitySystem } from './combat-ability-system';
 import { PlatformerEnemySystem } from './platformer-enemy-system';
 import { PlatformerHazardSystem } from './platformer-hazard-system';
-import { playPrimaryAttack, playSpecialAbility } from './platformer-effects';
+import { PlatformerProgressSystem } from './platformer-progress-system';
 import { ATLAS_TEXTURE_KEY, preloadSpriteAtlas, setCatPose } from './sprite-atlas';
+import { TagSwitchSystem } from './tag-switch-system';
 
 const FIXED_STEP_MS = 1000 / 60;
 const PLAYER_SPEED = 255;
@@ -24,7 +26,11 @@ export interface PrototypeSceneOptions {
   gameplay: GameplayController;
   inputState: GameInputState;
   onPauseRequested: () => void;
+  onLevelCompleted: () => void;
   onReady: () => void;
+  reducedMotion: boolean;
+  startNearFinish: boolean;
+  startNearCombat: boolean;
 }
 
 function arcadeBody(sprite: Phaser.Physics.Arcade.Sprite): Phaser.Physics.Arcade.Body {
@@ -36,27 +42,38 @@ export class PrototypeScene extends Phaser.Scene {
   readonly #facing: Record<CatId, number> = { luma: 1, nox: 1 };
   readonly #gameplay: GameplayController;
   readonly #inputState: GameInputState;
+  readonly #onLevelCompleted: () => void;
   readonly #onPauseRequested: () => void;
   readonly #onReady: () => void;
+  readonly #reducedMotion: boolean;
+  readonly #startNearFinish: boolean;
+  readonly #startNearCombat: boolean;
   #accumulatorMs = 0;
   #actors!: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   #enemySystem!: PlatformerEnemySystem;
   #lastPhase: Phase = 'day';
   #lastRestartCount = 0;
   #coyoteMs = 0;
-  #companionTether!: CompanionTether;
+  #combatSystem!: CombatAbilitySystem;
   #jumpBufferMs = 0;
   #hazardSystem!: PlatformerHazardSystem;
   #phaseOverlay!: Phaser.GameObjects.Rectangle;
   #platforms!: Phaser.Physics.Arcade.StaticGroup;
+  #progressSystem!: PlatformerProgressSystem;
   #selection!: Phaser.GameObjects.Ellipse;
+  #switching = false;
+  #tagSwitchSystem!: TagSwitchSystem;
 
   constructor(options: PrototypeSceneOptions) {
     super('prototype-platformer');
     this.#gameplay = options.gameplay;
     this.#inputState = options.inputState;
     this.#onPauseRequested = options.onPauseRequested;
+    this.#onLevelCompleted = options.onLevelCompleted;
     this.#onReady = options.onReady;
+    this.#reducedMotion = options.reducedMotion;
+    this.#startNearFinish = options.startNearFinish;
+    this.#startNearCombat = options.startNearCombat;
   }
 
   preload(): void {
@@ -75,12 +92,30 @@ export class PrototypeScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, PLATFORMER_WORLD.width, PLATFORMER_WORLD.height);
 
     this.#actors = { luma: this.#createCat('luma'), nox: this.#createCat('nox') };
-    this.#companionTether = new CompanionTether(this, this.#actors);
+    if (this.#startNearFinish) this.#actors.luma.setPosition(4870, 500);
+    else if (this.#startNearCombat) this.#actors.luma.setPosition(540, 500);
+    this.#actors.nox.disableBody(true, true);
+    this.#tagSwitchSystem = new TagSwitchSystem(this, this.#actors, this.#reducedMotion);
     this.physics.add.collider(Object.values(this.#actors), this.#platforms);
     this.#selection = this.add.ellipse(0, 0, 94, 24).setStrokeStyle(5, 0xffda72, 0.92).setDepth(2);
     drawCheckpoints(this);
     this.#enemySystem = new PlatformerEnemySystem(this, this.#gameplay, this.#platforms);
-    this.#hazardSystem = new PlatformerHazardSystem(this, this.#gameplay, this.#actors);
+    this.#combatSystem = new CombatAbilitySystem({
+      actionLockMs: this.#actionLockMs,
+      actors: this.#actors,
+      enemies: this.#enemySystem,
+      facing: this.#facing,
+      gameplay: this.#gameplay,
+      reducedMotion: this.#reducedMotion,
+      scene: this,
+    });
+    this.#hazardSystem = new PlatformerHazardSystem(
+      this,
+      this.#gameplay,
+      this.#actors,
+      this.#reducedMotion,
+    );
+    this.#progressSystem = new PlatformerProgressSystem(this.#gameplay, this.#onLevelCompleted);
     this.#applyPhase('day');
     this.cameras.main.startFollow(this.#actors.luma, true, 0.09, 0.09);
     this.cameras.main.setDeadzone(260, 130);
@@ -107,14 +142,19 @@ export class PrototypeScene extends Phaser.Scene {
 
   #fixedUpdate(deltaMs: number): void {
     this.#gameplay.tick(deltaMs);
-    if (this.#inputState.consume('switch-cat')) this.#switchCat();
-    if (this.#inputState.consume('primary-ability')) this.#attack();
-    if (this.#inputState.consume('support-ability')) this.#specialAbility();
+    if (this.#inputState.consume('switch-cat') && !this.#switching) this.#switchCat();
+    if (this.#switching) return;
+    if (this.#inputState.consume('primary-ability')) this.#combatSystem.primary();
+    if (this.#inputState.consume('special-ability')) this.#combatSystem.special();
+    if (this.#inputState.consume('mobility-ability')) this.#combatSystem.mobility();
+    if (this.#inputState.consume('support-ability')) this.#combatSystem.support();
+    if (this.#inputState.consume('change-phase')) this.#combatSystem.changePhase();
+    if (this.#inputState.consume('ultimate')) this.#combatSystem.ultimate();
     if (this.#inputState.consume('restart-checkpoint')) this.#gameplay.restartCheckpoint();
     this.#moveCats(deltaMs);
-    this.#enemySystem.update(this.#actors[this.#gameplay.getWeakCat()], deltaMs);
+    this.#enemySystem.update(this.#actors[this.#gameplay.getSnapshot().activeCat], deltaMs);
     this.#hazardSystem.update(deltaMs);
-    this.#checkCheckpointAndFalls();
+    this.#progressSystem.update(this.#actors[this.#gameplay.getSnapshot().activeCat]);
 
     const snapshot = this.#gameplay.getSnapshot();
     if (snapshot.phase !== this.#lastPhase) this.#applyPhase(snapshot.phase);
@@ -130,15 +170,18 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   #switchCat(): void {
+    const previousCat = this.#gameplay.getSnapshot().activeCat;
     const activeCat = this.#gameplay.switchActiveCat();
-    this.#companionTether.onActiveCatChanged(activeCat);
-    this.#facing[activeCat] = this.#actors[activeCat].flipX ? -1 : 1;
-    this.cameras.main.startFollow(this.#actors[activeCat], true, 0.09, 0.09);
+    this.#switching = true;
+    this.#tagSwitchSystem.animate(previousCat, activeCat, () => {
+      this.#switching = false;
+      this.#facing[activeCat] = this.#actors[activeCat].flipX ? -1 : 1;
+      this.#applyPhase(this.#gameplay.getSnapshot().phase);
+    });
   }
 
   #moveCats(deltaMs: number): void {
     const activeId = this.#gameplay.getSnapshot().activeCat;
-    const followerId = activeId === 'luma' ? 'nox' : 'luma';
     const active = this.#actors[activeId];
     const horizontal =
       Number(this.#inputState.isPressed('move-right')) -
@@ -156,74 +199,12 @@ export class PrototypeScene extends Phaser.Scene {
       this.#coyoteMs = 0;
     }
 
-    this.#companionTether.update(activeId, deltaMs);
-
-    this.#animateCat(activeId, deltaMs);
-    if (!this.#companionTether.isSpirit(followerId)) this.#animateCat(followerId, deltaMs);
-  }
-
-  #animateCat(catId: CatId, deltaMs: number): void {
-    const sprite = this.#actors[catId];
-    this.#actionLockMs[catId] = Math.max(0, this.#actionLockMs[catId] - deltaMs);
-    if (this.#actionLockMs[catId] > 0) return;
-    if (!arcadeBody(sprite).blocked.down) {
-      sprite.anims.stop();
-      setCatPose(sprite, catId, 'jump');
-    } else if (Math.abs(sprite.body?.velocity.x ?? 0) > 15) {
-      sprite.anims.play(`${catId}-run`, true);
-    } else {
-      sprite.anims.stop();
-      setCatPose(sprite, catId, 'idle');
-    }
+    updateCatAnimation(active, activeId, this.#actionLockMs, deltaMs);
   }
 
   #setFacing(catId: CatId, direction: number): void {
     this.#facing[catId] = direction < 0 ? -1 : 1;
     this.#actors[catId].setFlipX(direction < 0);
-  }
-
-  #attack(): void {
-    const catId = this.#gameplay.getSnapshot().activeCat;
-    const actor = this.#actors[catId];
-    actor.anims.stop();
-    setCatPose(actor, catId, 'attack');
-    this.#actionLockMs[catId] = 240;
-    playPrimaryAttack(
-      this,
-      this.#gameplay,
-      actor,
-      catId,
-      this.#facing[catId],
-      this.#enemySystem.targets(),
-    );
-  }
-
-  #specialAbility(): void {
-    const catId = this.#gameplay.getSnapshot().activeCat;
-    const actor = this.#actors[catId];
-    actor.anims.stop();
-    setCatPose(actor, catId, 'ability');
-    this.#actionLockMs[catId] = 430;
-    playSpecialAbility(
-      this,
-      this.#gameplay,
-      actor,
-      catId,
-      this.#facing[catId],
-      this.#enemySystem.targets(),
-    );
-  }
-
-  #checkCheckpointAndFalls(): void {
-    const snapshot = this.#gameplay.getSnapshot();
-    const active = this.#actors[snapshot.activeCat];
-    const moonWell = PROTOTYPE_SPAWNS.checkpoints[1];
-    if (Phaser.Math.Distance.Between(active.x, active.y, moonWell.x, moonWell.y) < 90) {
-      this.#gameplay.reachCheckpoint(moonWell.id);
-    }
-    if (Object.values(this.#actors).some((actor) => actor.y > PLATFORMER_WORLD.height + 90)) {
-      this.#gameplay.takeDamage(3);
-    }
   }
 
   #applyPhase(phase: Phase): void {
@@ -233,13 +214,6 @@ export class PrototypeScene extends Phaser.Scene {
       phase === 'day' ? 0xffdf8b : 0x2a174f,
       phase === 'day' ? 0.05 : 0.38,
     );
-    const dominantCat = dominantCatForPhase(phase);
-    (['luma', 'nox'] as const).forEach((catId) => {
-      if (this.#companionTether.isSpirit(catId)) return;
-      const sprite = this.#actors[catId];
-      if (catId === dominantCat) sprite.setAlpha(1).clearTint();
-      else sprite.setAlpha(0.78).setTint(0x8b8ca5);
-    });
   }
 
   #resetWorld(): void {
@@ -250,9 +224,12 @@ export class PrototypeScene extends Phaser.Scene {
       PROTOTYPE_SPAWNS.checkpoints[0];
     this.#actors.luma.setPosition(checkpoint.x + 34, checkpoint.y).setVelocity(0, 0);
     this.#actors.nox.setPosition(checkpoint.x - 58, checkpoint.y).setVelocity(0, 0);
-    this.#companionTether.reset();
+    const activeId = snapshot.activeCat;
+    const inactiveId = activeId === 'luma' ? 'nox' : 'luma';
+    this.#actors[activeId].enableBody(true, checkpoint.x, checkpoint.y, true, true);
+    this.#actors[inactiveId].disableBody(true, true);
     this.#enemySystem.reset();
-    this.cameras.main.flash(180, 255, 244, 206);
+    if (!this.#reducedMotion) this.cameras.main.flash(180, 255, 244, 206);
   }
 
   #updateSelection(): void {
@@ -262,7 +239,6 @@ export class PrototypeScene extends Phaser.Scene {
 
   #stopAllActors(): void {
     Object.values(this.#actors).forEach((actor) => actor.setVelocity(0, 0));
-    this.#companionTether.stop();
     this.#enemySystem.stop();
   }
 
@@ -274,5 +250,6 @@ export class PrototypeScene extends Phaser.Scene {
   #shutdown(): void {
     this.input.off('pointerdown', this.#handlePointerDown, this);
     this.#inputState.reset();
+    this.#combatSystem.destroy();
   }
 }

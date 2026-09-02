@@ -67,6 +67,34 @@ export class GameplayController {
     return result;
   }
 
+  useMobility(): boolean {
+    const result = this.#session.useMobility();
+    this.#flushEvents();
+    this.#publish();
+    return result !== null;
+  }
+
+  useSupport(): boolean {
+    const result = this.#session.useSupport();
+    this.#flushEvents();
+    this.#publish();
+    return result !== null;
+  }
+
+  manualChangePhase(): boolean {
+    const changed = this.#session.manualChangePhase();
+    this.#flushEvents();
+    this.#publish();
+    return changed;
+  }
+
+  useUltimate(enemyIds: readonly string[]): boolean {
+    const used = this.#session.useUltimate(enemyIds);
+    this.#flushEvents();
+    this.#publish();
+    return used;
+  }
+
   takeDamage(amount: number): boolean {
     const restarted = this.#session.takeDamage(amount);
     this.#flushEvents();

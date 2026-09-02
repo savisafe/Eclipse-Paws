@@ -43,4 +43,10 @@ export class PhaseCycle {
 
     return { changed, phase: this.#phase };
   }
+
+  changePhase(): Phase {
+    this.#elapsedMs = 0;
+    this.#phase = this.#phase === 'day' ? 'night' : 'day';
+    return this.#phase;
+  }
 }

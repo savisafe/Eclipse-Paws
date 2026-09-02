@@ -3,7 +3,7 @@ import { PROTOTYPE_SPAWNS } from '@content/index';
 import gardenBackgroundUrl from '../../assets/environments/garden-first-dawn-background-v1.png?url';
 import gardenPlatformUrl from '../../assets/environments/garden-stone-platform-tile-v1.png?url';
 
-export const PLATFORMER_WORLD = { width: 3400, height: 720 } as const;
+export const PLATFORMER_WORLD = { width: 5200, height: 720 } as const;
 
 const PLATFORM_RECTS = [
   { x: 350, y: 670, width: 700, height: 100 },
@@ -15,9 +15,18 @@ const PLATFORM_RECTS = [
   { x: 600, y: 545, width: 250, height: 26 },
   { x: 980, y: 435, width: 210, height: 30 },
   { x: 1325, y: 535, width: 180, height: 30 },
-  { x: 1810, y: 470, width: 250, height: 30 },
+  { x: 1640, y: 570, width: 150, height: 24 },
+  { x: 1810, y: 520, width: 270, height: 28 },
   { x: 2310, y: 520, width: 230, height: 30 },
   { x: 2780, y: 425, width: 230, height: 30 },
+  { x: 3650, y: 670, width: 500, height: 100 },
+  { x: 4180, y: 670, width: 460, height: 100 },
+  { x: 4810, y: 670, width: 780, height: 100 },
+  { x: 3380, y: 510, width: 220, height: 28 },
+  { x: 3720, y: 425, width: 220, height: 28 },
+  { x: 4100, y: 535, width: 190, height: 26 },
+  { x: 4520, y: 455, width: 230, height: 28 },
+  { x: 4920, y: 535, width: 280, height: 28 },
 ] as const;
 
 export function preloadEnvironment(scene: Phaser.Scene): void {
@@ -80,13 +89,22 @@ export function drawCheckpoints(scene: Phaser.Scene): void {
   PROTOTYPE_SPAWNS.checkpoints.forEach((point) => {
     scene.add.image(point.x, point.y, 'checkpoint').setAlpha(0.8).setDepth(3);
     scene.add
-      .text(point.x, point.y - 62, point.id === 'garden-gate' ? 'Врата сада' : 'Лунный колодец', {
-        color: '#fff4ce',
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '14px',
-        stroke: '#172339',
-        strokeThickness: 4,
-      })
+      .text(
+        point.x,
+        point.y - 62,
+        point.id === 'garden-gate'
+          ? 'Врата сада'
+          : point.id === 'moon-well'
+            ? 'Лунный колодец'
+            : 'Осколок Маятника · ФИНИШ',
+        {
+          color: '#fff4ce',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '14px',
+          stroke: '#172339',
+          strokeThickness: 4,
+        },
+      )
       .setOrigin(0.5);
   });
 }

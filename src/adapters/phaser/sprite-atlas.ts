@@ -21,6 +21,7 @@ interface MonsterFrameSet {
 export const MONSTER_FRAMES: Readonly<Record<string, MonsterFrameSet>> = {
   shadefang: { idle: 12, move: 13, attack: 18 },
   'spore-beast': { idle: 14, move: 15, attack: 19 },
+  'twilight-golem': { idle: 14, move: 15, attack: 19 },
   'light-wisp': { idle: 16, move: 17, attack: 20 },
 };
 
@@ -165,6 +166,7 @@ export function createAtlasAnimations(scene: Phaser.Scene): void {
     { key: 'nox-run', frames: [7, 8], frameRate: 9 },
     { key: 'shadefang-move', frames: [12, 13], frameRate: 8 },
     { key: 'spore-beast-move', frames: [14, 15], frameRate: 5 },
+    { key: 'twilight-golem-move', frames: [14, 15], frameRate: 3 },
     { key: 'light-wisp-move', frames: [16, 17], frameRate: 7 },
   ] as const;
 

@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '@ui/App';
 import { useSessionStore } from '@ui/store/session-store';
 
+vi.mock('@ui/components/GameCanvas', () => ({
+  GameCanvas: () => <div data-testid="mock-game-canvas" />,
+}));
+
 describe('App', () => {
   beforeEach(() => {
     vi.useFakeTimers();

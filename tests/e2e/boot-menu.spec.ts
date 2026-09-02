@@ -50,6 +50,20 @@ test('reflects the automatic phase change in the HUD', async ({ page }) => {
   await expect(page.locator('.phase-clock')).toContainText('Фаза: Ночь', { timeout: 10_000 });
 });
 
+test('reaches the finish and shows a level result', async ({ page }) => {
+  await page.goto('/?startNearFinish=1');
+  await page.getByRole('button', { name: 'Новая игра' }).click();
+  await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
+    timeout: 15_000,
+  });
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(3_000);
+  await page.keyboard.up('KeyD');
+  await expect(page.getByRole('heading', { name: 'Уровень пройден!' })).toBeVisible({
+    timeout: 10_000,
+  });
+});
+
 test('plays the platformer through combat, pause and checkpoint restart', async ({ page }) => {
   test.setTimeout(45_000);
   const errors: string[] = [];
@@ -57,7 +71,7 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
     if (message.type() === 'error') errors.push(message.text());
   });
 
-  await page.goto('/');
+  await page.goto('/?startNearCombat=1');
   await page.getByRole('button', { name: 'Новая игра' }).click();
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
@@ -65,15 +79,15 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
   await expect(page.locator('.phase-clock')).toContainText('Фаза: День');
 
   await page.keyboard.down('KeyD');
-  await page.waitForTimeout(1_000);
+  await page.waitForTimeout(1_300);
   await page.keyboard.up('KeyD');
   await page.keyboard.press('Space');
   await page.keyboard.press('KeyJ');
-  await page.waitForTimeout(200);
-  await page.keyboard.press('KeyQ');
-  await page.waitForTimeout(200);
-  await page.keyboard.press('KeyQ');
-  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 5');
+  await page.keyboard.press('KeyF');
+  await expect(page.locator('[aria-label^="luma-sky-lightning"]')).toHaveAttribute(
+    'aria-label',
+    /[1-3] сек\./,
+  );
 
   await page.keyboard.press('Tab');
   await expect(page.locator('.hud-cat--nox')).toHaveAttribute('aria-current', 'true');

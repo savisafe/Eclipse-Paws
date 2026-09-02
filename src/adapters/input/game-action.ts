@@ -5,10 +5,12 @@ export type GameAction =
   | 'move-right'
   | 'jump'
   | 'primary-ability'
+  | 'special-ability'
   | 'mobility-ability'
   | 'support-ability'
   | 'interact'
   | 'change-phase'
   | 'switch-cat'
   | 'restart-checkpoint'
+  | 'ultimate'
   | 'pause';

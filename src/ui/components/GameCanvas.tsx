@@ -6,10 +6,19 @@ interface GameCanvasProps {
   gameplay: GameplayController;
   inputState: GameInputState;
   onPauseRequested: () => void;
+  onLevelCompleted: () => void;
   onReady: () => void;
+  reducedMotion: boolean;
 }
 
-export function GameCanvas({ gameplay, inputState, onPauseRequested, onReady }: GameCanvasProps) {
+export function GameCanvas({
+  gameplay,
+  inputState,
+  onPauseRequested,
+  onLevelCompleted,
+  onReady,
+  reducedMotion,
+}: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -31,7 +40,21 @@ export function GameCanvas({ gameplay, inputState, onPauseRequested, onReady }: 
     void import('@adapters/phaser/create-prototype-game')
       .then(({ createPrototypeGame }) => {
         if (cancelled) return;
-        game = createPrototypeGame({ gameplay, inputState, onPauseRequested, onReady, parent });
+        const startNearFinish =
+          import.meta.env.DEV && new URLSearchParams(window.location.search).has('startNearFinish');
+        const startNearCombat =
+          import.meta.env.DEV && new URLSearchParams(window.location.search).has('startNearCombat');
+        game = createPrototypeGame({
+          gameplay,
+          inputState,
+          onPauseRequested,
+          onLevelCompleted,
+          onReady,
+          parent,
+          reducedMotion,
+          startNearFinish,
+          startNearCombat,
+        });
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -43,7 +66,7 @@ export function GameCanvas({ gameplay, inputState, onPauseRequested, onReady }: 
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       game?.destroy(true);
     };
-  }, [gameplay, inputState, onPauseRequested, onReady]);
+  }, [gameplay, inputState, onLevelCompleted, onPauseRequested, onReady, reducedMotion]);
 
   return (
     <div className="game-canvas-shell">

@@ -38,8 +38,17 @@ export class AppController {
     }
   }
 
+  completeLevel(): void {
+    if (this.state === 'playing') this.transition('level-result');
+  }
+
   returnToMenu(): void {
-    if (this.state === 'loading-level' || this.state === 'playing' || this.state === 'paused') {
+    if (
+      this.state === 'loading-level' ||
+      this.state === 'playing' ||
+      this.state === 'paused' ||
+      this.state === 'level-result'
+    ) {
       this.transition('main-menu');
     }
   }

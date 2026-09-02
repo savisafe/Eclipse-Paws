@@ -3,7 +3,16 @@ export type Phase = 'day' | 'night';
 
 export interface AbilityConfig {
   baseDamage: number;
-  effect: 'light-paw' | 'lightning' | 'shadow-spikes' | 'twilight-claw';
+  cooldownMs: number;
+  effect:
+    | 'light-paw'
+    | 'lightning'
+    | 'shadow-spikes'
+    | 'twilight-claw'
+    | 'solar-dash'
+    | 'shadow-step'
+    | 'purring-shield'
+    | 'shadow-decoy';
   id: string;
   owner: CatId;
   range: number;
@@ -28,8 +37,10 @@ export interface PrototypeContentConfig {
   abilities: Readonly<Record<CatId, AbilityConfig>>;
   enemies: readonly EnemyState[];
   enemyTypes: Readonly<Record<string, EnemyConfig>>;
+  mobilityAbilities: Readonly<Record<CatId, AbilityConfig>>;
   phaseDurationMs: number;
   specialAbilities: Readonly<Record<CatId, AbilityConfig>>;
+  supportAbilities: Readonly<Record<CatId, AbilityConfig>>;
 }
 
 export interface GameplaySnapshot {
@@ -37,15 +48,24 @@ export interface GameplaySnapshot {
   bondHealth: number;
   checkpointId: string;
   checkpointRestartCount: number;
+  cooldowns: Readonly<Record<string, number>>;
+  eclipseMeter: number;
   enemies: readonly EnemyState[];
   maxBondHealth: number;
+  maxEclipseMeter: number;
   paused: boolean;
   phase: Phase;
   phaseRemainingMs: number;
+  shieldCharges: number;
 }
 
 export interface AttackResult {
   damage: number;
   defeated: boolean;
   enemyId: string;
+}
+
+export interface AbilityUseResult {
+  abilityId: string;
+  cooldownMs: number;
 }

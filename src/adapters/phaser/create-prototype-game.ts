@@ -7,8 +7,12 @@ export interface CreatePrototypeGameOptions {
   gameplay: GameplayController;
   inputState: GameInputState;
   onPauseRequested: () => void;
+  onLevelCompleted: () => void;
   onReady: () => void;
   parent: HTMLElement;
+  reducedMotion: boolean;
+  startNearFinish: boolean;
+  startNearCombat: boolean;
 }
 
 export function createPrototypeGame(options: CreatePrototypeGameOptions): Phaser.Game {
