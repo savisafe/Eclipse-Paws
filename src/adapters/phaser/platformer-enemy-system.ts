@@ -122,6 +122,12 @@ export class PlatformerEnemySystem {
     this.#enemies.forEach((enemy) => enemy.sprite.setVelocity(0, 0));
   }
 
+  isDefeated(enemyId: string): boolean {
+    return (
+      (this.#gameplay.getSnapshot().enemies.find((enemy) => enemy.id === enemyId)?.health ?? 0) <= 0
+    );
+  }
+
   #resolveStrike(enemy: EnemyView, distance: number): void {
     enemy.sprite.clearTint();
     enemy.sprite.setFrame(enemy.frames.idle);

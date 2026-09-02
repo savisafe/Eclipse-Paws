@@ -75,6 +75,7 @@ export function GameHud({ gameplay }: GameHudProps) {
           ))}
         </div>
         <span className="enemy-counter">Монстры: {enemiesRemaining}</span>
+        <span className="spark-counter">Искры: {snapshot.sparksCollected}/3</span>
       </div>
 
       {snapshot.checkpointRestartCount > 0 ? (

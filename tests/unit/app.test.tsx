@@ -33,13 +33,16 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /Продолжить/ })).toBeDisabled();
   });
 
-  it('starts loading the prototype arena from New Game', async () => {
+  it('shows the story card before loading the prototype arena', async () => {
     render(<App />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(450);
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Новая игра' }));
+
+    expect(screen.getByRole('heading', { name: 'Маятник замолчал' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Войти в сад' }));
 
     expect(screen.getByText('Открываем Сад первой зари…')).toBeVisible();
   });

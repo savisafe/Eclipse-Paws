@@ -25,8 +25,10 @@ export class GameSession {
   #checkpointId = 'garden-gate';
   #checkpointRestartCount = 0;
   #enemies: EnemyState[];
+  #elapsedMs = 0;
   #paused = false;
   #shieldCharges = 0;
+  readonly #sparks = new Set<string>();
 
   constructor(content: PrototypeContentConfig) {
     this.#content = content;
@@ -42,6 +44,7 @@ export class GameSession {
       checkpointRestartCount: this.#checkpointRestartCount,
       cooldowns: this.#cooldowns.snapshot(),
       eclipseMeter: this.#meter.current,
+      elapsedMs: this.#elapsedMs,
       enemies: this.#enemies.map((enemy) => ({ ...enemy })),
       maxBondHealth: this.#bondHealth.maximum,
       maxEclipseMeter: this.#meter.maximum,
@@ -49,11 +52,14 @@ export class GameSession {
       phase: this.#phaseCycle.phase,
       phaseRemainingMs: this.#phaseCycle.remainingMs,
       shieldCharges: this.#shieldCharges,
+      sparksCollected: this.#sparks.size,
+      totalSparks: 3,
     };
   }
 
   update(deltaMs: number): void {
     if (this.#paused) return;
+    this.#elapsedMs += deltaMs;
     this.#cooldowns.update(deltaMs);
     const result = this.#phaseCycle.advance(deltaMs);
     if (result.changed) this.#events.push({ type: 'PhaseChanged', phase: result.phase });
@@ -118,6 +124,18 @@ export class GameSession {
       if (enemy.health === 0) this.#events.push({ type: 'EnemyDefeated', enemyId });
     });
     return true;
+  }
+
+  collectSpark(sparkId: string): boolean {
+    if (this.#sparks.has(sparkId)) return false;
+    this.#sparks.add(sparkId);
+    this.#meter.gain(12);
+    this.#events.push({ type: 'SparkCollected', sparkId, total: this.#sparks.size });
+    return true;
+  }
+
+  rewardEclipse(amount: number): void {
+    this.#meter.gain(amount);
   }
 
   takeDamage(amount: number): boolean {

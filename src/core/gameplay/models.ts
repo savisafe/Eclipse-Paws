@@ -50,6 +50,7 @@ export interface GameplaySnapshot {
   checkpointRestartCount: number;
   cooldowns: Readonly<Record<string, number>>;
   eclipseMeter: number;
+  elapsedMs: number;
   enemies: readonly EnemyState[];
   maxBondHealth: number;
   maxEclipseMeter: number;
@@ -57,6 +58,8 @@ export interface GameplaySnapshot {
   phase: Phase;
   phaseRemainingMs: number;
   shieldCharges: number;
+  sparksCollected: number;
+  totalSparks: number;
 }
 
 export interface AttackResult {

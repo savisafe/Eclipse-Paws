@@ -1,1 +1,1 @@
-export type { SaveRepository } from './save-repository';
+export { LocalStorageSaveRepository } from './local-storage-save-repository';

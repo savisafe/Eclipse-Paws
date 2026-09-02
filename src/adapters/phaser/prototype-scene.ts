@@ -12,6 +12,8 @@ import {
 import { createArenaTextures } from './arena-textures';
 import { updateCatAnimation } from './cat-animation';
 import { CombatAbilitySystem } from './combat-ability-system';
+import { GardenCollectibleSystem } from './garden-collectible-system';
+import { GardenFlowerPuzzle } from './garden-flower-puzzle';
 import { PlatformerEnemySystem } from './platformer-enemy-system';
 import { PlatformerHazardSystem } from './platformer-hazard-system';
 import { PlatformerProgressSystem } from './platformer-progress-system';
@@ -51,12 +53,14 @@ export class PrototypeScene extends Phaser.Scene {
   #accumulatorMs = 0;
   #actors!: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   #enemySystem!: PlatformerEnemySystem;
+  #collectibleSystem!: GardenCollectibleSystem;
   #lastPhase: Phase = 'day';
   #lastRestartCount = 0;
   #coyoteMs = 0;
   #combatSystem!: CombatAbilitySystem;
   #jumpBufferMs = 0;
   #hazardSystem!: PlatformerHazardSystem;
+  #flowerPuzzle!: GardenFlowerPuzzle;
   #phaseOverlay!: Phaser.GameObjects.Rectangle;
   #platforms!: Phaser.Physics.Arcade.StaticGroup;
   #progressSystem!: PlatformerProgressSystem;
@@ -100,6 +104,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.#selection = this.add.ellipse(0, 0, 94, 24).setStrokeStyle(5, 0xffda72, 0.92).setDepth(2);
     drawCheckpoints(this);
     this.#enemySystem = new PlatformerEnemySystem(this, this.#gameplay, this.#platforms);
+    this.#collectibleSystem = new GardenCollectibleSystem(this, this.#gameplay);
+    this.#flowerPuzzle = new GardenFlowerPuzzle(this, this.#gameplay, this.#actors);
     this.#combatSystem = new CombatAbilitySystem({
       actionLockMs: this.#actionLockMs,
       actors: this.#actors,
@@ -150,11 +156,19 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.#inputState.consume('support-ability')) this.#combatSystem.support();
     if (this.#inputState.consume('change-phase')) this.#combatSystem.changePhase();
     if (this.#inputState.consume('ultimate')) this.#combatSystem.ultimate();
+    if (this.#inputState.consume('interact')) {
+      this.#flowerPuzzle.interact(this.#actors[this.#gameplay.getSnapshot().activeCat]);
+    }
     if (this.#inputState.consume('restart-checkpoint')) this.#gameplay.restartCheckpoint();
     this.#moveCats(deltaMs);
     this.#enemySystem.update(this.#actors[this.#gameplay.getSnapshot().activeCat], deltaMs);
     this.#hazardSystem.update(deltaMs);
-    this.#progressSystem.update(this.#actors[this.#gameplay.getSnapshot().activeCat]);
+    const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
+    this.#collectibleSystem.update(active);
+    const canFinish =
+      this.#startNearFinish ||
+      (this.#flowerPuzzle.solved && this.#enemySystem.isDefeated('twilight-golem-2'));
+    this.#progressSystem.update(active, canFinish);
 
     const snapshot = this.#gameplay.getSnapshot();
     if (snapshot.phase !== this.#lastPhase) this.#applyPhase(snapshot.phase);

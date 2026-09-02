@@ -4,3 +4,5 @@ export {
   type GameEventListener,
   type GameplayListener,
 } from './gameplay-controller';
+export { ProgressService } from './progress-service';
+export type { SaveRepository } from './ports/save-repository';

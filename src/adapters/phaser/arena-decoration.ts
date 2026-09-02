@@ -77,6 +77,15 @@ export function drawArena(scene: Phaser.Scene): PlatformerWorldView {
       strokeThickness: 5,
     })
     .setScrollFactor(0.65);
+  scene.add
+    .text(95, 105, 'ЦЕЛЬ: цветы 1→2→3 [E] · голем · осколок в конце сада', {
+      color: '#fff8dd',
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '15px',
+      stroke: '#142235',
+      strokeThickness: 4,
+    })
+    .setScrollFactor(0.65);
 
   const phaseOverlay = scene.add
     .rectangle(0, 0, PLATFORMER_WORLD.width, PLATFORMER_WORLD.height, 0x251c52, 0)

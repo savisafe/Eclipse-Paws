@@ -22,3 +22,4 @@ export type {
   PrototypeContentConfig,
 } from './models';
 export { PhaseCycle, type PhaseAdvanceResult } from './phase-cycle';
+export { SequencePuzzle, type SequenceResult } from './sequence-puzzle';

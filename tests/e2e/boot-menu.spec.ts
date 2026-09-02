@@ -1,4 +1,9 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function startGame(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Новая игра' }).click();
+  await page.getByRole('button', { name: 'Войти в сад' }).click();
+}
 
 test('boots into a keyboard-accessible menu without layout overflow', async ({ page }) => {
   const errors: string[] = [];
@@ -22,7 +27,7 @@ test('boots into a keyboard-accessible menu without layout overflow', async ({ p
 
 test('crosses the first platform with a forgiving buffered jump', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Новая игра' }).click();
+  await startGame(page);
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
@@ -41,7 +46,7 @@ test('crosses the first platform with a forgiving buffered jump', async ({ page 
 
 test('reflects the automatic phase change in the HUD', async ({ page }) => {
   await page.goto('/?phaseDurationMs=200');
-  await page.getByRole('button', { name: 'Новая игра' }).click();
+  await startGame(page);
   await page.bringToFront();
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
@@ -52,7 +57,7 @@ test('reflects the automatic phase change in the HUD', async ({ page }) => {
 
 test('reaches the finish and shows a level result', async ({ page }) => {
   await page.goto('/?startNearFinish=1');
-  await page.getByRole('button', { name: 'Новая игра' }).click();
+  await startGame(page);
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
@@ -72,7 +77,7 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
   });
 
   await page.goto('/?startNearCombat=1');
-  await page.getByRole('button', { name: 'Новая игра' }).click();
+  await startGame(page);
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });

@@ -8,4 +8,5 @@ export type GameEvent =
   | { type: 'EnemyDefeated'; enemyId: string }
   | { type: 'CheckpointReached'; checkpointId: string }
   | { type: 'CheckpointRestarted'; checkpointId: string; restartCount: number }
+  | { type: 'SparkCollected'; sparkId: string; total: number }
   | { type: 'GamePaused'; paused: boolean };

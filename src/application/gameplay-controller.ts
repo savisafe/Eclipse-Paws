@@ -95,6 +95,18 @@ export class GameplayController {
     return used;
   }
 
+  collectSpark(sparkId: string): boolean {
+    const collected = this.#session.collectSpark(sparkId);
+    this.#flushEvents();
+    this.#publish();
+    return collected;
+  }
+
+  rewardEclipse(amount: number): void {
+    this.#session.rewardEclipse(amount);
+    this.#publish();
+  }
+
   takeDamage(amount: number): boolean {
     const restarted = this.#session.takeDamage(amount);
     this.#flushEvents();

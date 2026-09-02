@@ -13,14 +13,14 @@ export class PlatformerProgressSystem {
     this.#onLevelCompleted = onLevelCompleted;
   }
 
-  update(active: Phaser.Physics.Arcade.Sprite): void {
+  update(active: Phaser.Physics.Arcade.Sprite, canFinish: boolean): void {
     const moonWell = PROTOTYPE_SPAWNS.checkpoints[1];
     if (Phaser.Math.Distance.Between(active.x, active.y, moonWell.x, moonWell.y) < 90) {
       this.#gameplay.reachCheckpoint(moonWell.id);
     }
 
     const finish = PROTOTYPE_SPAWNS.checkpoints[2];
-    if (!this.#finished && active.x >= finish.x - 55) {
+    if (!this.#finished && canFinish && active.x >= finish.x - 55) {
       this.#finished = true;
       this.#onLevelCompleted();
     }
