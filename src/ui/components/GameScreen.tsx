@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
 import type { AppState } from '@core/index';
+import type { CampaignLevelDefinition } from '@content/index';
 import { GameCanvas } from './GameCanvas';
 import { GameHud } from './GameHud';
 import { PauseOverlay } from './PauseOverlay';
@@ -12,6 +13,7 @@ interface GameScreenProps {
   appState: AppState;
   gameplay: GameplayController;
   inputState: GameInputState;
+  level: CampaignLevelDefinition;
   onPauseToggle: () => void;
   onLevelCompleted: () => void;
   onReady: () => void;
@@ -22,6 +24,7 @@ export function GameScreen({
   appState,
   gameplay,
   inputState,
+  level,
   onPauseToggle,
   onLevelCompleted,
   onReady,
@@ -35,6 +38,7 @@ export function GameScreen({
       <GameCanvas
         gameplay={gameplay}
         inputState={inputState}
+        level={level}
         onPauseRequested={onPauseToggle}
         onLevelCompleted={onLevelCompleted}
         onReady={onReady}

@@ -481,6 +481,47 @@ button:focus-visible {
   cursor: pointer;
 }
 
+.level-select-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.level-select-button {
+  display: grid;
+  min-height: 3.8rem;
+  grid-template-columns: 2.4rem 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgb(255 231 167 / 35%);
+  border-radius: 1rem;
+  color: var(--cream);
+  background: rgb(255 255 255 / 7%);
+  text-align: left;
+  cursor: pointer;
+}
+
+.level-select-button > span {
+  display: grid;
+  width: 2.2rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  color: #292653;
+  background: var(--gold);
+  font-weight: 900;
+}
+
+.level-select-button small {
+  color: var(--turquoise);
+}
+
+.level-select-button:disabled {
+  filter: grayscale(1);
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 @media (max-height: 700px) {
   .hero-panel {
     padding-block: 1rem;

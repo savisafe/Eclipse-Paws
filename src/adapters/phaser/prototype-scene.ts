@@ -1,32 +1,29 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
-import { PROTOTYPE_SPAWNS } from '@content/index';
+import { PROTOTYPE_MONSTERS, STAGE4_ENEMIES, type CampaignLevelDefinition } from '@content/index';
 import type { CatId, Phase } from '@core/index';
 import {
   drawArena,
   drawCheckpoints,
-  PLATFORMER_WORLD,
+  PLATFORMER_WORLD_HEIGHT,
   preloadEnvironment,
 } from './arena-decoration';
 import { createArenaTextures } from './arena-textures';
-import { updateCatAnimation } from './cat-animation';
 import { CombatAbilitySystem } from './combat-ability-system';
-import { GardenCollectibleSystem } from './garden-collectible-system';
-import { GardenFlowerPuzzle } from './garden-flower-puzzle';
+import { LevelMechanicsSystem } from './level-mechanics-system';
 import { PlatformerEnemySystem } from './platformer-enemy-system';
-import { PlatformerHazardSystem } from './platformer-hazard-system';
-import { PlatformerProgressSystem } from './platformer-progress-system';
+import { PlayerMovementSystem } from './player-movement-system';
 import { ATLAS_TEXTURE_KEY, preloadSpriteAtlas, setCatPose } from './sprite-atlas';
 import { TagSwitchSystem } from './tag-switch-system';
+import { preloadStage4EnemyAtlas, prepareStage4EnemyAtlas } from './stage4-enemy-atlas';
 
 const FIXED_STEP_MS = 1000 / 60;
-const PLAYER_SPEED = 255;
-const JUMP_SPEED = 560;
 
 export interface PrototypeSceneOptions {
   gameplay: GameplayController;
   inputState: GameInputState;
+  level: CampaignLevelDefinition;
   onPauseRequested: () => void;
   onLevelCompleted: () => void;
   onReady: () => void;
@@ -35,15 +32,12 @@ export interface PrototypeSceneOptions {
   startNearCombat: boolean;
 }
 
-function arcadeBody(sprite: Phaser.Physics.Arcade.Sprite): Phaser.Physics.Arcade.Body {
-  return sprite.body as Phaser.Physics.Arcade.Body;
-}
-
 export class PrototypeScene extends Phaser.Scene {
   readonly #actionLockMs: Record<CatId, number> = { luma: 0, nox: 0 };
   readonly #facing: Record<CatId, number> = { luma: 1, nox: 1 };
   readonly #gameplay: GameplayController;
   readonly #inputState: GameInputState;
+  readonly #level: CampaignLevelDefinition;
   readonly #onLevelCompleted: () => void;
   readonly #onPauseRequested: () => void;
   readonly #onReady: () => void;
@@ -53,17 +47,13 @@ export class PrototypeScene extends Phaser.Scene {
   #accumulatorMs = 0;
   #actors!: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   #enemySystem!: PlatformerEnemySystem;
-  #collectibleSystem!: GardenCollectibleSystem;
   #lastPhase: Phase = 'day';
   #lastRestartCount = 0;
-  #coyoteMs = 0;
   #combatSystem!: CombatAbilitySystem;
-  #jumpBufferMs = 0;
-  #hazardSystem!: PlatformerHazardSystem;
-  #flowerPuzzle!: GardenFlowerPuzzle;
+  #levelMechanics!: LevelMechanicsSystem;
   #phaseOverlay!: Phaser.GameObjects.Rectangle;
   #platforms!: Phaser.Physics.Arcade.StaticGroup;
-  #progressSystem!: PlatformerProgressSystem;
+  #playerMovement!: PlayerMovementSystem;
   #selection!: Phaser.GameObjects.Ellipse;
   #switching = false;
   #tagSwitchSystem!: TagSwitchSystem;
@@ -72,6 +62,7 @@ export class PrototypeScene extends Phaser.Scene {
     super('prototype-platformer');
     this.#gameplay = options.gameplay;
     this.#inputState = options.inputState;
+    this.#level = options.level;
     this.#onPauseRequested = options.onPauseRequested;
     this.#onLevelCompleted = options.onLevelCompleted;
     this.#onReady = options.onReady;
@@ -82,30 +73,38 @@ export class PrototypeScene extends Phaser.Scene {
 
   preload(): void {
     preloadSpriteAtlas(this);
-    preloadEnvironment(this);
+    preloadEnvironment(this, this.#level);
+    if (this.#level.index === 2 || this.#level.index === 3) preloadStage4EnemyAtlas(this);
   }
 
   create(): void {
     createArenaTextures(this);
-    const world = drawArena(this);
+    if (this.#level.index === 2 || this.#level.index === 3) prepareStage4EnemyAtlas(this);
+    const world = drawArena(this, this.#level);
     this.#phaseOverlay = world.phaseOverlay;
     this.#platforms = world.platforms;
 
-    this.physics.world.setBounds(0, 0, PLATFORMER_WORLD.width, PLATFORMER_WORLD.height + 180);
+    this.physics.world.setBounds(0, 0, this.#level.worldWidth, PLATFORMER_WORLD_HEIGHT + 180);
     this.physics.world.setBoundsCollision(true, true, true, false);
-    this.cameras.main.setBounds(0, 0, PLATFORMER_WORLD.width, PLATFORMER_WORLD.height);
+    this.cameras.main.setBounds(0, 0, this.#level.worldWidth, PLATFORMER_WORLD_HEIGHT);
 
     this.#actors = { luma: this.#createCat('luma'), nox: this.#createCat('nox') };
-    if (this.#startNearFinish) this.#actors.luma.setPosition(4870, 500);
+    const finish = this.#level.checkpoints[2];
+    if (this.#startNearFinish) this.#actors.luma.setPosition(finish.x - 75, finish.y);
     else if (this.#startNearCombat) this.#actors.luma.setPosition(540, 500);
     this.#actors.nox.disableBody(true, true);
     this.#tagSwitchSystem = new TagSwitchSystem(this, this.#actors, this.#reducedMotion);
     this.physics.add.collider(Object.values(this.#actors), this.#platforms);
     this.#selection = this.add.ellipse(0, 0, 94, 24).setStrokeStyle(5, 0xffda72, 0.92).setDepth(2);
-    drawCheckpoints(this);
-    this.#enemySystem = new PlatformerEnemySystem(this, this.#gameplay, this.#platforms);
-    this.#collectibleSystem = new GardenCollectibleSystem(this, this.#gameplay);
-    this.#flowerPuzzle = new GardenFlowerPuzzle(this, this.#gameplay, this.#actors);
+    drawCheckpoints(this, this.#level);
+    const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES };
+    this.#enemySystem = new PlatformerEnemySystem(
+      this,
+      this.#gameplay,
+      this.#platforms,
+      this.#level.enemies,
+      enemyTypes,
+    );
     this.#combatSystem = new CombatAbilitySystem({
       actionLockMs: this.#actionLockMs,
       actors: this.#actors,
@@ -115,13 +114,23 @@ export class PrototypeScene extends Phaser.Scene {
       reducedMotion: this.#reducedMotion,
       scene: this,
     });
-    this.#hazardSystem = new PlatformerHazardSystem(
-      this,
-      this.#gameplay,
-      this.#actors,
-      this.#reducedMotion,
-    );
-    this.#progressSystem = new PlatformerProgressSystem(this.#gameplay, this.#onLevelCompleted);
+    this.#playerMovement = new PlayerMovementSystem({
+      actionLockMs: this.#actionLockMs,
+      actors: this.#actors,
+      facing: this.#facing,
+      gameplay: this.#gameplay,
+      input: this.#inputState,
+    });
+    this.#levelMechanics = new LevelMechanicsSystem({
+      actors: this.#actors,
+      enemies: this.#enemySystem,
+      gameplay: this.#gameplay,
+      level: this.#level,
+      onLevelCompleted: this.#onLevelCompleted,
+      reducedMotion: this.#reducedMotion,
+      scene: this,
+      startNearFinish: this.#startNearFinish,
+    });
     this.#applyPhase('day');
     this.cameras.main.startFollow(this.#actors.luma, true, 0.09, 0.09);
     this.cameras.main.setDeadzone(260, 130);
@@ -157,18 +166,14 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.#inputState.consume('change-phase')) this.#combatSystem.changePhase();
     if (this.#inputState.consume('ultimate')) this.#combatSystem.ultimate();
     if (this.#inputState.consume('interact')) {
-      this.#flowerPuzzle.interact(this.#actors[this.#gameplay.getSnapshot().activeCat]);
+      const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
+      this.#levelMechanics.interact(active);
     }
     if (this.#inputState.consume('restart-checkpoint')) this.#gameplay.restartCheckpoint();
-    this.#moveCats(deltaMs);
+    this.#playerMovement.update(deltaMs);
     this.#enemySystem.update(this.#actors[this.#gameplay.getSnapshot().activeCat], deltaMs);
-    this.#hazardSystem.update(deltaMs);
     const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
-    this.#collectibleSystem.update(active);
-    const canFinish =
-      this.#startNearFinish ||
-      (this.#flowerPuzzle.solved && this.#enemySystem.isDefeated('twilight-golem-2'));
-    this.#progressSystem.update(active, canFinish);
+    this.#levelMechanics.update(active, deltaMs);
 
     const snapshot = this.#gameplay.getSnapshot();
     if (snapshot.phase !== this.#lastPhase) this.#applyPhase(snapshot.phase);
@@ -176,8 +181,9 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   #createCat(catId: CatId): Phaser.Physics.Arcade.Sprite {
-    const spawn = PROTOTYPE_SPAWNS.cats[catId];
-    const sprite = this.physics.add.sprite(spawn.x, spawn.y, ATLAS_TEXTURE_KEY).setDepth(6);
+    const start = this.#level.checkpoints[0];
+    const x = start.x + (catId === 'luma' ? 35 : -45);
+    const sprite = this.physics.add.sprite(x, start.y, ATLAS_TEXTURE_KEY).setDepth(6);
     setCatPose(sprite, catId, 'idle');
     sprite.setScale(0.58).setSize(125, 120).setOffset(65, 105).setCollideWorldBounds(true);
     return sprite;
@@ -194,33 +200,6 @@ export class PrototypeScene extends Phaser.Scene {
     });
   }
 
-  #moveCats(deltaMs: number): void {
-    const activeId = this.#gameplay.getSnapshot().activeCat;
-    const active = this.#actors[activeId];
-    const horizontal =
-      Number(this.#inputState.isPressed('move-right')) -
-      Number(this.#inputState.isPressed('move-left'));
-    active.setVelocityX(horizontal * PLAYER_SPEED);
-    if (horizontal !== 0) this.#setFacing(activeId, horizontal);
-
-    const grounded = arcadeBody(active).blocked.down;
-    this.#coyoteMs = grounded ? 120 : Math.max(0, this.#coyoteMs - deltaMs);
-    this.#jumpBufferMs = Math.max(0, this.#jumpBufferMs - deltaMs);
-    if (this.#inputState.consume('jump')) this.#jumpBufferMs = 130;
-    if (this.#jumpBufferMs > 0 && (grounded || this.#coyoteMs > 0)) {
-      active.setVelocityY(-JUMP_SPEED);
-      this.#jumpBufferMs = 0;
-      this.#coyoteMs = 0;
-    }
-
-    updateCatAnimation(active, activeId, this.#actionLockMs, deltaMs);
-  }
-
-  #setFacing(catId: CatId, direction: number): void {
-    this.#facing[catId] = direction < 0 ? -1 : 1;
-    this.#actors[catId].setFlipX(direction < 0);
-  }
-
   #applyPhase(phase: Phase): void {
     this.#lastPhase = phase;
     this.cameras.main.setBackgroundColor(phase === 'day' ? 0x82c8d4 : 0x171738);
@@ -228,14 +207,15 @@ export class PrototypeScene extends Phaser.Scene {
       phase === 'day' ? 0xffdf8b : 0x2a174f,
       phase === 'day' ? 0.05 : 0.38,
     );
+    this.#levelMechanics.applyPhase(phase);
   }
 
   #resetWorld(): void {
     const snapshot = this.#gameplay.getSnapshot();
     this.#lastRestartCount = snapshot.checkpointRestartCount;
     const checkpoint =
-      PROTOTYPE_SPAWNS.checkpoints.find((point) => point.id === snapshot.checkpointId) ??
-      PROTOTYPE_SPAWNS.checkpoints[0];
+      this.#level.checkpoints.find((point) => point.id === snapshot.checkpointId) ??
+      this.#level.checkpoints[0];
     this.#actors.luma.setPosition(checkpoint.x + 34, checkpoint.y).setVelocity(0, 0);
     this.#actors.nox.setPosition(checkpoint.x - 58, checkpoint.y).setVelocity(0, 0);
     const activeId = snapshot.activeCat;

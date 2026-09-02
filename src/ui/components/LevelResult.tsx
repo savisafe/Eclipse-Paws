@@ -1,6 +1,9 @@
 interface LevelResultProps {
   elapsedMs: number;
+  levelTitle: string;
+  nextLevelTitle?: string;
   onMenu: () => void;
+  onNext?: () => void;
   onReplay: () => void;
   sparks: number;
   totalSparks: number;
@@ -8,7 +11,10 @@ interface LevelResultProps {
 
 export function LevelResult({
   elapsedMs,
+  levelTitle,
+  nextLevelTitle,
   onMenu,
+  onNext,
   onReplay,
   sparks,
   totalSparks,
@@ -25,7 +31,7 @@ export function LevelResult({
         <div className="result-shard" aria-hidden="true">
           ✦
         </div>
-        <p>Люма и Нокс восстановили первую часть цикла.</p>
+        <p>«{levelTitle}» завершён. Цикл становится устойчивее.</p>
         <dl className="result-stats">
           <div>
             <dt>Время</dt>
@@ -43,6 +49,11 @@ export function LevelResult({
         <button className="menu-button" onClick={onReplay} type="button">
           Пройти ещё раз
         </button>
+        {onNext && nextLevelTitle ? (
+          <button className="menu-button" onClick={onNext} type="button">
+            Далее: {nextLevelTitle}
+          </button>
+        ) : null}
         <button className="result-card__secondary" onClick={onMenu} type="button">
           В главное меню
         </button>

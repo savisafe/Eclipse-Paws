@@ -1,17 +1,18 @@
 import { CatSigil } from './CatSigil';
 import { SettingsDialog } from './SettingsDialog';
+import { LevelSelectDialog } from './LevelSelectDialog';
+import type { CampaignLevelId } from '@content/index';
 
-const menuItems = [
-  { label: 'Продолжить', disabled: true },
-  { label: 'Новая игра', disabled: false },
-  { label: 'Выбор уровня', disabled: true },
-] as const;
+const menuItems = [{ label: 'Новая игра', disabled: false }] as const;
 
 interface MainMenuProps {
+  onContinue: () => void;
   onNewGame: () => void;
+  onSelectLevel: (levelId: CampaignLevelId) => void;
+  unlockedLevels: readonly CampaignLevelId[];
 }
 
-export function MainMenu({ onNewGame }: MainMenuProps) {
+export function MainMenu({ onContinue, onNewGame, onSelectLevel, unlockedLevels }: MainMenuProps) {
   return (
     <main className="main-menu">
       <div className="sky-orb sky-orb--sun" aria-hidden="true" />
@@ -31,6 +32,15 @@ export function MainMenu({ onNewGame }: MainMenuProps) {
         </div>
 
         <nav className="menu-actions" aria-label="Главное меню">
+          <button
+            className="menu-button"
+            disabled={unlockedLevels.length <= 1}
+            onClick={onContinue}
+            type="button"
+          >
+            <span>Продолжить</span>
+            {unlockedLevels.length <= 1 ? <small>Нет сохранения</small> : null}
+          </button>
           {menuItems.map((item) => (
             <button
               className="menu-button"
@@ -43,6 +53,7 @@ export function MainMenu({ onNewGame }: MainMenuProps) {
               {item.disabled ? <small>Скоро</small> : null}
             </button>
           ))}
+          <LevelSelectDialog onSelect={onSelectLevel} unlockedLevels={unlockedLevels} />
           <SettingsDialog />
         </nav>
 

@@ -13,3 +13,13 @@ export {
 export { SHADEFANG_CONFIG } from './enemies/shadefang';
 export { PROTOTYPE_CONTENT, PROTOTYPE_SPAWNS, type ArenaPoint } from './levels/prototype-arena';
 export { LEVEL_MONSTER_ROSTERS, type LevelRosterId } from './levels/monster-rosters';
+export {
+  CAMPAIGN_LEVEL_ORDER,
+  CAMPAIGN_LEVELS,
+  createLevelContent,
+  type CampaignLevelDefinition,
+  type CampaignLevelId,
+  type LevelPoint,
+  type PlatformRect,
+} from './levels/campaign-levels';
+export { STAGE4_ENEMIES } from './enemies/stage4-enemies';

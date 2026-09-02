@@ -1,15 +1,16 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
-import { PROTOTYPE_MONSTERS, PROTOTYPE_SPAWNS, type ArenaPoint } from '@content/index';
+import type { LevelPoint } from '@content/index';
 import type { EnemyConfig } from '@core/index';
 import type { EffectTarget } from './platformer-effects';
 import { ATLAS_TEXTURE_KEY, MONSTER_FRAMES } from './sprite-atlas';
+import { STAGE4_ENEMY_FRAMES, STAGE4_ENEMY_TEXTURE } from './stage4-enemy-atlas';
 
 interface EnemyView extends EffectTarget {
   config: EnemyConfig;
   cooldownMs: number;
   frames: { attack: number; idle: number; move: number };
-  spawn: ArenaPoint;
+  spawn: LevelPoint & { configId: string };
   telegraphMs: number;
 }
 
@@ -26,26 +27,37 @@ export class PlatformerEnemySystem {
     scene: Phaser.Scene,
     gameplay: GameplayController,
     platforms: Phaser.Physics.Arcade.StaticGroup,
+    spawns: readonly (LevelPoint & { configId: string })[],
+    enemyTypes: Readonly<Record<string, EnemyConfig>>,
   ) {
     this.#scene = scene;
     this.#gameplay = gameplay;
-    PROTOTYPE_SPAWNS.enemies.forEach((spawn) => {
-      const config = PROTOTYPE_MONSTERS[spawn.configId];
+    spawns.forEach((spawn) => {
+      const config = enemyTypes[spawn.configId];
       if (!config) throw new Error(`Unknown platformer monster: ${spawn.configId}`);
-      const frames = MONSTER_FRAMES[spawn.configId];
+      const stage4Frame = STAGE4_ENEMY_FRAMES[spawn.configId];
+      const frames =
+        stage4Frame === undefined
+          ? MONSTER_FRAMES[spawn.configId]
+          : { idle: stage4Frame, move: stage4Frame, attack: stage4Frame };
       if (!frames) throw new Error(`Missing atlas frames for monster: ${spawn.configId}`);
+      const texture = stage4Frame === undefined ? ATLAS_TEXTURE_KEY : STAGE4_ENEMY_TEXTURE;
       const sprite = scene.physics.add
-        .sprite(spawn.x, spawn.y, ATLAS_TEXTURE_KEY, frames.idle)
+        .sprite(spawn.x, spawn.y, texture, frames.idle)
         .setDepth(5)
         .setCollideWorldBounds(false);
       const scale =
-        spawn.configId === 'twilight-golem'
-          ? 0.78
-          : spawn.configId === 'spore-beast'
-            ? 0.54
-            : spawn.configId === 'light-wisp'
-              ? 0.48
-              : 0.56;
+        spawn.configId === 'great-mushroom' || spawn.configId === 'archivist-echo'
+          ? 0.82
+          : stage4Frame !== undefined
+            ? 0.62
+            : spawn.configId === 'twilight-golem'
+              ? 0.78
+              : spawn.configId === 'spore-beast'
+                ? 0.54
+                : spawn.configId === 'light-wisp'
+                  ? 0.48
+                  : 0.56;
       sprite
         .setScale(scale)
         .setSize(
@@ -99,10 +111,10 @@ export class PlatformerEnemySystem {
         enemy.sprite.anims.stop();
         enemy.sprite.setFrame(enemy.frames.attack);
       } else if (enemy.config.movement === 'flying') {
-        enemy.sprite.anims.play(`${enemy.config.id}-move`, true);
+        this.#playMove(enemy);
         this.#scene.physics.moveToObject(enemy.sprite, weakCat, enemy.config.speed);
       } else {
-        enemy.sprite.anims.play(`${enemy.config.id}-move`, true);
+        this.#playMove(enemy);
         enemy.sprite.setVelocityX(Math.sign(dx) * enemy.config.speed).setFlipX(dx < 0);
       }
     });
@@ -133,5 +145,11 @@ export class PlatformerEnemySystem {
     enemy.sprite.setFrame(enemy.frames.idle);
     enemy.cooldownMs = 1400;
     if (distance < 118) this.#gameplay.takeDamage(enemy.config.contactDamage);
+  }
+
+  #playMove(enemy: EnemyView): void {
+    const animationKey = `${enemy.config.id}-move`;
+    if (this.#scene.anims.exists(animationKey)) enemy.sprite.anims.play(animationKey, true);
+    else enemy.sprite.setFrame(enemy.frames.move);
   }
 }

@@ -3,7 +3,7 @@ interface CatSigilProps {
 }
 
 export function CatSigil({ kind }: CatSigilProps) {
-  const label = kind === 'luma' ? 'Люма, хранительница света' : 'Нокс, хранитель теней';
+  const label = kind === 'luma' ? 'Кокс, хранитель света' : 'Боня, хранитель теней';
 
   return (
     <div className={`cat-sigil cat-sigil--${kind}`} role="img" aria-label={label}>

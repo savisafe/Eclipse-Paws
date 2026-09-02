@@ -121,3 +121,12 @@ Phaser adapter поэтому один раз при загрузке удаля
 camera ownership второму герою через короткую уникальную анимацию света/тьмы. Это полностью
 исключает follower soft-lock и визуальное «побледнение» напарника. Общая Связь и фазовая
 асимметрия сохраняются.
+
+## ADR-014 — CampaignLevelDefinition для уровней 1–5
+
+- Статус: принято
+- Дата: 2026-09-03
+
+Маршрут, фон, platforms, phase platforms, hazards, checkpoints, sparks, enemy spawns, boss и
+mechanic задаются одним типизированным level config. Общая Phaser scene принимает definition и
+не содержит `switch` по номеру уровня. Лес и библиотека добавлены без изменения combat core API.

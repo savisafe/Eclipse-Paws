@@ -1,23 +1,23 @@
 interface StoryIntroProps {
   onBack: () => void;
   onStart: () => void;
+  story: string;
+  subtitle: string;
+  title: string;
 }
 
-export function StoryIntro({ onBack, onStart }: StoryIntroProps) {
+export function StoryIntro({ onBack, onStart, story, subtitle, title }: StoryIntroProps) {
   return (
     <main className="story-screen">
       <section className="story-card" aria-labelledby="story-title">
-        <p>Осколок I · Сад первой зари</p>
-        <h1 id="story-title">Маятник замолчал</h1>
-        <blockquote>
-          День застыл над древним садом. Люма чувствует зов солнечных цветов, а Нокс слышит тень под
-          корнями.
-        </blockquote>
+        <p>{subtitle}</p>
+        <h1 id="story-title">{title}</h1>
+        <blockquote>{story}</blockquote>
         <div className="story-meow" aria-label="Коты готовы к путешествию">
-          Люма: «Мяу!» · Нокс: «Мр-р.»
+          Кокс: «Мяу!» · Боня: «Мр-р.»
         </div>
         <button className="menu-button" onClick={onStart} type="button">
-          Войти в сад
+          Начать уровень
         </button>
         <button className="result-card__secondary" onClick={onBack} type="button">
           Назад

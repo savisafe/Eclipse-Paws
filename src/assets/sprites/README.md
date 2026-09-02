@@ -9,3 +9,7 @@ CanvasTexture, then releases the unprocessed source texture.
 
 ImageGen mode: built-in edit/generation using the original concept sheet as the identity and style
 reference. No external CDN or runtime network request is used.
+
+`stage4-enemy-atlas-v1.png` contains eight unique painterly enemies for the forest and library:
+thorn stalker, lantern moth, elder spore, Great Mushroom, mirror harpy, ink sprite, echo owl and
+Archivist Echo. The adapter removes its white source background once and registers eight frames.

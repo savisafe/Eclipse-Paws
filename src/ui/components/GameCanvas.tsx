@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameplayController } from '@application/index';
 import { KeyboardInputAdapter, type GameInputState } from '@adapters/input/index';
+import type { CampaignLevelDefinition } from '@content/index';
 
 interface GameCanvasProps {
   gameplay: GameplayController;
   inputState: GameInputState;
+  level: CampaignLevelDefinition;
   onPauseRequested: () => void;
   onLevelCompleted: () => void;
   onReady: () => void;
@@ -14,6 +16,7 @@ interface GameCanvasProps {
 export function GameCanvas({
   gameplay,
   inputState,
+  level,
   onPauseRequested,
   onLevelCompleted,
   onReady,
@@ -47,6 +50,7 @@ export function GameCanvas({
         game = createPrototypeGame({
           gameplay,
           inputState,
+          level,
           onPauseRequested,
           onLevelCompleted,
           onReady,
@@ -66,7 +70,7 @@ export function GameCanvas({
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       game?.destroy(true);
     };
-  }, [gameplay, inputState, onLevelCompleted, onPauseRequested, onReady, reducedMotion]);
+  }, [gameplay, inputState, level, onLevelCompleted, onPauseRequested, onReady, reducedMotion]);
 
   return (
     <div className="game-canvas-shell">

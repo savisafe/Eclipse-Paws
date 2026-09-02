@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
+import type { LevelPoint } from '@content/index';
 import type { CatId, Phase } from '@core/index';
 
 interface HazardView {
@@ -8,16 +9,6 @@ interface HazardView {
   x: number;
   y: number;
 }
-
-const HAZARDS = [
-  { x: 1110, y: 610, activePhase: 'day' },
-  { x: 1690, y: 610, activePhase: 'night' },
-  { x: 2220, y: 610, activePhase: 'day' },
-  { x: 2670, y: 610, activePhase: 'night' },
-  { x: 3560, y: 610, activePhase: 'day' },
-  { x: 4160, y: 610, activePhase: 'night' },
-  { x: 4680, y: 610, activePhase: 'day' },
-] as const satisfies readonly Omit<HazardView, 'graphics'>[];
 
 export class PlatformerHazardSystem {
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
@@ -32,12 +23,13 @@ export class PlatformerHazardSystem {
     gameplay: GameplayController,
     actors: Record<CatId, Phaser.Physics.Arcade.Sprite>,
     reducedMotion: boolean,
+    hazards: readonly (LevelPoint & { activePhase: Phase })[],
   ) {
     this.#scene = scene;
     this.#gameplay = gameplay;
     this.#actors = actors;
     this.#reducedMotion = reducedMotion;
-    this.#hazards = HAZARDS.map((hazard) => ({ ...hazard, graphics: this.#draw(hazard) }));
+    this.#hazards = hazards.map((hazard) => ({ ...hazard, graphics: this.#draw(hazard) }));
   }
 
   update(deltaMs: number): void {

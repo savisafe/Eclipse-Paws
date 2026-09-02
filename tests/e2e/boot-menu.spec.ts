@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function startGame(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Новая игра' }).click();
-  await page.getByRole('button', { name: 'Войти в сад' }).click();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
 }
 
 test('boots into a keyboard-accessible menu without layout overflow', async ({ page }) => {
@@ -67,6 +67,35 @@ test('reaches the finish and shows a level result', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Уровень пройден!' })).toBeVisible({
     timeout: 10_000,
   });
+});
+
+test('continues from the garden into the forest and celestial library', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  await page.goto('/?startNearFinish=1');
+  await startGame(page);
+  await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
+    timeout: 15_000,
+  });
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(2_000);
+  await page.keyboard.up('KeyD');
+  await page.getByRole('button', { name: /Далее: Лес шепчущих теней/ }).click();
+  await expect(page.getByRole('heading', { name: 'Лес шепчущих теней' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
+    timeout: 15_000,
+  });
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(2_000);
+  await page.keyboard.up('KeyD');
+  await page.getByRole('button', { name: /Далее: Небесная библиотека/ }).click();
+  await expect(page.getByRole('heading', { name: 'Небесная библиотека' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 6', { timeout: 15_000 });
+  expect(errors).toEqual([]);
 });
 
 test('plays the platformer through combat, pause and checkpoint restart', async ({ page }) => {

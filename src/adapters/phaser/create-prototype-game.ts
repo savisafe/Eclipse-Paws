@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
+import type { CampaignLevelDefinition } from '@content/index';
 import { PrototypeScene } from './prototype-scene';
 
 export interface CreatePrototypeGameOptions {
   gameplay: GameplayController;
   inputState: GameInputState;
+  level: CampaignLevelDefinition;
   onPauseRequested: () => void;
   onLevelCompleted: () => void;
   onReady: () => void;
