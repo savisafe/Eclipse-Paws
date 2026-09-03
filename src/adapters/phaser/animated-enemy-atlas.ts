@@ -53,13 +53,14 @@ export function prepareAnimatedEnemyAtlas(
   scene: Phaser.Scene,
   sourceKey: string,
   textureKey: string,
+  columns = 4,
 ): void {
   if (scene.textures.exists(textureKey)) return;
   const source = scene.textures.get(sourceKey).getSourceImage() as HTMLImageElement;
   const sourceWidth = source.naturalWidth || source.width;
   const sourceHeight = source.naturalHeight || source.height;
   const output = document.createElement('canvas');
-  output.width = 1024;
+  output.width = columns * 256;
   output.height = 768;
   const outputContext = output.getContext('2d');
   if (!outputContext) throw new Error('Canvas 2D is required for animated enemy sprites.');
@@ -69,17 +70,18 @@ export function prepareAnimatedEnemyAtlas(
   for (let row = 0; row < 3; row += 1) {
     const sourceY = Math.round((row * sourceHeight) / 3);
     const nextY = Math.round(((row + 1) * sourceHeight) / 3);
-    for (let column = 0; column < 4; column += 1) {
+    for (let column = 0; column < columns; column += 1) {
       const cell = document.createElement('canvas');
-      cell.width = Math.round(sourceWidth / 4);
+      cell.width = Math.round(sourceWidth / columns);
       cell.height = nextY - sourceY;
       const cellContext = cell.getContext('2d', { willReadFrequently: true });
       if (!cellContext) throw new Error('Canvas 2D is required for enemy frame cleanup.');
       cellContext.drawImage(
         source,
-        Math.round((column * sourceWidth) / 4),
+        Math.round((column * sourceWidth) / columns),
         sourceY,
-        Math.round(((column + 1) * sourceWidth) / 4) - Math.round((column * sourceWidth) / 4),
+        Math.round(((column + 1) * sourceWidth) / columns) -
+          Math.round((column * sourceWidth) / columns),
         cell.height,
         0,
         0,
@@ -95,8 +97,8 @@ export function prepareAnimatedEnemyAtlas(
 
   const texture = scene.textures.addCanvas(textureKey, output);
   if (!texture) throw new Error(`Could not register animated enemy atlas: ${textureKey}`);
-  for (let frame = 0; frame < 12; frame += 1) {
-    texture.add(frame, 0, (frame % 4) * 256, Math.floor(frame / 4) * 256, 256, 256);
+  for (let frame = 0; frame < columns * 3; frame += 1) {
+    texture.add(frame, 0, (frame % columns) * 256, Math.floor(frame / columns) * 256, 256, 256);
   }
   scene.textures.remove(sourceKey);
 }
