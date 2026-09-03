@@ -10,6 +10,7 @@ describe('AppStateMachine', () => {
     expect(machine.transition('loading-level')).toBe('loading-level');
     expect(machine.transition('playing')).toBe('playing');
     expect(machine.transition('level-result')).toBe('level-result');
+    expect(machine.transition('credits')).toBe('credits');
     expect(machine.transition('main-menu')).toBe('main-menu');
     expect(machine.transition('loading-level')).toBe('loading-level');
     expect(machine.transition('playing')).toBe('playing');

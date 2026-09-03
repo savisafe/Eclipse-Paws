@@ -630,3 +630,57 @@
   font-size: 1.3rem;
   font-weight: 900;
 }
+
+.credits-screen {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 1.5rem;
+  color: var(--cream);
+  background:
+    radial-gradient(circle at 50% 20%, rgb(255 214 112 / 28%), transparent 26%),
+    linear-gradient(160deg, #305d75, #282052 55%, #10122d);
+}
+
+.credits-card {
+  display: grid;
+  width: min(38rem, 100%);
+  gap: 1.1rem;
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+  border: 1px solid rgb(255 232 172 / 42%);
+  border-radius: 2rem;
+  background: rgb(18 20 51 / 88%);
+  text-align: center;
+}
+
+.credits-card p,
+.credits-card h1,
+.credits-card blockquote {
+  margin: 0;
+}
+
+.credits-card p {
+  color: var(--turquoise);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.credits-card blockquote {
+  color: #e4e5f5;
+  line-height: 1.7;
+}
+
+.credits-eclipse {
+  color: var(--gold);
+  font-size: 3.5rem;
+  letter-spacing: -0.2em;
+  filter: drop-shadow(0 0 1rem rgb(255 209 97 / 58%));
+}
+
+.credits-names {
+  display: grid;
+  gap: 0.35rem;
+  color: #c9cbe8;
+  font-size: 0.85rem;
+}

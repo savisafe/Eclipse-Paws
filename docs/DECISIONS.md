@@ -130,3 +130,12 @@ camera ownership второму герою через короткую уник�
 Маршрут, фон, platforms, phase platforms, hazards, checkpoints, sparks, enemy spawns, boss и
 mechanic задаются одним типизированным level config. Общая Phaser scene принимает definition и
 не содержит `switch` по номеру уровня. Лес и библиотека добавлены без изменения combat core API.
+
+## ADR-015 — Три фазы финального босса по health thresholds
+
+- Статус: принято
+- Дата: 2026-09-03
+
+Pure `BossPhaseTracker` делит здоровье Пожирателя Зари на интервалы >⅔, >⅓ и ≤⅓. Phaser adapter
+отображает текущую фазу; в третьей фазе шкала Затмения регулярно восполняется для совместного
+приёма. Переходы тестируются без renderer и не зависят от FPS.

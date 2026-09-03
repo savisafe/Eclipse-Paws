@@ -1,7 +1,12 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
-import { PROTOTYPE_MONSTERS, STAGE4_ENEMIES, type CampaignLevelDefinition } from '@content/index';
+import {
+  PROTOTYPE_MONSTERS,
+  STAGE4_ENEMIES,
+  STAGE5_ENEMIES,
+  type CampaignLevelDefinition,
+} from '@content/index';
 import type { CatId, Phase } from '@core/index';
 import {
   drawArena,
@@ -17,6 +22,7 @@ import { PlayerMovementSystem } from './player-movement-system';
 import { ATLAS_TEXTURE_KEY, preloadSpriteAtlas, setCatPose } from './sprite-atlas';
 import { TagSwitchSystem } from './tag-switch-system';
 import { preloadStage4EnemyAtlas, prepareStage4EnemyAtlas } from './stage4-enemy-atlas';
+import { preloadStage5EnemyAtlas, prepareStage5EnemyAtlas } from './stage5-enemy-atlas';
 
 const FIXED_STEP_MS = 1000 / 60;
 
@@ -75,11 +81,13 @@ export class PrototypeScene extends Phaser.Scene {
     preloadSpriteAtlas(this);
     preloadEnvironment(this, this.#level);
     if (this.#level.index === 2 || this.#level.index === 3) preloadStage4EnemyAtlas(this);
+    if (this.#level.index >= 4) preloadStage5EnemyAtlas(this);
   }
 
   create(): void {
     createArenaTextures(this);
     if (this.#level.index === 2 || this.#level.index === 3) prepareStage4EnemyAtlas(this);
+    if (this.#level.index >= 4) prepareStage5EnemyAtlas(this);
     const world = drawArena(this, this.#level);
     this.#phaseOverlay = world.phaseOverlay;
     this.#platforms = world.platforms;
@@ -97,7 +105,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.physics.add.collider(Object.values(this.#actors), this.#platforms);
     this.#selection = this.add.ellipse(0, 0, 94, 24).setStrokeStyle(5, 0xffda72, 0.92).setDepth(2);
     drawCheckpoints(this, this.#level);
-    const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES };
+    const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES };
     this.#enemySystem = new PlatformerEnemySystem(
       this,
       this.#gameplay,

@@ -3,6 +3,7 @@ import type { GameplayController } from '@application/index';
 import type { CampaignLevelDefinition } from '@content/index';
 import type { CatId, Phase } from '@core/index';
 import { GardenCollectibleSystem } from './garden-collectible-system';
+import { FinalBossSystem } from './final-boss-system';
 import { GardenFlowerPuzzle } from './garden-flower-puzzle';
 import { LibraryConstellationSystem } from './library-constellation-system';
 import { PhaseBridgeSystem } from './phase-bridge-system';
@@ -15,6 +16,7 @@ export class LevelMechanicsSystem {
   readonly #constellations: LibraryConstellationSystem | null;
   readonly #enemies: PlatformerEnemySystem;
   readonly #flowers: GardenFlowerPuzzle | null;
+  readonly #finalBoss: FinalBossSystem | null;
   readonly #gameplay: GameplayController;
   readonly #hazards: PlatformerHazardSystem;
   readonly #level: CampaignLevelDefinition;
@@ -44,6 +46,16 @@ export class LevelMechanicsSystem {
     this.#flowers =
       options.level.mechanic === 'flowers'
         ? new GardenFlowerPuzzle(options.scene, options.gameplay, options.actors)
+        : null;
+    this.#finalBoss =
+      options.level.mechanic === 'boss-rush'
+        ? new FinalBossSystem(
+            options.scene,
+            options.gameplay,
+            options.level.bossId,
+            360,
+            options.reducedMotion,
+          )
         : null;
     this.#constellations =
       options.level.mechanic === 'constellations'
@@ -76,6 +88,7 @@ export class LevelMechanicsSystem {
 
   update(active: Phaser.Physics.Arcade.Sprite, deltaMs: number): void {
     this.#hazards.update(deltaMs);
+    this.#finalBoss?.update(deltaMs);
     this.#collectibles.update(active);
     const canFinish =
       this.#startNearFinish ||

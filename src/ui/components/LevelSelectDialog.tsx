@@ -20,7 +20,7 @@ export function LevelSelectDialog({ onSelect, unlockedLevels }: LevelSelectDialo
           <Dialog.Title>Выбор уровня</Dialog.Title>
           <Dialog.Description>Пройденный уровень открывает следующий.</Dialog.Description>
           <div className="level-select-list">
-            {CAMPAIGN_LEVEL_ORDER.slice(0, 3).map((levelId) => {
+            {CAMPAIGN_LEVEL_ORDER.map((levelId) => {
               const level = CAMPAIGN_LEVELS[levelId];
               const unlocked = unlockedLevels.includes(levelId);
               return (

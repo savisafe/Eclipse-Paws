@@ -1,4 +1,5 @@
 export { BondHealth } from './bond-health';
+export { BossPhaseTracker } from './boss-phase-tracker';
 export { CooldownTracker } from './cooldown-tracker';
 export {
   DOMINANT_POWER_MODIFIER,

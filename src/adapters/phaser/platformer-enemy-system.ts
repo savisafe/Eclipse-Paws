@@ -5,6 +5,7 @@ import type { EnemyConfig } from '@core/index';
 import type { EffectTarget } from './platformer-effects';
 import { ATLAS_TEXTURE_KEY, MONSTER_FRAMES } from './sprite-atlas';
 import { STAGE4_ENEMY_FRAMES, STAGE4_ENEMY_TEXTURE } from './stage4-enemy-atlas';
+import { STAGE5_ENEMY_FRAMES, STAGE5_ENEMY_TEXTURE } from './stage5-enemy-atlas';
 
 interface EnemyView extends EffectTarget {
   config: EnemyConfig;
@@ -36,28 +37,39 @@ export class PlatformerEnemySystem {
       const config = enemyTypes[spawn.configId];
       if (!config) throw new Error(`Unknown platformer monster: ${spawn.configId}`);
       const stage4Frame = STAGE4_ENEMY_FRAMES[spawn.configId];
+      const stage5Frame = STAGE5_ENEMY_FRAMES[spawn.configId];
+      const campaignFrame = stage4Frame ?? stage5Frame;
       const frames =
-        stage4Frame === undefined
+        campaignFrame === undefined
           ? MONSTER_FRAMES[spawn.configId]
-          : { idle: stage4Frame, move: stage4Frame, attack: stage4Frame };
+          : { idle: campaignFrame, move: campaignFrame, attack: campaignFrame };
       if (!frames) throw new Error(`Missing atlas frames for monster: ${spawn.configId}`);
-      const texture = stage4Frame === undefined ? ATLAS_TEXTURE_KEY : STAGE4_ENEMY_TEXTURE;
+      const texture =
+        stage4Frame !== undefined
+          ? STAGE4_ENEMY_TEXTURE
+          : stage5Frame !== undefined
+            ? STAGE5_ENEMY_TEXTURE
+            : ATLAS_TEXTURE_KEY;
       const sprite = scene.physics.add
         .sprite(spawn.x, spawn.y, texture, frames.idle)
         .setDepth(5)
         .setCollideWorldBounds(false);
-      const scale =
-        spawn.configId === 'great-mushroom' || spawn.configId === 'archivist-echo'
-          ? 0.82
-          : stage4Frame !== undefined
-            ? 0.62
-            : spawn.configId === 'twilight-golem'
-              ? 0.78
-              : spawn.configId === 'spore-beast'
-                ? 0.54
-                : spawn.configId === 'light-wisp'
-                  ? 0.48
-                  : 0.56;
+      const scale = [
+        'great-mushroom',
+        'archivist-echo',
+        'fortress-golem',
+        'dawn-devourer',
+      ].includes(spawn.configId)
+        ? 0.82
+        : campaignFrame !== undefined
+          ? 0.62
+          : spawn.configId === 'twilight-golem'
+            ? 0.78
+            : spawn.configId === 'spore-beast'
+              ? 0.54
+              : spawn.configId === 'light-wisp'
+                ? 0.48
+                : 0.56;
       sprite
         .setScale(scale)
         .setSize(

@@ -13,3 +13,7 @@ reference. No external CDN or runtime network request is used.
 `stage4-enemy-atlas-v1.png` contains eight unique painterly enemies for the forest and library:
 thorn stalker, lantern moth, elder spore, Great Mushroom, mirror harpy, ink sprite, echo owl and
 Archivist Echo. The adapter removes its white source background once and registers eight frames.
+
+`stage5-enemy-atlas-v1.png` contains eight unique fortress/final enemies: clockwork mite, eclipse
+knight, pendulum wraith, fortress golem, dawn fragment, void maw, eclipse sentinel and the Dawn
+Devourer. It uses the same local background-removal and frame-registration pipeline.

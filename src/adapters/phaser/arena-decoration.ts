@@ -4,6 +4,8 @@ import gardenBackgroundUrl from '../../assets/environments/garden-first-dawn-bac
 import gardenPlatformUrl from '../../assets/environments/garden-stone-platform-tile-v1.png?url';
 import forestBackgroundUrl from '../../assets/environments/whispering-forest-background-v1.png?url';
 import libraryBackgroundUrl from '../../assets/environments/celestial-library-background-v1.png?url';
+import fortressBackgroundUrl from '../../assets/environments/clock-fortress-background-v1.png?url';
+import eclipseBackgroundUrl from '../../assets/environments/eclipse-heart-background-v1.png?url';
 
 export const PLATFORMER_WORLD_HEIGHT = 720;
 
@@ -11,8 +13,8 @@ const BACKGROUNDS: Record<CampaignLevelDefinition['background'], string> = {
   garden: gardenBackgroundUrl,
   forest: forestBackgroundUrl,
   library: libraryBackgroundUrl,
-  fortress: gardenBackgroundUrl,
-  eclipse: gardenBackgroundUrl,
+  fortress: fortressBackgroundUrl,
+  eclipse: eclipseBackgroundUrl,
 };
 
 export function preloadEnvironment(scene: Phaser.Scene, level: CampaignLevelDefinition): void {
@@ -53,6 +55,8 @@ export function drawArena(
       .setDepth(1);
     if (level.background === 'forest') tile.setTint(0x7795aa);
     if (level.background === 'library') tile.setTint(0xd7d6ee);
+    if (level.background === 'fortress') tile.setTint(0x8f7e72);
+    if (level.background === 'eclipse') tile.setTint(0x8b7bb6);
     scene.physics.add.existing(tile, true);
     platforms.add(tile);
   });

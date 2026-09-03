@@ -11,5 +11,9 @@ with the lazy Phaser game chunk.
   lantern shrines and turquoise bioluminescence.
 - `celestial-library-background-v1.png`: suspended observatory-library with bookshelves, brass
   orreries, constellation ceiling and sun/moon light.
+- `clock-fortress-background-v1.png`: monumental stopped clocks, brass gears, chains and eclipse
+  towers under opposed amber/indigo light.
+- `eclipse-heart-background-v1.png`: shattered celestial pendulum chamber resolving from cosmic
+  eclipse toward dawn.
 
 No CDN, logos, text, trademarks or runtime network requests are used.

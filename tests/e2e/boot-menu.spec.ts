@@ -69,7 +69,8 @@ test('reaches the finish and shows a level result', async ({ page }) => {
   });
 });
 
-test('continues from the garden into the forest and celestial library', async ({ page }) => {
+test('completes all five campaign levels and reaches the credits', async ({ page }) => {
+  test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
@@ -95,6 +96,25 @@ test('continues from the garden into the forest and celestial library', async ({
   await expect(page.getByRole('heading', { name: 'Небесная библиотека' })).toBeVisible();
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.enemy-counter')).toContainText('Монстры: 6', { timeout: 15_000 });
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(2_000);
+  await page.keyboard.up('KeyD');
+  await page.getByRole('button', { name: /Далее: Крепость остановленных часов/ }).click();
+  await expect(page.getByRole('heading', { name: 'Крепость остановленных часов' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 7', { timeout: 15_000 });
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(2_000);
+  await page.keyboard.up('KeyD');
+  await page.getByRole('button', { name: /Далее: Сердце затмения/ }).click();
+  await expect(page.getByRole('heading', { name: 'Сердце затмения' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 7', { timeout: 15_000 });
+  await page.keyboard.down('KeyD');
+  await page.waitForTimeout(2_000);
+  await page.keyboard.up('KeyD');
+  await page.getByRole('button', { name: /Далее: Финал/ }).click();
+  await expect(page.getByRole('heading', { name: 'Eclipse Paws' })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

@@ -7,6 +7,7 @@ import {
 } from '../abilities/prototype-abilities';
 import { PROTOTYPE_MONSTERS } from '../enemies/prototype-monsters';
 import { STAGE4_ENEMIES } from '../enemies/stage4-enemies';
+import { STAGE5_ENEMIES } from '../enemies/stage5-enemies';
 
 export type CampaignLevelId =
   'garden-first-dawn' | 'whispering-forest' | 'sky-library' | 'clock-fortress' | 'eclipse-heart';
@@ -198,8 +199,92 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
       { id: 'archivist-echo-boss', configId: 'archivist-echo', x: 4800, y: 330 },
     ],
   },
-  'clock-fortress': {} as CampaignLevelDefinition,
-  'eclipse-heart': {} as CampaignLevelDefinition,
+  'clock-fortress': {
+    id: 'clock-fortress',
+    index: 4,
+    title: 'Крепость остановленных часов',
+    subtitle: 'Осколок IV',
+    story: 'Маятники крепости замерли между ударами. Каждый механизм подчиняется своей фазе.',
+    objective: 'фазовые механизмы · смешанные бои · Сумеречный голем',
+    background: 'fortress',
+    mechanic: 'clocks',
+    worldWidth: 5200,
+    bossId: 'fortress-golem-boss',
+    platforms: [
+      ...ground(5200),
+      ...commonPlatforms.map((platform, index) => ({
+        ...platform,
+        y: platform.y - (index % 2 === 0 ? 25 : 70),
+      })),
+    ],
+    phasePlatforms: [
+      { x: 760, y: 570, width: 140, height: 22 },
+      { x: 1960, y: 520, width: 140, height: 22 },
+      { x: 2870, y: 540, width: 140, height: 22 },
+      { x: 4480, y: 500, width: 150, height: 22 },
+    ],
+    checkpoints: checkpointTriplet(
+      ['fortress-gate', 'great-clock', 'fortress-shard'],
+      [180, 2550, 5050],
+      500,
+    ),
+    sparks: points(['gear-spark-a', 'gear-spark-b', 'gear-spark-c'], [1000, 3000, 4550], 360),
+    hazards: points(['ch1', 'ch2', 'ch3', 'ch4'], [1200, 2200, 3450, 4450], 610).map(
+      (point, index) => ({ ...point, activePhase: index % 2 === 0 ? 'day' : 'night' }),
+    ),
+    enemies: [
+      { id: 'mite-1', configId: 'clockwork-mite', x: 780, y: 470 },
+      { id: 'knight-1', configId: 'eclipse-knight', x: 1500, y: 450 },
+      { id: 'wraith-1', configId: 'pendulum-wraith', x: 2250, y: 300 },
+      { id: 'mite-2', configId: 'clockwork-mite', x: 3100, y: 470 },
+      { id: 'knight-2', configId: 'eclipse-knight', x: 3900, y: 450 },
+      { id: 'wraith-2', configId: 'pendulum-wraith', x: 4400, y: 280 },
+      { id: 'fortress-golem-boss', configId: 'fortress-golem', x: 4900, y: 430 },
+    ],
+  },
+  'eclipse-heart': {
+    id: 'eclipse-heart',
+    index: 5,
+    title: 'Сердце затмения',
+    subtitle: 'Финальный осколок',
+    story: 'В центре расколотого Маятника Сумеречник стал Пожирателем Зари. Цикл нужно исцелить.',
+    objective: 'обе силы · три фазы босса · восстановить Маятник',
+    background: 'eclipse',
+    mechanic: 'boss-rush',
+    worldWidth: 5200,
+    bossId: 'dawn-devourer-boss',
+    platforms: [
+      ...ground(5200),
+      { x: 900, y: 520, width: 260, height: 28 },
+      { x: 1600, y: 430, width: 280, height: 28 },
+      { x: 2450, y: 520, width: 260, height: 28 },
+      { x: 3300, y: 420, width: 280, height: 28 },
+      { x: 4200, y: 500, width: 300, height: 28 },
+    ],
+    phasePlatforms: [
+      { x: 760, y: 575, width: 140, height: 22 },
+      { x: 1960, y: 540, width: 140, height: 22 },
+      { x: 2870, y: 540, width: 140, height: 22 },
+    ],
+    checkpoints: checkpointTriplet(
+      ['tower-entry', 'broken-pendulum', 'restored-pendulum'],
+      [180, 2700, 5050],
+      500,
+    ),
+    sparks: points(['dawn-spark-a', 'dawn-spark-b', 'dawn-spark-c'], [1100, 2750, 4300], 350),
+    hazards: points(['eh1', 'eh2', 'eh3', 'eh4'], [1300, 2350, 3500, 4500], 610).map(
+      (point, index) => ({ ...point, activePhase: index % 2 === 0 ? 'night' : 'day' }),
+    ),
+    enemies: [
+      { id: 'fragment-1', configId: 'dawn-fragment', x: 850, y: 300 },
+      { id: 'maw-1', configId: 'void-maw', x: 1550, y: 450 },
+      { id: 'sentinel-1', configId: 'eclipse-sentinel', x: 2350, y: 290 },
+      { id: 'fragment-2', configId: 'dawn-fragment', x: 3200, y: 280 },
+      { id: 'maw-2', configId: 'void-maw', x: 3900, y: 450 },
+      { id: 'sentinel-2', configId: 'eclipse-sentinel', x: 4400, y: 280 },
+      { id: 'dawn-devourer-boss', configId: 'dawn-devourer', x: 4900, y: 400 },
+    ],
+  },
 };
 
 export const CAMPAIGN_LEVEL_ORDER: readonly CampaignLevelId[] = [
@@ -212,7 +297,7 @@ export const CAMPAIGN_LEVEL_ORDER: readonly CampaignLevelId[] = [
 
 export function createLevelContent(levelId: CampaignLevelId): PrototypeContentConfig {
   const level = CAMPAIGN_LEVELS[levelId];
-  const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES };
+  const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES };
   return {
     abilities: PROTOTYPE_ABILITIES,
     mobilityAbilities: PROTOTYPE_MOBILITY_ABILITIES,

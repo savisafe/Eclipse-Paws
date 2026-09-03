@@ -42,12 +42,17 @@ export class AppController {
     if (this.state === 'playing') this.transition('level-result');
   }
 
+  showCredits(): void {
+    if (this.state === 'level-result') this.transition('credits');
+  }
+
   returnToMenu(): void {
     if (
       this.state === 'loading-level' ||
       this.state === 'playing' ||
       this.state === 'paused' ||
-      this.state === 'level-result'
+      this.state === 'level-result' ||
+      this.state === 'credits'
     ) {
       this.transition('main-menu');
     }

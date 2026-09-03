@@ -13,6 +13,7 @@ import { GameScreen } from '@ui/components/GameScreen';
 import { MainMenu } from '@ui/components/MainMenu';
 import { LevelResult } from '@ui/components/LevelResult';
 import { StoryIntro } from '@ui/components/StoryIntro';
+import { Credits } from '@ui/components/Credits';
 import { useAppController } from '@ui/hooks/use-app-controller';
 import { useSessionStore } from '@ui/store/session-store';
 import { useSettingsStore } from '@ui/store/settings-store';
@@ -32,7 +33,7 @@ function initialLevelFromLocation(): CampaignLevelId {
   const requested = new URLSearchParams(window.location.search).get('level');
   return import.meta.env.DEV &&
     requested &&
-    CAMPAIGN_LEVEL_ORDER.slice(0, 3).includes(requested as CampaignLevelId)
+    CAMPAIGN_LEVEL_ORDER.includes(requested as CampaignLevelId)
     ? (requested as CampaignLevelId)
     : 'garden-first-dawn';
 }
@@ -113,12 +114,14 @@ export function App() {
     appController.returnToMenu();
     openLevelIntro(nextLevel);
   }, [appController, nextLevel, openLevelIntro]);
+  const showCredits = useCallback(() => appController.showCredits(), [appController]);
   const continueGame = useCallback(() => {
     const available = CAMPAIGN_LEVEL_ORDER.filter((levelId) => unlockedLevels.includes(levelId));
     openLevelIntro(available.at(-1) ?? 'garden-first-dawn');
   }, [openLevelIntro, unlockedLevels]);
 
   if (appState === 'boot') return <BootScreen />;
+  if (appState === 'credits') return <Credits onMenu={returnToMenu} />;
   if (appState === 'main-menu') {
     return showIntro ? (
       <StoryIntro
@@ -143,9 +146,17 @@ export function App() {
       <LevelResult
         elapsedMs={snapshot.elapsedMs}
         levelTitle={CAMPAIGN_LEVELS[selectedLevel].title}
-        nextLevelTitle={nextLevel ? CAMPAIGN_LEVELS[nextLevel].title : undefined}
+        nextLevelTitle={
+          nextLevel
+            ? CAMPAIGN_LEVELS[nextLevel].title
+            : selectedLevel === 'eclipse-heart'
+              ? 'Финал'
+              : undefined
+        }
         onMenu={returnToMenu}
-        onNext={nextLevel ? startNextLevel : undefined}
+        onNext={
+          nextLevel ? startNextLevel : selectedLevel === 'eclipse-heart' ? showCredits : undefined
+        }
         onReplay={startNewGame}
         sparks={snapshot.sparksCollected}
         totalSparks={snapshot.totalSparks}
