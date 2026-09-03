@@ -70,3 +70,14 @@
 - Сумеречный голем завершает крепость; Пожиратель Зари использует три health-driven фазы.
 - В третьей фазе финального боя шкала Затмения восполняется для совместного приёма.
 - Реализован полный маршрут пяти уровней, финальная сцена, титры и выбор всех открытых уровней.
+
+### Stage 6 — web polish and PWA
+
+- Добавлены PWA manifest, install icons, production service worker и offline runtime cache.
+- Runtime backgrounds конвертированы в JPEG quality 84, снизив их суммарную загрузку примерно на
+  11 MB без изменения исходных PNG.
+- Добавлены vibration setting, Web Haptics adapter и effects-volume bridge для синтезированных SFX.
+- Добавлены portrait orientation hint, safe-area-aware touch layout и проверки размера 44 px.
+- Reduced motion отключает camera flashes/shake и ускоряет переходные эффекты.
+- Добавлены object pools для tag particles и ultimate waves с полным scene cleanup.
+- Добавлена production/release документация в `docs/WEB_RELEASE.md`.

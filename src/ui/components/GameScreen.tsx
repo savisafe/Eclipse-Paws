@@ -31,6 +31,8 @@ export function GameScreen({
   onReturnToMenu,
 }: GameScreenProps) {
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
+  const effectsVolume = useSettingsStore((state) => state.effectsVolume);
+  const vibration = useSettingsStore((state) => state.vibration);
   useEffect(() => gameplay.setPaused(appState === 'paused'), [appState, gameplay]);
 
   return (
@@ -43,6 +45,8 @@ export function GameScreen({
         onLevelCompleted={onLevelCompleted}
         onReady={onReady}
         reducedMotion={reducedMotion}
+        effectsVolume={effectsVolume}
+        vibration={vibration}
       />
       <GameHud gameplay={gameplay} />
       <div className="control-hint" aria-hidden="true">
@@ -50,6 +54,9 @@ export function GameScreen({
         X — приём
       </div>
       <TouchControls inputState={inputState} />
+      <div className="orientation-hint" role="status">
+        ↻ Поверните устройство горизонтально для лучшего обзора
+      </div>
       {appState === 'loading-level' ? (
         <div className="level-loading" role="status">
           <span className="level-loading__orb" aria-hidden="true" />

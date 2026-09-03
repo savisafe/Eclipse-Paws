@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { CatId } from '@core/index';
+import type { HapticsPort } from '@adapters/haptics/index';
 import type { PlatformerEnemySystem } from './platformer-enemy-system';
 import { playPrimaryAttack, playSpecialAbility } from './platformer-effects';
 import { SfxSynth } from './sfx-synth';
 import { setCatPose } from './sprite-atlas';
+import { GameObjectPool } from './game-object-pool';
 
 export class CombatAbilitySystem {
   readonly #actionLockMs: Record<CatId, number>;
@@ -12,9 +14,11 @@ export class CombatAbilitySystem {
   readonly #enemies: PlatformerEnemySystem;
   readonly #facing: Record<CatId, number>;
   readonly #gameplay: GameplayController;
+  readonly #haptics: HapticsPort;
   readonly #scene: Phaser.Scene;
   readonly #reducedMotion: boolean;
   readonly #sfx = new SfxSynth();
+  readonly #waves: GameObjectPool<Phaser.GameObjects.Arc>;
 
   constructor(options: {
     actionLockMs: Record<CatId, number>;
@@ -23,6 +27,8 @@ export class CombatAbilitySystem {
     facing: Record<CatId, number>;
     gameplay: GameplayController;
     reducedMotion: boolean;
+    effectsVolume: number;
+    haptics: HapticsPort;
     scene: Phaser.Scene;
   }) {
     this.#actionLockMs = options.actionLockMs;
@@ -30,8 +36,16 @@ export class CombatAbilitySystem {
     this.#enemies = options.enemies;
     this.#facing = options.facing;
     this.#gameplay = options.gameplay;
+    this.#haptics = options.haptics;
     this.#reducedMotion = options.reducedMotion;
     this.#scene = options.scene;
+    this.#sfx.setVolume(options.effectsVolume / 100);
+    this.#waves = new GameObjectPool(3, () =>
+      options.scene.add
+        .circle(0, 0, 70, 0xf7d27c, 0.45)
+        .setStrokeStyle(10, 0x8be9f2, 0.9)
+        .setDepth(17),
+    );
   }
 
   primary(): void {
@@ -50,6 +64,7 @@ export class CombatAbilitySystem {
       this.#reducedMotion,
     );
     this.#sfx.play(catId === 'luma' ? 660 : 190, 110, catId === 'luma' ? 'sine' : 'sawtooth');
+    void this.#haptics.impact('light');
   }
 
   special(): void {
@@ -68,6 +83,7 @@ export class CombatAbilitySystem {
       this.#reducedMotion,
     );
     this.#sfx.play(catId === 'luma' ? 880 : 92, 260, catId === 'luma' ? 'square' : 'sawtooth');
+    void this.#haptics.impact('medium');
   }
 
   mobility(): void {
@@ -109,23 +125,24 @@ export class CombatAbilitySystem {
     const targets = this.#enemies.targets();
     if (!this.#gameplay.useUltimate(targets.map((target) => target.id))) return;
     const active = this.#actors[this.#activeCat()];
-    const wave = this.#scene.add
-      .circle(active.x, active.y, 70, 0xf7d27c, 0.45)
-      .setStrokeStyle(10, 0x8be9f2, 0.9)
-      .setDepth(17);
+    const wave = this.#waves.acquire();
+    if (!wave) return;
+    wave.setPosition(active.x, active.y).setScale(1).setAlpha(0.45);
     this.#scene.tweens.add({
       targets: wave,
       scale: 7,
       alpha: 0,
       duration: 700,
-      onComplete: () => wave.destroy(),
+      onComplete: () => this.#waves.release(wave),
     });
     if (!this.#reducedMotion) this.#scene.cameras.main.shake(320, 0.012);
     this.#sfx.play(110, 650, 'sine');
+    void this.#haptics.impact('heavy');
   }
 
   destroy(): void {
     this.#sfx.close();
+    this.#waves.destroy();
   }
 
   #activeCat(): CatId {

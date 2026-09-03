@@ -38,4 +38,10 @@ export default tseslint.config(
       globals: { ...globals.node, ...globals.browser },
     },
   },
+  {
+    files: ['public/sw.js'],
+    languageOptions: {
+      globals: globals.serviceworker,
+    },
+  },
 );

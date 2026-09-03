@@ -1,0 +1,22 @@
+{
+  "name": "Eclipse Paws — Лапы затмения",
+  "short_name": "Eclipse Paws",
+  "description": "Сказочный action-platformer о хранителях дня и ночи.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#11142f",
+  "theme_color": "#171738",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/icons/eclipse-paws-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/eclipse-paws-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 export class SfxSynth {
   #context: AudioContext | null = null;
+  #volume = 0.08;
+
+  setVolume(volume: number): void {
+    this.#volume = Math.max(0, Math.min(1, volume)) * 0.1;
+  }
 
   play(frequency: number, durationMs: number, type: OscillatorType = 'sine'): void {
     const context = this.#context ?? new AudioContext();
@@ -12,7 +17,10 @@ export class SfxSynth {
         oscillator.type = type;
         oscillator.frequency.setValueAtTime(frequency, context.currentTime);
         gain.gain.setValueAtTime(0.0001, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(
+          Math.max(0.0001, this.#volume),
+          context.currentTime + 0.01,
+        );
         gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + durationMs / 1000);
         oscillator.connect(gain).connect(context.destination);
         oscillator.start();

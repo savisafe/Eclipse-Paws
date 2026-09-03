@@ -70,6 +70,7 @@ export function App() {
           effectsVolume: settings.effectsVolume,
           musicVolume: settings.musicVolume,
           reducedMotion: settings.reducedMotion,
+          vibration: settings.vibration,
         });
       });
     });

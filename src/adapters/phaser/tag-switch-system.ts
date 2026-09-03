@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import type { CatId } from '@core/index';
 import { setCatPose } from './sprite-atlas';
+import { GameObjectPool } from './game-object-pool';
 
 export class TagSwitchSystem {
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   readonly #reducedMotion: boolean;
   readonly #scene: Phaser.Scene;
+  readonly #motes: GameObjectPool<Phaser.GameObjects.Arc>;
 
   constructor(
     scene: Phaser.Scene,
@@ -15,6 +17,9 @@ export class TagSwitchSystem {
     this.#scene = scene;
     this.#actors = actors;
     this.#reducedMotion = reducedMotion;
+    this.#motes = new GameObjectPool(18, () =>
+      scene.add.circle(0, 0, 5, 0xffffff, 0.8).setDepth(15),
+    );
   }
 
   animate(previousId: CatId, nextId: CatId, onComplete: () => void): void {
@@ -22,6 +27,7 @@ export class TagSwitchSystem {
     const next = this.#actors[nextId];
     const position = { x: previous.x, y: previous.y };
     const effect = this.#createEffect(nextId, position.x, position.y);
+    this.#burstMotes(nextId, position.x, position.y);
     const duration = this.#reducedMotion ? 1 : 150;
     previous.setVelocity(0, 0);
     this.#scene.tweens.add({
@@ -81,5 +87,30 @@ export class TagSwitchSystem {
       }
     }
     return graphics;
+  }
+
+  destroy(): void {
+    this.#motes.destroy();
+  }
+
+  #burstMotes(catId: CatId, x: number, y: number): void {
+    if (this.#reducedMotion) return;
+    for (let index = 0; index < 12; index += 1) {
+      const mote = this.#motes.acquire();
+      if (!mote) break;
+      const angle = (Math.PI * 2 * index) / 12;
+      mote
+        .setPosition(x, y)
+        .setFillStyle(catId === 'luma' ? 0xffdd72 : 0xa56be8)
+        .setAlpha(0.9);
+      this.#scene.tweens.add({
+        targets: mote,
+        x: x + Math.cos(angle) * 95,
+        y: y + Math.sin(angle) * 70,
+        alpha: 0,
+        duration: 300,
+        onComplete: () => this.#motes.release(mote),
+      });
+    }
   }
 }

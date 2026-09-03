@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
+import { WebHapticsAdapter } from '@adapters/haptics/index';
 import {
   PROTOTYPE_MONSTERS,
   STAGE4_ENEMIES,
@@ -34,6 +35,8 @@ export interface PrototypeSceneOptions {
   onLevelCompleted: () => void;
   onReady: () => void;
   reducedMotion: boolean;
+  effectsVolume: number;
+  vibration: boolean;
   startNearFinish: boolean;
   startNearCombat: boolean;
 }
@@ -48,6 +51,8 @@ export class PrototypeScene extends Phaser.Scene {
   readonly #onPauseRequested: () => void;
   readonly #onReady: () => void;
   readonly #reducedMotion: boolean;
+  readonly #effectsVolume: number;
+  readonly #vibration: boolean;
   readonly #startNearFinish: boolean;
   readonly #startNearCombat: boolean;
   #accumulatorMs = 0;
@@ -73,6 +78,8 @@ export class PrototypeScene extends Phaser.Scene {
     this.#onLevelCompleted = options.onLevelCompleted;
     this.#onReady = options.onReady;
     this.#reducedMotion = options.reducedMotion;
+    this.#effectsVolume = options.effectsVolume;
+    this.#vibration = options.vibration;
     this.#startNearFinish = options.startNearFinish;
     this.#startNearCombat = options.startNearCombat;
   }
@@ -120,6 +127,8 @@ export class PrototypeScene extends Phaser.Scene {
       facing: this.#facing,
       gameplay: this.#gameplay,
       reducedMotion: this.#reducedMotion,
+      effectsVolume: this.#effectsVolume,
+      haptics: new WebHapticsAdapter(this.#vibration),
       scene: this,
     });
     this.#playerMovement = new PlayerMovementSystem({
@@ -253,5 +262,6 @@ export class PrototypeScene extends Phaser.Scene {
     this.input.off('pointerdown', this.#handlePointerDown, this);
     this.#inputState.reset();
     this.#combatSystem.destroy();
+    this.#tagSwitchSystem.destroy();
   }
 }

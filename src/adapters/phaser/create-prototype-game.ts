@@ -13,6 +13,8 @@ export interface CreatePrototypeGameOptions {
   onReady: () => void;
   parent: HTMLElement;
   reducedMotion: boolean;
+  effectsVolume: number;
+  vibration: boolean;
   startNearFinish: boolean;
   startNearCombat: boolean;
 }

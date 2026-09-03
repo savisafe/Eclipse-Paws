@@ -365,6 +365,10 @@
   pointer-events: none;
 }
 
+.orientation-hint {
+  display: none;
+}
+
 .touch-dpad {
   display: grid;
   grid-template: repeat(2, 3rem) / repeat(3, 3rem);
@@ -487,6 +491,26 @@
 
   .bond-health {
     font-size: 1rem;
+  }
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .orientation-hint {
+    position: fixed;
+    z-index: 22;
+    top: 10rem;
+    left: 50%;
+    display: block;
+    width: min(18rem, calc(100vw - 2rem));
+    padding: 0.55rem 0.8rem;
+    translate: -50% 0;
+    border: 1px solid rgb(255 222 143 / 45%);
+    border-radius: 999px;
+    color: var(--cream);
+    background: rgb(20 20 52 / 86%);
+    font-size: 0.7rem;
+    text-align: center;
+    pointer-events: none;
   }
 }
 

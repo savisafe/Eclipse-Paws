@@ -36,9 +36,11 @@ export function SettingsDialog() {
   const effectsVolume = useSettingsStore((state) => state.effectsVolume);
   const musicVolume = useSettingsStore((state) => state.musicVolume);
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
+  const vibration = useSettingsStore((state) => state.vibration);
   const setEffectsVolume = useSettingsStore((state) => state.setEffectsVolume);
   const setMusicVolume = useSettingsStore((state) => state.setMusicVolume);
   const setReducedMotion = useSettingsStore((state) => state.setReducedMotion);
+  const setVibration = useSettingsStore((state) => state.setVibration);
 
   return (
     <Dialog.Root>
@@ -52,7 +54,7 @@ export function SettingsDialog() {
         <Dialog.Content className="settings-dialog">
           <Dialog.Title>Настройки</Dialog.Title>
           <Dialog.Description>
-            Настройте звук и движение. Параметры сохранятся после этапа 3.
+            Настройте звук, вибрацию и движение. Параметры сохраняются автоматически.
           </Dialog.Description>
 
           <div className="settings-dialog__controls">
@@ -65,6 +67,17 @@ export function SettingsDialog() {
                 checked={reducedMotion}
                 className="motion-switch"
                 onCheckedChange={setReducedMotion}
+              >
+                <Switch.Thumb className="motion-switch__thumb" />
+              </Switch.Root>
+            </label>
+            <label className="setting-row">
+              <span>Вибрация</span>
+              <Switch.Root
+                aria-label="Вибрация"
+                checked={vibration}
+                className="motion-switch"
+                onCheckedChange={setVibration}
               >
                 <Switch.Thumb className="motion-switch__thumb" />
               </Switch.Root>

@@ -4,6 +4,7 @@ export interface SavedSettings {
   effectsVolume: number;
   musicVolume: number;
   reducedMotion: boolean;
+  vibration: boolean;
 }
 
 export interface SaveGame {
@@ -20,7 +21,7 @@ export function createDefaultSave(): SaveGame {
     bestTimesMs: {},
     completedLevels: [],
     schemaVersion: SAVE_SCHEMA_VERSION,
-    settings: { effectsVolume: 80, musicVolume: 70, reducedMotion: false },
+    settings: { effectsVolume: 80, musicVolume: 70, reducedMotion: false, vibration: true },
     sparksByLevel: {},
     unlockedLevels: ['garden-first-dawn'],
   };

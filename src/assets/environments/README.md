@@ -17,3 +17,6 @@ with the lazy Phaser game chunk.
   eclipse toward dawn.
 
 No CDN, logos, text, trademarks or runtime network requests are used.
+
+The PNG files are lossless ImageGen sources. Phaser imports matching JPEG quality-84 derivatives
+for substantially smaller web delivery while preserving the sources for future art iteration.

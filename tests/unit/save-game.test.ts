@@ -39,5 +39,6 @@ describe('save game', () => {
     expect(save.bestTimesMs['garden-first-dawn']).toBe(95_000);
     expect(save.sparksByLevel['garden-first-dawn']).toBe(2);
     expect(save.unlockedLevels).toContain('whispering-forest');
+    expect(save.settings.vibration).toBe(true);
   });
 });

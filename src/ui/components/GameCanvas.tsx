@@ -11,6 +11,8 @@ interface GameCanvasProps {
   onLevelCompleted: () => void;
   onReady: () => void;
   reducedMotion: boolean;
+  effectsVolume: number;
+  vibration: boolean;
 }
 
 export function GameCanvas({
@@ -21,6 +23,8 @@ export function GameCanvas({
   onLevelCompleted,
   onReady,
   reducedMotion,
+  effectsVolume,
+  vibration,
 }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loadError, setLoadError] = useState(false);
@@ -56,6 +60,8 @@ export function GameCanvas({
           onReady,
           parent,
           reducedMotion,
+          effectsVolume,
+          vibration,
           startNearFinish,
           startNearCombat,
         });
@@ -70,7 +76,17 @@ export function GameCanvas({
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       game?.destroy(true);
     };
-  }, [gameplay, inputState, level, onLevelCompleted, onPauseRequested, onReady, reducedMotion]);
+  }, [
+    effectsVolume,
+    gameplay,
+    inputState,
+    level,
+    onLevelCompleted,
+    onPauseRequested,
+    onReady,
+    reducedMotion,
+    vibration,
+  ]);
 
   return (
     <div className="game-canvas-shell">

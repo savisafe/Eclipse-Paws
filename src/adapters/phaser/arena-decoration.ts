@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import type { CampaignLevelDefinition } from '@content/index';
-import gardenBackgroundUrl from '../../assets/environments/garden-first-dawn-background-v1.png?url';
+import gardenBackgroundUrl from '../../assets/environments/garden-first-dawn-background-v1.jpg?url';
 import gardenPlatformUrl from '../../assets/environments/garden-stone-platform-tile-v1.png?url';
-import forestBackgroundUrl from '../../assets/environments/whispering-forest-background-v1.png?url';
-import libraryBackgroundUrl from '../../assets/environments/celestial-library-background-v1.png?url';
-import fortressBackgroundUrl from '../../assets/environments/clock-fortress-background-v1.png?url';
-import eclipseBackgroundUrl from '../../assets/environments/eclipse-heart-background-v1.png?url';
+import forestBackgroundUrl from '../../assets/environments/whispering-forest-background-v1.jpg?url';
+import libraryBackgroundUrl from '../../assets/environments/celestial-library-background-v1.jpg?url';
+import fortressBackgroundUrl from '../../assets/environments/clock-fortress-background-v1.jpg?url';
+import eclipseBackgroundUrl from '../../assets/environments/eclipse-heart-background-v1.jpg?url';
 
 export const PLATFORMER_WORLD_HEIGHT = 720;
 
