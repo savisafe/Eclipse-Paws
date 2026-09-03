@@ -8,7 +8,7 @@ import {
   STAGE5_ENEMIES,
   type CampaignLevelDefinition,
 } from '@content/index';
-import type { CatId, Phase } from '@core/index';
+import type { CatId, GameEvent, Phase } from '@core/index';
 import {
   drawArena,
   drawCheckpoints,
@@ -22,6 +22,7 @@ import { PlatformerEnemySystem } from './platformer-enemy-system';
 import { PlayerMovementSystem } from './player-movement-system';
 import { ATLAS_TEXTURE_KEY, preloadSpriteAtlas, setCatPose } from './sprite-atlas';
 import { TagSwitchSystem } from './tag-switch-system';
+import { preloadGardenEnemyAtlas, prepareGardenEnemyAtlas } from './garden-enemy-atlas';
 import { preloadStage4EnemyAtlas, prepareStage4EnemyAtlas } from './stage4-enemy-atlas';
 import { preloadStage5EnemyAtlas, prepareStage5EnemyAtlas } from './stage5-enemy-atlas';
 
@@ -68,6 +69,7 @@ export class PrototypeScene extends Phaser.Scene {
   #selection!: Phaser.GameObjects.Ellipse;
   #switching = false;
   #tagSwitchSystem!: TagSwitchSystem;
+  #unsubscribeEvents?: () => void;
 
   constructor(options: PrototypeSceneOptions) {
     super('prototype-platformer');
@@ -86,6 +88,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   preload(): void {
     preloadSpriteAtlas(this);
+    if (this.#level.index === 1) preloadGardenEnemyAtlas(this);
     preloadEnvironment(this, this.#level);
     if (this.#level.index === 2 || this.#level.index === 3) preloadStage4EnemyAtlas(this);
     if (this.#level.index >= 4) preloadStage5EnemyAtlas(this);
@@ -93,6 +96,7 @@ export class PrototypeScene extends Phaser.Scene {
 
   create(): void {
     createArenaTextures(this);
+    if (this.#level.index === 1) prepareGardenEnemyAtlas(this);
     if (this.#level.index === 2 || this.#level.index === 3) prepareStage4EnemyAtlas(this);
     if (this.#level.index >= 4) prepareStage5EnemyAtlas(this);
     const world = drawArena(this, this.#level);
@@ -105,7 +109,7 @@ export class PrototypeScene extends Phaser.Scene {
 
     this.#actors = { luma: this.#createCat('luma'), nox: this.#createCat('nox') };
     const finish = this.#level.checkpoints[2];
-    if (this.#startNearFinish) this.#actors.luma.setPosition(finish.x - 75, finish.y);
+    if (this.#startNearFinish) this.#actors.luma.setPosition(finish.x - 20, finish.y);
     else if (this.#startNearCombat) this.#actors.luma.setPosition(540, 500);
     this.#actors.nox.disableBody(true, true);
     this.#tagSwitchSystem = new TagSwitchSystem(this, this.#actors, this.#reducedMotion);
@@ -149,6 +153,9 @@ export class PrototypeScene extends Phaser.Scene {
       startNearFinish: this.#startNearFinish,
     });
     this.#applyPhase('day');
+    this.#unsubscribeEvents = this.#gameplay.subscribeToEvents((event) =>
+      this.#showProgressEvent(event),
+    );
     this.cameras.main.startFollow(this.#actors.luma, true, 0.09, 0.09);
     this.cameras.main.setDeadzone(260, 130);
 
@@ -263,5 +270,36 @@ export class PrototypeScene extends Phaser.Scene {
     this.#inputState.reset();
     this.#combatSystem.destroy();
     this.#tagSwitchSystem.destroy();
+    this.#unsubscribeEvents?.();
+  }
+
+  #showProgressEvent(event: GameEvent): void {
+    const message =
+      event.type === 'HeroLevelUp'
+        ? `УРОВЕНЬ ${event.level} · СИЛА ПАРЫ ВОЗРОСЛА`
+        : event.type === 'LootCollected'
+          ? `ДОБЫЧА · ${event.kind === 'dawn-crystal' ? 'Кристалл зари' : event.kind === 'moon-petal' ? 'Лунный лепесток' : 'Руда затмения'}`
+          : null;
+    if (!message) return;
+    const label = this.add
+      .text(640, event.type === 'HeroLevelUp' ? 190 : 245, message, {
+        color: event.type === 'HeroLevelUp' ? '#ffe291' : '#91f3ef',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: event.type === 'HeroLevelUp' ? '25px' : '17px',
+        fontStyle: 'bold',
+        stroke: '#17152f',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(40);
+    this.tweens.add({
+      targets: label,
+      y: label.y - 30,
+      alpha: 0,
+      duration: this.#reducedMotion ? 1 : 1300,
+      hold: this.#reducedMotion ? 800 : 350,
+      onComplete: () => label.destroy(),
+    });
   }
 }

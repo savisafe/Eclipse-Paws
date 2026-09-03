@@ -12,6 +12,7 @@ export function GameHud({ gameplay }: GameHudProps) {
   const seconds = Math.max(0, Math.ceil(snapshot.phaseRemainingMs / 1000));
   const enemiesRemaining = snapshot.enemies.filter((enemy) => enemy.health > 0).length;
   const dominantCat = dominantCatForPhase(snapshot.phase);
+  const lootTotal = Object.values(snapshot.loot).reduce((total, count) => total + count, 0);
 
   return (
     <header className="game-hud" aria-label="Игровой интерфейс">
@@ -61,21 +62,31 @@ export function GameHud({ gameplay }: GameHudProps) {
 
       <div className="hud-status">
         <div
-          className="bond-health"
-          aria-label={`Связь: ${snapshot.bondHealth} из ${snapshot.maxBondHealth}`}
+          className="hero-health"
+          aria-label={`HP героев: ${snapshot.bondHealth} из ${snapshot.maxBondHealth}`}
         >
-          {Array.from({ length: snapshot.maxBondHealth }, (_, index) => (
-            <span
-              className={index < snapshot.bondHealth ? 'is-full' : ''}
-              key={index}
-              aria-hidden="true"
-            >
-              ♥
-            </span>
-          ))}
+          <div className="hero-health__label">
+            <span>Кокс + Боня</span>
+            <strong>
+              {snapshot.bondHealth}/{snapshot.maxBondHealth} HP
+            </strong>
+          </div>
+          <div className="hero-health__track" aria-hidden="true">
+            <span style={{ width: `${(snapshot.bondHealth / snapshot.maxBondHealth) * 100}%` }} />
+          </div>
         </div>
         <span className="enemy-counter">Монстры: {enemiesRemaining}</span>
         <span className="spark-counter">Искры: {snapshot.sparksCollected}/3</span>
+        <div
+          className="hero-progress"
+          aria-label={`Уровень ${snapshot.heroLevel}, опыт ${snapshot.heroXp} из ${snapshot.heroXpToNext}`}
+        >
+          <strong>LV {snapshot.heroLevel}</strong>
+          <span className="hero-progress__track" aria-hidden="true">
+            <i style={{ width: `${(snapshot.heroXp / snapshot.heroXpToNext) * 100}%` }} />
+          </span>
+          <small>Лут ✦ {lootTotal}</small>
+        </div>
       </div>
 
       {snapshot.checkpointRestartCount > 0 ? (

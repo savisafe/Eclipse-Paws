@@ -1,4 +1,6 @@
-export const SAVE_SCHEMA_VERSION = 1;
+import { createDefaultHeroProgress, type HeroProgress } from '../gameplay/models';
+
+export const SAVE_SCHEMA_VERSION = 2;
 
 export interface SavedSettings {
   effectsVolume: number;
@@ -10,6 +12,7 @@ export interface SavedSettings {
 export interface SaveGame {
   bestTimesMs: Record<string, number>;
   completedLevels: string[];
+  heroProgress: HeroProgress;
   schemaVersion: number;
   settings: SavedSettings;
   sparksByLevel: Record<string, number>;
@@ -20,6 +23,7 @@ export function createDefaultSave(): SaveGame {
   return {
     bestTimesMs: {},
     completedLevels: [],
+    heroProgress: createDefaultHeroProgress(),
     schemaVersion: SAVE_SCHEMA_VERSION,
     settings: { effectsVolume: 80, musicVolume: 70, reducedMotion: false, vibration: true },
     sparksByLevel: {},
@@ -39,17 +43,19 @@ export function parseSaveGame(value: unknown): SaveGame | null {
     ...defaults,
     ...candidate,
     bestTimesMs: candidate.bestTimesMs ?? {},
+    heroProgress: candidate.heroProgress ?? defaults.heroProgress,
     settings: { ...defaults.settings, ...candidate.settings },
     sparksByLevel: candidate.sparksByLevel ?? {},
   };
 }
 
 function migrateSave(candidate: Partial<SaveGame>): SaveGame | null {
-  if (candidate.schemaVersion !== 0) return null;
+  if (candidate.schemaVersion !== 0 && candidate.schemaVersion !== 1) return null;
   const migrated = createDefaultSave();
   return {
     ...migrated,
     completedLevels: Array.isArray(candidate.completedLevels) ? candidate.completedLevels : [],
+    heroProgress: candidate.heroProgress ?? migrated.heroProgress,
     unlockedLevels: Array.isArray(candidate.unlockedLevels)
       ? candidate.unlockedLevels
       : migrated.unlockedLevels,

@@ -1,4 +1,9 @@
-import { createDefaultSave, type SaveGame, type SavedSettings } from '@core/index';
+import {
+  createDefaultSave,
+  type HeroProgress,
+  type SaveGame,
+  type SavedSettings,
+} from '@core/index';
 import type { SaveRepository } from './ports/save-repository';
 
 export class ProgressService {
@@ -12,7 +17,12 @@ export class ProgressService {
     return (await this.#repository.load()) ?? createDefaultSave();
   }
 
-  async completeLevel(levelId: string, elapsedMs: number, sparks: number): Promise<SaveGame> {
+  async completeLevel(
+    levelId: string,
+    elapsedMs: number,
+    sparks: number,
+    heroProgress?: HeroProgress,
+  ): Promise<SaveGame> {
     const save = await this.load();
     const completedLevels = [...new Set([...save.completedLevels, levelId])];
     const nextLevel = this.#nextLevel(levelId);
@@ -27,6 +37,7 @@ export class ProgressService {
         [levelId]: previousBest ? Math.min(previousBest, elapsedMs) : elapsedMs,
       },
       completedLevels,
+      heroProgress: heroProgress ?? save.heroProgress,
       sparksByLevel: {
         ...save.sparksByLevel,
         [levelId]: Math.max(save.sparksByLevel[levelId] ?? 0, sparks),

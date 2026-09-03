@@ -1,4 +1,4 @@
-import type { CatId, Phase } from './models';
+import type { CatId, LootKind, Phase } from './models';
 
 export type GameEvent =
   | { type: 'PhaseChanged'; phase: Phase }
@@ -6,6 +6,8 @@ export type GameEvent =
   | { type: 'DamageTaken'; amount: number; remainingHealth: number }
   | { type: 'AbilityUsed'; abilityId: string; catId: CatId; damage: number }
   | { type: 'EnemyDefeated'; enemyId: string }
+  | { type: 'HeroLevelUp'; level: number }
+  | { type: 'LootCollected'; kind: LootKind; total: number }
   | { type: 'CheckpointReached'; checkpointId: string }
   | { type: 'CheckpointRestarted'; checkpointId: string; restartCount: number }
   | { type: 'SparkCollected'; sparkId: string; total: number }

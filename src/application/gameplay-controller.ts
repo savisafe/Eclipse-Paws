@@ -5,6 +5,8 @@ import {
   type CatId,
   type GameEvent,
   type GameplaySnapshot,
+  type HeroProgress,
+  type LootKind,
   type PrototypeContentConfig,
 } from '@core/index';
 
@@ -18,8 +20,8 @@ export class GameplayController {
   #publishElapsedMs = 0;
   #snapshot: GameplaySnapshot;
 
-  constructor(content: PrototypeContentConfig) {
-    this.#session = new GameSession(content);
+  constructor(content: PrototypeContentConfig, progress?: HeroProgress) {
+    this.#session = new GameSession(content, progress);
     this.#snapshot = this.#session.snapshot();
   }
 
@@ -100,6 +102,13 @@ export class GameplayController {
     this.#flushEvents();
     this.#publish();
     return collected;
+  }
+
+  collectLoot(sourceId: string): LootKind {
+    const kind = this.#session.collectLoot(sourceId);
+    this.#flushEvents();
+    this.#publish();
+    return kind;
   }
 
   rewardEclipse(amount: number): void {

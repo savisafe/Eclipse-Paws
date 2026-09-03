@@ -7,18 +7,19 @@ describe('save game', () => {
   beforeEach(() => window.localStorage.clear());
 
   it('migrates schema version 0 safely', () => {
-    expect(
-      parseSaveGame({
-        schemaVersion: 0,
-        completedLevels: ['garden-first-dawn'],
-        unlockedLevels: ['garden-first-dawn', 'whispering-forest'],
-      }),
-    ).toEqual(
+    const migrated = parseSaveGame({
+      schemaVersion: 0,
+      completedLevels: ['garden-first-dawn'],
+      unlockedLevels: ['garden-first-dawn', 'whispering-forest'],
+    });
+    expect(migrated).toEqual(
       expect.objectContaining({
-        schemaVersion: 1,
+        schemaVersion: 2,
         completedLevels: ['garden-first-dawn'],
       }),
     );
+    expect(migrated?.heroProgress.level).toBe(1);
+    expect(migrated?.heroProgress.xp).toBe(0);
   });
 
   it('clears corrupted JSON instead of crashing', async () => {

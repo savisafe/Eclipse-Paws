@@ -52,13 +52,23 @@ export class PlatformerHazardSystem {
   #draw(hazard: Omit<HazardView, 'graphics'>): Phaser.GameObjects.Graphics {
     const graphics = this.#scene.add.graphics().setDepth(4);
     const color = hazard.activePhase === 'day' ? 0xffa33f : 0x8e48de;
-    graphics.fillStyle(color, 0.9);
+    const accent = hazard.activePhase === 'day' ? 0xfff0a1 : 0x62cfff;
+    graphics.fillStyle(color, 0.16);
+    graphics.fillEllipse(hazard.x, hazard.y + 6, 132, 30);
+    graphics.lineStyle(3, accent, 0.72);
+    graphics.strokeEllipse(hazard.x, hazard.y + 8, 120, 18);
     for (let index = 0; index < 5; index += 1) {
       const x = hazard.x - 48 + index * 24;
-      graphics.fillTriangle(x - 12, hazard.y + 10, x, hazard.y - 48, x + 12, hazard.y + 10);
+      const height = index % 2 === 0 ? 56 : 42;
+      graphics.fillStyle(0x24113c, 0.96);
+      graphics.fillTriangle(x - 13, hazard.y + 10, x, hazard.y - height, x + 13, hazard.y + 10);
+      graphics.fillStyle(color, 0.88);
+      graphics.fillTriangle(x - 7, hazard.y + 6, x, hazard.y - height + 7, x + 2, hazard.y + 5);
+      graphics.lineStyle(2, accent, 0.78);
+      graphics.lineBetween(x, hazard.y - height + 7, x + 2, hazard.y + 4);
     }
-    graphics.lineStyle(3, 0xffe8ad, 0.55);
-    graphics.lineBetween(hazard.x - 55, hazard.y + 10, hazard.x + 55, hazard.y + 10);
+    graphics.lineStyle(3, accent, 0.55);
+    graphics.lineBetween(hazard.x - 58, hazard.y + 10, hazard.x + 58, hazard.y + 10);
     return graphics;
   }
 }

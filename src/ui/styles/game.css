@@ -224,22 +224,39 @@
   gap: 0.35rem;
 }
 
-.bond-health {
+.hero-health {
+  width: 11rem;
+  padding: 0.45rem 0.65rem 0.55rem;
+  border: 1px solid rgb(255 232 178 / 36%);
+  border-radius: 0.7rem;
+  color: #fff3d1;
+  background: rgb(20 21 53 / 91%);
+  box-shadow: 0 0.5rem 1.5rem rgb(5 7 28 / 40%);
+}
+
+.hero-health__label {
   display: flex;
-  gap: 0.25rem;
-  padding: 0.45rem 0.65rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.63rem;
+  font-weight: 850;
+}
+
+.hero-health__track {
+  height: 0.48rem;
+  margin-top: 0.32rem;
+  overflow: hidden;
   border-radius: 999px;
-  background: rgb(20 21 53 / 88%);
-  font-size: 1.25rem;
+  background: #3b334f;
 }
 
-.bond-health span {
-  color: #6c637e;
-}
-
-.bond-health span.is-full {
-  color: #ff6682;
-  filter: drop-shadow(0 0 0.3rem rgb(255 86 123 / 65%));
+.hero-health__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ec4f75, #ff8aa0, #ffd071);
+  box-shadow: 0 0 0.5rem rgb(255 103 133 / 75%);
+  transition: width 180ms ease;
 }
 
 .enemy-counter {
@@ -258,6 +275,35 @@
   background: rgb(255 221 114 / 92%);
   font-size: 0.72rem;
   font-weight: 850;
+}
+
+.hero-progress {
+  display: grid;
+  width: 11rem;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgb(123 229 240 / 38%);
+  border-radius: 999px;
+  color: #fff1be;
+  background: rgb(27 28 68 / 90%);
+  font-size: 0.62rem;
+}
+
+.hero-progress__track {
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #45405d;
+}
+
+.hero-progress__track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #75e5e2, #a67aee);
+  transition: width 180ms ease;
 }
 
 .restart-notice {
@@ -288,6 +334,112 @@
   background: rgb(17 19 47 / 82%);
   font-size: clamp(0.65rem, 1.4vw, 0.78rem);
   text-align: center;
+}
+
+.dialogue-overlay {
+  position: fixed;
+  z-index: 24;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(3.8rem, calc(env(safe-area-inset-bottom) + 3.8rem));
+  left: max(1rem, env(safe-area-inset-left));
+  display: grid;
+  max-width: 46rem;
+  min-height: 6.2rem;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  margin-inline: auto;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgb(255 230 163 / 45%);
+  border-radius: 1.2rem;
+  color: #fff6dd;
+  background: linear-gradient(135deg, rgb(17 18 48 / 96%), rgb(45 28 69 / 94%));
+  box-shadow: 0 1rem 3rem rgb(3 5 22 / 60%);
+  backdrop-filter: blur(10px);
+  animation: dialogue-enter 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dialogue-overlay--light {
+  border-color: rgb(255 211 100 / 70%);
+}
+.dialogue-overlay--shadow {
+  border-color: rgb(170 112 244 / 72%);
+}
+.dialogue-overlay--world {
+  border-color: rgb(102 228 225 / 66%);
+}
+
+.dialogue-portrait {
+  display: grid;
+  width: 3.7rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 2px solid currentcolor;
+  border-radius: 50%;
+  color: #ffd36f;
+  background: radial-gradient(circle, #fff5c7 0 18%, #493667 20% 48%, #171831 50%);
+  box-shadow: 0 0 1.2rem rgb(255 205 105 / 35%);
+  font-size: 1.7rem;
+  animation: dialogue-orbit 3.5s ease-in-out infinite;
+}
+
+.dialogue-overlay--shadow .dialogue-portrait {
+  color: #bc88ff;
+}
+.dialogue-overlay--world .dialogue-portrait {
+  color: #74e7e2;
+}
+
+.dialogue-copy {
+  min-width: 0;
+}
+.dialogue-copy strong {
+  color: #79e7e1;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.dialogue-copy p {
+  min-height: 2.6rem;
+  margin: 0.3rem 0 0;
+  font-family: Georgia, serif;
+  font-size: clamp(0.9rem, 1.8vw, 1.08rem);
+  line-height: 1.42;
+}
+.dialogue-copy p span {
+  color: #ffd36f;
+  animation: dialogue-caret 600ms steps(1) infinite;
+}
+
+.dialogue-overlay button {
+  min-height: 2.6rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 0.75rem;
+  color: #fff5d7;
+  background: rgb(101 73 146 / 72%);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@keyframes dialogue-enter {
+  from {
+    opacity: 0;
+    transform: translateY(2rem) scale(0.97);
+  }
+}
+
+@keyframes dialogue-orbit {
+  50% {
+    transform: translateY(-4px);
+    box-shadow: 0 0 1.8rem rgb(128 224 235 / 48%);
+  }
+}
+
+@keyframes dialogue-caret {
+  50% {
+    opacity: 0;
+  }
 }
 
 .level-loading,
@@ -440,6 +592,22 @@
     display: none;
   }
 
+  .dialogue-overlay {
+    bottom: 6.8rem;
+    min-height: 5rem;
+    grid-template-columns: auto 1fr;
+    padding: 0.6rem;
+  }
+
+  .dialogue-overlay button {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .dialogue-portrait {
+    width: 2.8rem;
+  }
+
   .game-hud {
     grid-template-columns: 1fr auto;
     gap: 0.4rem;
@@ -489,8 +657,8 @@
     grid-row: 1;
   }
 
-  .bond-health {
-    font-size: 1rem;
+  .hero-health {
+    width: 8.5rem;
   }
 }
 

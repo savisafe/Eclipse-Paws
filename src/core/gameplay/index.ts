@@ -19,8 +19,11 @@ export type {
   EnemyConfig,
   EnemyState,
   GameplaySnapshot,
+  HeroProgress,
+  LootKind,
   Phase,
   PrototypeContentConfig,
 } from './models';
+export { createDefaultHeroProgress } from './models';
 export { PhaseCycle, type PhaseAdvanceResult } from './phase-cycle';
 export { SequencePuzzle, type SequenceResult } from './sequence-puzzle';

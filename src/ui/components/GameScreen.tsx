@@ -8,6 +8,7 @@ import { GameHud } from './GameHud';
 import { PauseOverlay } from './PauseOverlay';
 import { TouchControls } from './TouchControls';
 import { useSettingsStore } from '@ui/store/settings-store';
+import { DialogueOverlay } from './DialogueOverlay';
 
 interface GameScreenProps {
   appState: AppState;
@@ -49,6 +50,7 @@ export function GameScreen({
         vibration={vibration}
       />
       <GameHud gameplay={gameplay} />
+      <DialogueOverlay levelId={level.id} reducedMotion={reducedMotion} />
       <div className="control-hint" aria-hidden="true">
         A/D — бег · Space — прыжок · J — атака · Shift — рывок · Q — защита · F — магия · R — фаза ·
         X — приём

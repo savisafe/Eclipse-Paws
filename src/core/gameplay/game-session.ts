@@ -10,6 +10,8 @@ import type {
   CatId,
   EnemyState,
   GameplaySnapshot,
+  HeroProgress,
+  LootKind,
   PrototypeContentConfig,
 } from './models';
 import { PhaseCycle } from './phase-cycle';
@@ -29,11 +31,17 @@ export class GameSession {
   #paused = false;
   #shieldCharges = 0;
   readonly #sparks = new Set<string>();
+  #heroLevel: number;
+  #heroXp: number;
+  readonly #loot: Record<LootKind, number>;
 
-  constructor(content: PrototypeContentConfig) {
+  constructor(content: PrototypeContentConfig, progress?: HeroProgress) {
     this.#content = content;
     this.#phaseCycle = new PhaseCycle(content.phaseDurationMs);
     this.#enemies = this.#createEnemyStates();
+    this.#heroLevel = progress?.level ?? 1;
+    this.#heroXp = progress?.xp ?? 0;
+    this.#loot = { 'dawn-crystal': 0, 'moon-petal': 0, 'eclipse-ore': 0, ...progress?.loot };
   }
 
   snapshot(): GameplaySnapshot {
@@ -48,6 +56,10 @@ export class GameSession {
       enemies: this.#enemies.map((enemy) => ({ ...enemy })),
       maxBondHealth: this.#bondHealth.maximum,
       maxEclipseMeter: this.#meter.maximum,
+      heroLevel: this.#heroLevel,
+      heroXp: this.#heroXp,
+      heroXpToNext: this.#xpToNext(),
+      loot: { ...this.#loot },
       paused: this.#paused,
       phase: this.#phaseCycle.phase,
       phaseRemainingMs: this.#phaseCycle.remainingMs,
@@ -81,7 +93,11 @@ export class GameSession {
       : this.#content.abilities[this.#activeCat];
     if (!this.#cooldowns.ready(ability.id)) return null;
     this.#cooldowns.start(ability.id, ability.cooldownMs);
-    const damage = ability.baseDamage * powerModifierFor(this.#activeCat, this.#phaseCycle.phase);
+    const levelModifier = 1 + (this.#heroLevel - 1) * 0.08;
+    const damage =
+      ability.baseDamage *
+      powerModifierFor(this.#activeCat, this.#phaseCycle.phase) *
+      levelModifier;
     enemy.health = Math.max(0, enemy.health - damage);
     const defeated = enemy.health === 0;
 
@@ -91,7 +107,15 @@ export class GameSession {
       catId: this.#activeCat,
       damage,
     });
-    if (defeated) this.#events.push({ type: 'EnemyDefeated', enemyId });
+    if (defeated) {
+      this.#events.push({ type: 'EnemyDefeated', enemyId });
+      this.#gainXp(
+        Math.max(
+          10,
+          Math.round(enemy.health + this.#content.enemyTypes[enemy.configId]!.health * 0.45),
+        ),
+      );
+    }
     this.#meter.gain((special ? 12 : 8) + (defeated ? 15 : 0));
 
     return { damage, defeated, enemyId };
@@ -132,6 +156,15 @@ export class GameSession {
     this.#meter.gain(12);
     this.#events.push({ type: 'SparkCollected', sparkId, total: this.#sparks.size });
     return true;
+  }
+
+  collectLoot(sourceId: string): LootKind {
+    const checksum = [...sourceId].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+    const kinds: readonly LootKind[] = ['dawn-crystal', 'moon-petal', 'eclipse-ore'];
+    const kind = kinds[checksum % kinds.length] ?? 'moon-petal';
+    this.#loot[kind] += 1;
+    this.#events.push({ type: 'LootCollected', kind, total: this.#loot[kind] });
+    return kind;
   }
 
   rewardEclipse(amount: number): void {
@@ -204,5 +237,18 @@ export class GameSession {
       if (!config) throw new Error(`Unknown enemy config: ${enemy.configId}`);
       return { ...enemy, health: config.health };
     });
+  }
+
+  #gainXp(amount: number): void {
+    this.#heroXp += amount;
+    while (this.#heroXp >= this.#xpToNext()) {
+      this.#heroXp -= this.#xpToNext();
+      this.#heroLevel += 1;
+      this.#events.push({ type: 'HeroLevelUp', level: this.#heroLevel });
+    }
+  }
+
+  #xpToNext(): number {
+    return 60 + (this.#heroLevel - 1) * 35;
   }
 }

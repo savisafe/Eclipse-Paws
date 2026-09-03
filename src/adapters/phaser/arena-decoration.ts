@@ -44,11 +44,27 @@ export function drawArena(
   const platforms = scene.physics.add.staticGroup();
 
   level.platforms.forEach((platform) => {
-    if (platform.height < 40) {
-      scene.add
-        .rectangle(platform.x + 7, platform.y + 12, platform.width, platform.height, 0x081a1a, 0.55)
-        .setDepth(0);
-    }
+    const edgeColor =
+      level.background === 'garden'
+        ? 0xf4d676
+        : level.background === 'forest'
+          ? 0x70e4c6
+          : level.background === 'library'
+            ? 0x9bdcff
+            : level.background === 'fortress'
+              ? 0xffb85c
+              : 0xc17cff;
+    scene.add
+      .rectangle(
+        platform.x + 8,
+        platform.y + 13,
+        platform.width + 10,
+        platform.height + 12,
+        0x050915,
+        0.78,
+      )
+      .setStrokeStyle(3, 0x050915, 0.9)
+      .setDepth(0);
     const tile = scene.add
       .tileSprite(platform.x, platform.y, platform.width, platform.height, 'garden-platform-tile')
       .setTileScale(0.24)
@@ -59,6 +75,17 @@ export function drawArena(
     if (level.background === 'eclipse') tile.setTint(0x8b7bb6);
     scene.physics.add.existing(tile, true);
     platforms.add(tile);
+    scene.add
+      .rectangle(
+        platform.x,
+        platform.y - platform.height / 2 + 3,
+        platform.width - 4,
+        6,
+        edgeColor,
+        0.95,
+      )
+      .setStrokeStyle(2, 0xffffff, 0.24)
+      .setDepth(2);
   });
 
   scene.add

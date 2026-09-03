@@ -12,19 +12,6 @@ const CAT_FRAMES: Readonly<Record<CatId, Readonly<Record<CatPose, number>>>> = {
   nox: { idle: 6, jump: 9, attack: 10, ability: 11 },
 };
 
-interface MonsterFrameSet {
-  attack: number;
-  idle: number;
-  move: number;
-}
-
-export const MONSTER_FRAMES: Readonly<Record<string, MonsterFrameSet>> = {
-  shadefang: { idle: 12, move: 13, attack: 18 },
-  'spore-beast': { idle: 14, move: 15, attack: 19 },
-  'twilight-golem': { idle: 14, move: 15, attack: 19 },
-  'light-wisp': { idle: 16, move: 17, attack: 20 },
-};
-
 export const EFFECT_FRAMES = { lightning: 21, shadowSpikes: 22 } as const;
 
 interface SourceCrop {
@@ -164,10 +151,6 @@ export function createAtlasAnimations(scene: Phaser.Scene): void {
   const animations = [
     { key: 'luma-run', frames: [1, 2], frameRate: 9 },
     { key: 'nox-run', frames: [7, 8], frameRate: 9 },
-    { key: 'shadefang-move', frames: [12, 13], frameRate: 8 },
-    { key: 'spore-beast-move', frames: [14, 15], frameRate: 5 },
-    { key: 'twilight-golem-move', frames: [14, 15], frameRate: 3 },
-    { key: 'light-wisp-move', frames: [16, 17], frameRate: 7 },
   ] as const;
 
   animations.forEach((animation) => {
@@ -177,6 +160,7 @@ export function createAtlasAnimations(scene: Phaser.Scene): void {
       frames: animation.frames.map((frame) => ({ key: ATLAS_TEXTURE_KEY, frame })),
       frameRate: animation.frameRate,
       repeat: -1,
+      yoyo: true,
     });
   });
 }

@@ -103,4 +103,20 @@ describe('GameSession', () => {
       session.drainEvents().filter((event) => event.type === 'CheckpointReached'),
     ).toHaveLength(1);
   });
+
+  it('carries hero progression, scales damage, and records collected loot', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT, {
+      level: 3,
+      loot: { 'dawn-crystal': 1, 'moon-petal': 0, 'eclipse-ore': 0 },
+      xp: 12,
+    });
+
+    expect(session.attack('shadefang-1')?.damage).toBeCloseTo(20.88);
+    const kind = session.collectLoot('shadefang-1');
+    expect(session.snapshot().heroLevel).toBe(3);
+    expect(session.snapshot().loot[kind]).toBeGreaterThan(0);
+    expect(session.drainEvents()).toContainEqual(
+      expect.objectContaining({ type: 'LootCollected', kind }),
+    );
+  });
 });

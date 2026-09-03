@@ -54,12 +54,32 @@ export interface GameplaySnapshot {
   enemies: readonly EnemyState[];
   maxBondHealth: number;
   maxEclipseMeter: number;
+  heroLevel: number;
+  heroXp: number;
+  heroXpToNext: number;
+  loot: Readonly<Record<LootKind, number>>;
   paused: boolean;
   phase: Phase;
   phaseRemainingMs: number;
   shieldCharges: number;
   sparksCollected: number;
   totalSparks: number;
+}
+
+export type LootKind = 'dawn-crystal' | 'moon-petal' | 'eclipse-ore';
+
+export interface HeroProgress {
+  level: number;
+  loot: Record<LootKind, number>;
+  xp: number;
+}
+
+export function createDefaultHeroProgress(): HeroProgress {
+  return {
+    level: 1,
+    loot: { 'dawn-crystal': 0, 'moon-petal': 0, 'eclipse-ore': 0 },
+    xp: 0,
+  };
 }
 
 export interface AttackResult {

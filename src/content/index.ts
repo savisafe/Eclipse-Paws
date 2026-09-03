@@ -24,3 +24,4 @@ export {
 } from './levels/campaign-levels';
 export { STAGE4_ENEMIES } from './enemies/stage4-enemies';
 export { STAGE5_ENEMIES } from './enemies/stage5-enemies';
+export { CAMPAIGN_DIALOGUES, type DialogueBeat } from './dialogues/campaign-dialogues';

@@ -17,8 +17,12 @@ import { Credits } from '@ui/components/Credits';
 import { useAppController } from '@ui/hooks/use-app-controller';
 import { useSessionStore } from '@ui/store/session-store';
 import { useSettingsStore } from '@ui/store/settings-store';
+import { createDefaultHeroProgress, type HeroProgress } from '@core/index';
 
-function createCampaignGameplay(levelId: CampaignLevelId): GameplayController {
+function createCampaignGameplay(
+  levelId: CampaignLevelId,
+  progress?: HeroProgress,
+): GameplayController {
   const requestedDuration = Number(
     new URLSearchParams(window.location.search).get('phaseDurationMs'),
   );
@@ -26,7 +30,7 @@ function createCampaignGameplay(levelId: CampaignLevelId): GameplayController {
     import.meta.env.DEV && Number.isFinite(requestedDuration) && requestedDuration >= 100
       ? { ...createLevelContent(levelId), phaseDurationMs: requestedDuration }
       : createLevelContent(levelId);
-  return new GameplayController(content);
+  return new GameplayController(content, progress);
 }
 
 function initialLevelFromLocation(): CampaignLevelId {
@@ -46,6 +50,7 @@ export function App() {
   );
   const [selectedLevel, setSelectedLevel] = useState<CampaignLevelId>(initialLevelFromLocation);
   const [unlockedLevels, setUnlockedLevels] = useState<CampaignLevelId[]>(['garden-first-dawn']);
+  const [heroProgress, setHeroProgress] = useState<HeroProgress>(createDefaultHeroProgress);
   const [gameplay, setGameplay] = useState(() =>
     createCampaignGameplay(initialLevelFromLocation()),
   );
@@ -65,6 +70,7 @@ export function App() {
       if (disposed) return;
       useSettingsStore.setState(save.settings);
       setUnlockedLevels(save.unlockedLevels as CampaignLevelId[]);
+      setHeroProgress(save.heroProgress);
       unsubscribe = useSettingsStore.subscribe((settings) => {
         void progressService.saveSettings({
           effectsVolume: settings.effectsVolume,
@@ -82,9 +88,9 @@ export function App() {
 
   const startNewGame = useCallback(() => {
     inputState.reset();
-    setGameplay(createCampaignGameplay(selectedLevel));
+    setGameplay(createCampaignGameplay(selectedLevel, heroProgress));
     appController.startNewGame();
-  }, [appController, inputState, selectedLevel]);
+  }, [appController, heroProgress, inputState, selectedLevel]);
   const openLevelIntro = useCallback((levelId: CampaignLevelId) => {
     setSelectedLevel(levelId);
     setShowIntro(true);
@@ -104,8 +110,15 @@ export function App() {
   const completeLevel = useCallback(() => {
     const snapshot = gameplay.getSnapshot();
     void progressService
-      .completeLevel(selectedLevel, snapshot.elapsedMs, snapshot.sparksCollected)
-      .then((save) => setUnlockedLevels(save.unlockedLevels as CampaignLevelId[]));
+      .completeLevel(selectedLevel, snapshot.elapsedMs, snapshot.sparksCollected, {
+        level: snapshot.heroLevel,
+        loot: { ...snapshot.loot },
+        xp: snapshot.heroXp,
+      })
+      .then((save) => {
+        setUnlockedLevels(save.unlockedLevels as CampaignLevelId[]);
+        setHeroProgress(save.heroProgress);
+      });
     appController.completeLevel();
   }, [appController, gameplay, progressService, selectedLevel]);
   const currentIndex = CAMPAIGN_LEVEL_ORDER.indexOf(selectedLevel);
