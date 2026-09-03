@@ -123,6 +123,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.#platforms,
       this.#level.enemies,
       enemyTypes,
+      this.#level.index,
     );
     this.#combatSystem = new CombatAbilitySystem({
       actionLockMs: this.#actionLockMs,

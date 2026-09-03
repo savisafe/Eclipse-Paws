@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { LevelPoint } from '@content/index';
-import type { EnemyConfig } from '@core/index';
+import { enemyAiProfileForLevel, type EnemyAiProfile, type EnemyConfig } from '@core/index';
 import type { EffectTarget } from './platformer-effects';
 import { GARDEN_ENEMY_FRAMES } from './garden-enemy-atlas';
 import { STAGE4_ENEMY_FRAMES } from './stage4-enemy-atlas';
@@ -21,7 +21,10 @@ interface EnemyView extends EffectTarget {
   frames: EnemyFrames;
   healthBack: Phaser.GameObjects.Rectangle;
   healthFill: Phaser.GameObjects.Rectangle;
+  jumpCooldownMs: number;
+  lastX: number;
   spawn: LevelPoint & { configId: string };
+  stuckMs: number;
   telegraphMs: number;
 }
 
@@ -77,6 +80,7 @@ function anchorToNearestPlatform(
 }
 
 export class PlatformerEnemySystem {
+  readonly #ai: EnemyAiProfile;
   readonly #collectedDrops = new Set<string>();
   readonly #drops = new Map<string, Phaser.GameObjects.Container>();
   readonly #enemies = new Map<string, EnemyView>();
@@ -90,10 +94,12 @@ export class PlatformerEnemySystem {
     platforms: Phaser.Physics.Arcade.StaticGroup,
     spawns: readonly (LevelPoint & { configId: string })[],
     enemyTypes: Readonly<Record<string, EnemyConfig>>,
+    levelIndex: number,
   ) {
     this.#scene = scene;
     this.#gameplay = gameplay;
     this.#platforms = platforms;
+    this.#ai = enemyAiProfileForLevel(levelIndex);
     spawns.forEach((spawn, spawnIndex) => {
       const config = enemyTypes[spawn.configId];
       if (!config) throw new Error(`Unknown platformer monster: ${spawn.configId}`);
@@ -150,8 +156,11 @@ export class PlatformerEnemySystem {
         healthBack,
         healthFill,
         id: spawn.id,
+        jumpCooldownMs: 350 + spawnIndex * 90,
+        lastX: safeSpawn.x,
         spawn: safeSpawn,
         sprite,
+        stuckMs: 0,
         telegraphMs: 0,
       });
     });
@@ -177,7 +186,10 @@ export class PlatformerEnemySystem {
       this.#updateHealthBar(enemy, state.health);
       if (enemy.sprite.y > 790) this.#recoverFallenEnemy(enemy);
       enemy.cooldownMs = Math.max(0, enemy.cooldownMs - deltaMs);
-      const dx = targetCat.x - enemy.sprite.x;
+      enemy.jumpCooldownMs = Math.max(0, enemy.jumpCooldownMs - deltaMs);
+      const targetBody = arcadeBody(targetCat);
+      const predictedX = targetCat.x + targetBody.velocity.x * this.#ai.predictionSeconds;
+      const dx = predictedX - enemy.sprite.x;
       const distance = Phaser.Math.Distance.Between(
         enemy.sprite.x,
         enemy.sprite.y,
@@ -189,15 +201,29 @@ export class PlatformerEnemySystem {
         enemy.sprite.setVelocity(0, 0).setTint(0xff5578);
         enemy.telegraphMs -= deltaMs;
         if (enemy.telegraphMs <= 0) this.#resolveStrike(enemy, distance);
-      } else if (distance < 92 && enemy.cooldownMs === 0) {
-        enemy.telegraphMs = enemy.config.telegraphMs;
+      } else if (distance < this.#ai.attackRange && enemy.cooldownMs === 0) {
+        enemy.telegraphMs = enemy.config.telegraphMs * this.#ai.telegraphMultiplier;
         enemy.sprite.clearTint().anims.play(`${enemy.config.id}-attack`, true);
       } else if (enemy.config.movement === 'flying') {
         this.#playMove(enemy);
-        this.#scene.physics.moveToObject(enemy.sprite, targetCat, enemy.config.speed);
+        if (distance <= this.#ai.aggressionRange) {
+          this.#scene.physics.moveTo(
+            enemy.sprite,
+            predictedX,
+            targetCat.y + targetBody.velocity.y * this.#ai.predictionSeconds,
+            enemy.config.speed,
+          );
+        } else {
+          this.#scene.physics.moveTo(
+            enemy.sprite,
+            enemy.spawn.x,
+            enemy.spawn.y,
+            enemy.config.speed * 0.55,
+          );
+        }
         enemy.sprite.setFlipX(dx < 0);
       } else {
-        this.#walkPlatform(enemy, dx);
+        this.#walkPlatform(enemy, dx, targetCat.y, distance <= this.#ai.aggressionRange, deltaMs);
       }
     });
   }
@@ -210,6 +236,9 @@ export class PlatformerEnemySystem {
       enemy.cooldownMs = 800;
       enemy.telegraphMs = 0;
       enemy.direction = 1;
+      enemy.jumpCooldownMs = 500;
+      enemy.lastX = enemy.spawn.x;
+      enemy.stuckMs = 0;
       enemy.sprite.enableBody(true, enemy.spawn.x, enemy.spawn.y, true, true).clearTint();
       enemy.sprite.anims.stop();
       enemy.sprite.setFrame(enemy.frames.idle);
@@ -228,22 +257,76 @@ export class PlatformerEnemySystem {
     );
   }
 
-  #walkPlatform(enemy: EnemyView, dx: number): void {
+  #walkPlatform(
+    enemy: EnemyView,
+    dx: number,
+    targetY: number,
+    aggressive: boolean,
+    deltaMs: number,
+  ): void {
     const body = arcadeBody(enemy.sprite);
     if (!body.blocked.down && !body.touching.down) {
-      enemy.sprite.setVelocityX(0);
+      this.#playMove(enemy);
       return;
     }
-    const desiredDirection =
-      Math.abs(dx) < 330 ? Math.sign(dx || enemy.direction) : enemy.direction;
-    if (Math.abs(enemy.sprite.x - enemy.spawn.x) > 245)
+
+    const moved = Math.abs(enemy.sprite.x - enemy.lastX);
+    enemy.lastX = enemy.sprite.x;
+    enemy.stuckMs = moved < 0.45 && Math.abs(body.velocity.x) > 8 ? enemy.stuckMs + deltaMs : 0;
+    if (enemy.stuckMs > 680) {
+      enemy.direction *= -1;
+      this.#jump(enemy, enemy.direction, 0.78);
+      enemy.stuckMs = 0;
+      return;
+    }
+
+    const verticalRise = enemy.sprite.y - targetY;
+    if (
+      aggressive &&
+      verticalRise > 45 &&
+      verticalRise < 235 &&
+      Math.abs(dx) < this.#ai.jumpRangeX &&
+      enemy.jumpCooldownMs === 0
+    ) {
+      this.#jump(enemy, Math.sign(dx || enemy.direction));
+      return;
+    }
+
+    const patrolRadius = aggressive ? 310 : 125;
+    const desiredDirection = aggressive ? Math.sign(dx || enemy.direction) : enemy.direction;
+    if (Math.abs(enemy.sprite.x - enemy.spawn.x) > patrolRadius)
       enemy.direction = enemy.sprite.x > enemy.spawn.x ? -1 : 1;
     else enemy.direction = desiredDirection;
     const probeX = enemy.sprite.x + enemy.direction * (body.halfWidth + 24);
     const footY = body.bottom + 8;
-    if (!this.#hasPlatformAt(probeX, footY)) enemy.direction *= -1;
+    if (!this.#hasPlatformAt(probeX, footY)) {
+      const targetBelow = targetY > enemy.sprite.y + 60;
+      const shouldGapJump =
+        aggressive &&
+        this.#ai.canGapJump &&
+        !targetBelow &&
+        Math.abs(dx) < this.#ai.jumpRangeX &&
+        enemy.jumpCooldownMs === 0;
+      if (shouldGapJump) {
+        this.#jump(enemy, enemy.direction, 0.74);
+        return;
+      }
+      if (!(aggressive && this.#ai.canDropFromLedges && targetBelow)) enemy.direction *= -1;
+    }
     this.#playMove(enemy);
     enemy.sprite.setVelocityX(enemy.direction * enemy.config.speed).setFlipX(enemy.direction < 0);
+  }
+
+  #jump(enemy: EnemyView, direction: number, heightMultiplier = 1): void {
+    enemy.direction = direction < 0 ? -1 : 1;
+    enemy.jumpCooldownMs = this.#ai.jumpCooldownMs;
+    enemy.sprite
+      .setVelocity(
+        enemy.direction * Math.max(145, enemy.config.speed * 1.75),
+        -this.#ai.jumpVelocity * heightMultiplier,
+      )
+      .setFlipX(enemy.direction < 0);
+    this.#playMove(enemy);
   }
 
   #hasPlatformAt(x: number, footY: number): boolean {
@@ -263,6 +346,8 @@ export class PlatformerEnemySystem {
   #recoverFallenEnemy(enemy: EnemyView): void {
     enemy.sprite.setPosition(enemy.spawn.x, enemy.spawn.y).setVelocity(0, 0);
     enemy.direction *= -1;
+    enemy.jumpCooldownMs = 700;
+    enemy.stuckMs = 0;
   }
 
   #updateLootDrop(enemy: EnemyView, targetCat: Phaser.Physics.Arcade.Sprite): void {
@@ -316,8 +401,8 @@ export class PlatformerEnemySystem {
   #resolveStrike(enemy: EnemyView, distance: number): void {
     enemy.sprite.clearTint();
     enemy.sprite.setFrame(enemy.frames.idle);
-    enemy.cooldownMs = 1400;
-    if (distance < 118) this.#gameplay.takeDamage(enemy.config.contactDamage);
+    enemy.cooldownMs = this.#ai.strikeCooldownMs;
+    if (distance < this.#ai.attackRange + 24) this.#gameplay.takeDamage(enemy.config.contactDamage);
   }
 
   #playMove(enemy: EnemyView): void {

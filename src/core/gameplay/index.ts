@@ -11,6 +11,7 @@ export {
 export type { GameEvent } from './game-event';
 export { GameSession } from './game-session';
 export { EclipseMeter } from './eclipse-meter';
+export { enemyAiProfileForLevel, type EnemyAiProfile } from './enemy-ai-profile';
 export type {
   AbilityConfig,
   AbilityUseResult,
