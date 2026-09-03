@@ -48,11 +48,7 @@ export function GameHud({ gameplay }: GameHudProps) {
         <span className="phase-clock__icon" aria-hidden="true">
           {snapshot.phase === 'day' ? '☀' : '☾'}
         </span>
-        <span>Фаза: {snapshot.
-
-
-
-          phase === 'day' ? 'День' : 'Ночь'}</span>
+        <span>Фаза: {snapshot.phase === 'day' ? 'День' : 'Ночь'}</span>
         <strong>{seconds}</strong>
       </div>
 
