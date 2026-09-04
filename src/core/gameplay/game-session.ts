@@ -127,7 +127,19 @@ export class GameSession {
 
   useSupport(): AbilityUseResult | null {
     const result = this.#useUtility(this.#content.supportAbilities[this.#activeCat], 6);
-    if (result) this.#shieldCharges = Math.min(2, this.#shieldCharges + 1);
+    if (result) {
+      if (this.#bondHealth.current < this.#bondHealth.maximum) {
+        const before = this.#bondHealth.current;
+        const remainingHealth = this.#bondHealth.heal(1);
+        this.#events.push({
+          type: 'HealingReceived',
+          amount: remainingHealth - before,
+          remainingHealth,
+        });
+      } else {
+        this.#shieldCharges = Math.min(2, this.#shieldCharges + 1);
+      }
+    }
     return result;
   }
 

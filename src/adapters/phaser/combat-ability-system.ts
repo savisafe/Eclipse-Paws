@@ -70,10 +70,7 @@ export class CombatAbilitySystem {
   special(): void {
     const catId = this.#activeCat();
     const actor = this.#actors[catId];
-    actor.anims.stop();
-    setCatPose(actor, catId, 'ability');
-    this.#actionLockMs[catId] = 430;
-    playSpecialAbility(
+    const used = playSpecialAbility(
       this.#scene,
       this.#gameplay,
       actor,
@@ -82,6 +79,10 @@ export class CombatAbilitySystem {
       this.#enemies.targets(),
       this.#reducedMotion,
     );
+    if (!used) return;
+    actor.anims.stop();
+    setCatPose(actor, catId, 'ability');
+    this.#actionLockMs[catId] = 430;
     this.#sfx.play(catId === 'luma' ? 880 : 92, 260, catId === 'luma' ? 'square' : 'sawtooth');
     void this.#haptics.impact('medium');
   }
@@ -97,20 +98,40 @@ export class CombatAbilitySystem {
   }
 
   support(): void {
+    const healthBefore = this.#gameplay.getSnapshot().bondHealth;
     if (!this.#gameplay.useSupport()) return;
-    const color = this.#activeCat() === 'luma' ? 0x7de8ff : 0x9f66ef;
+    const healed = this.#gameplay.getSnapshot().bondHealth > healthBefore;
+    const color = healed ? 0x77efad : this.#activeCat() === 'luma' ? 0x7de8ff : 0x9f66ef;
     const ring = this.#scene.add
       .ellipse(0, 0, 240, 150)
       .setStrokeStyle(7, color, 0.85)
       .setDepth(16);
     const active = this.#actors[this.#activeCat()];
     ring.setPosition(active.x, active.y);
+    const icon = this.#scene.add
+      .text(active.x, active.y - 68, healed ? '+1 ♥' : 'ЩИТ', {
+        color: healed ? '#baffcf' : '#d7eeff',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: healed ? '24px' : '16px',
+        fontStyle: 'bold',
+        stroke: '#142039',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(18);
     this.#scene.tweens.add({
       targets: ring,
       alpha: 0,
       scale: 1.5,
       duration: 520,
       onComplete: () => ring.destroy(),
+    });
+    this.#scene.tweens.add({
+      targets: icon,
+      y: icon.y - 35,
+      alpha: 0,
+      duration: 720,
+      onComplete: () => icon.destroy(),
     });
     this.#sfx.play(420, 320, 'sine');
   }

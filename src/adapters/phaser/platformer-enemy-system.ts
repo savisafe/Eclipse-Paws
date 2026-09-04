@@ -85,6 +85,7 @@ export class PlatformerEnemySystem {
   readonly #drops = new Map<string, Phaser.GameObjects.Container>();
   readonly #enemies = new Map<string, EnemyView>();
   readonly #gameplay: GameplayController;
+  readonly #hazards: readonly LevelPoint[];
   readonly #platforms: Phaser.Physics.Arcade.StaticGroup;
   readonly #scene: Phaser.Scene;
 
@@ -94,10 +95,12 @@ export class PlatformerEnemySystem {
     platforms: Phaser.Physics.Arcade.StaticGroup,
     spawns: readonly (LevelPoint & { configId: string })[],
     enemyTypes: Readonly<Record<string, EnemyConfig>>,
+    hazards: readonly LevelPoint[],
     levelIndex: number,
   ) {
     this.#scene = scene;
     this.#gameplay = gameplay;
+    this.#hazards = hazards;
     this.#platforms = platforms;
     this.#ai = enemyAiProfileForLevel(levelIndex);
     spawns.forEach((spawn, spawnIndex) => {
@@ -281,6 +284,14 @@ export class PlatformerEnemySystem {
     }
 
     const verticalRise = enemy.sprite.y - targetY;
+    const approachDirection = aggressive ? Math.sign(dx || enemy.direction) : enemy.direction;
+    if (
+      enemy.jumpCooldownMs === 0 &&
+      this.#hazardAhead(enemy.sprite, approachDirection, body.bottom)
+    ) {
+      this.#jump(enemy, approachDirection, 0.68);
+      return;
+    }
     if (
       aggressive &&
       verticalRise > 45 &&
@@ -343,6 +354,17 @@ export class PlatformerEnemySystem {
     });
   }
 
+  #hazardAhead(sprite: Phaser.Physics.Arcade.Sprite, direction: number, footY: number): boolean {
+    return this.#hazards.some((hazard) => {
+      const dx = hazard.x - sprite.x;
+      return (
+        Math.sign(dx || direction) === Math.sign(direction) &&
+        Math.abs(dx) < 125 &&
+        Math.abs(hazard.y - footY) < 90
+      );
+    });
+  }
+
   #recoverFallenEnemy(enemy: EnemyView): void {
     enemy.sprite.setPosition(enemy.spawn.x, enemy.spawn.y).setVelocity(0, 0);
     enemy.direction *= -1;
@@ -359,8 +381,21 @@ export class PlatformerEnemySystem {
         .polygon(0, 0, [0, -15, 11, 0, 0, 15, -11, 0], 0x80e8ff, 1)
         .setStrokeStyle(2, 0xffffff, 0.9);
       const spark = this.#scene.add.star(0, 0, 6, 5, 12, 0xffdc76, 0.85);
+      const beam = this.#scene.add
+        .rectangle(0, 18, 5, 74, 0x9ceeff, 0.22)
+        .setBlendMode(Phaser.BlendModes.ADD);
+      const label = this.#scene.add
+        .text(0, -36, 'ДОБЫЧА · коснись', {
+          color: '#fff0a6',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '11px',
+          fontStyle: 'bold',
+          stroke: '#14132c',
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5);
       drop = this.#scene.add
-        .container(enemy.sprite.x, enemy.sprite.y - 10, [aura, diamond, spark])
+        .container(enemy.sprite.x, enemy.sprite.y - 10, [beam, aura, diamond, spark, label])
         .setDepth(17);
       this.#scene.tweens.add({
         targets: drop,

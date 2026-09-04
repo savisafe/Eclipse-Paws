@@ -180,43 +180,39 @@ export function playSpecialAbility(
   facing: number,
   targets: readonly EffectTarget[],
   reducedMotion = false,
-): void {
+): boolean {
   const config = PROTOTYPE_SPECIAL_ABILITIES[catId];
   const inRange =
     catId === 'luma'
       ? targetsInRadius(actor, targets, config.range)
       : targetsInFront(actor, targets, facing, config.range);
 
+  const target = inRange[0];
+  if (!target) return false;
+  const result = gameplay.useSpecialAbility(target.id);
+  if (!result) return false;
+
   if (catId === 'luma') {
-    const target = inRange[0];
-    if (!target) return;
     drawLightning(scene, actor, target.sprite, reducedMotion);
-    const result = gameplay.useSpecialAbility(target.id);
-    if (result) {
-      showHitFeedback(
-        scene,
-        target,
-        result.damage,
-        dominantCatForPhase(gameplay.getSnapshot().phase) === catId,
-      );
-    }
-    return;
+    showHitFeedback(
+      scene,
+      target,
+      result.damage,
+      dominantCatForPhase(gameplay.getSnapshot().phase) === catId,
+    );
+    return true;
   }
 
   const groundY = actor.y + 45;
   for (let index = 0; index < 5; index += 1) {
     drawShadowSpike(scene, actor.x + facing * (55 + index * 52), groundY, index);
   }
-  inRange.slice(0, 3).forEach((target) => {
-    const result = gameplay.useSpecialAbility(target.id);
-    if (result) {
-      showHitFeedback(
-        scene,
-        target,
-        result.damage,
-        dominantCatForPhase(gameplay.getSnapshot().phase) === catId,
-      );
-    }
-  });
+  showHitFeedback(
+    scene,
+    target,
+    result.damage,
+    dominantCatForPhase(gameplay.getSnapshot().phase) === catId,
+  );
   if (!reducedMotion) scene.cameras.main.shake(180, 0.006);
+  return true;
 }

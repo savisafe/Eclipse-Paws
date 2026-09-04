@@ -57,6 +57,19 @@ describe('GameSession', () => {
     expect(session.snapshot().bondHealth).toBe(2);
   });
 
+  it('uses the support ability as healing when bond health is missing', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT);
+    session.takeDamage(1);
+
+    expect(session.snapshot().bondHealth).toBe(2);
+    expect(session.useSupport()).not.toBeNull();
+    expect(session.snapshot().bondHealth).toBe(3);
+    expect(session.snapshot().shieldCharges).toBe(0);
+    expect(session.drainEvents()).toContainEqual(
+      expect.objectContaining({ type: 'HealingReceived', amount: 1, remainingHealth: 3 }),
+    );
+  });
+
   it('spends a full meter on the shared Eclipse ultimate', () => {
     const session = new GameSession(PROTOTYPE_CONTENT);
     const targets = ['shadefang-1', 'light-wisp-1', 'spore-beast-1', 'shadefang-2'];

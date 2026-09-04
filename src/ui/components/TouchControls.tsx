@@ -58,8 +58,8 @@ export function TouchControls({ inputState }: TouchControlsProps) {
         <TouchButton
           action="support-ability"
           inputState={inputState}
-          label="Особая способность"
-          symbol="ϟ"
+          label="Лечение или щит"
+          symbol="♥"
         />
         <TouchButton
           action="special-ability"

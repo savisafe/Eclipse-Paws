@@ -32,6 +32,15 @@ export class BondHealth {
     return this.#current;
   }
 
+  heal(amount: number): number {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('Healing must be a positive finite number.');
+    }
+
+    this.#current = Math.min(this.#maximum, this.#current + amount);
+    return this.#current;
+  }
+
   restore(): void {
     this.#current = this.#maximum;
   }

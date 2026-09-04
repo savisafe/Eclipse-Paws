@@ -44,6 +44,6 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Сад первой зари' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Начать уровень' }));
 
-    expect(screen.getByText('Открываем Сад первой зари…')).toBeVisible();
+    expect(screen.getByText('Открываем «Сад первой зари»…')).toBeVisible();
   });
 });

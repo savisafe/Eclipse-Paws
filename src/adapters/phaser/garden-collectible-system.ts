@@ -13,7 +13,22 @@ export class GardenCollectibleSystem {
       const rays = scene.add.star(0, 0, 8, 13, 31, 0xffca5f, 0.42);
       const core = scene.add.star(0, 0, 6, 7, 18, 0xfff2a6, 1).setStrokeStyle(2, 0xffffff, 0.9);
       const gem = scene.add.circle(0, 0, 6, 0x78eaff, 1);
-      const view = scene.add.container(spark.x, spark.y, [aura, rays, core, gem]).setDepth(8);
+      const beam = scene.add
+        .rectangle(0, 17, 5, 76, 0x8eeeff, 0.2)
+        .setBlendMode(Phaser.BlendModes.ADD);
+      const label = scene.add
+        .text(0, -43, 'ИСКРА · коснись', {
+          color: '#fff4b0',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '12px',
+          fontStyle: 'bold',
+          stroke: '#11162f',
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5);
+      const view = scene.add
+        .container(spark.x, spark.y, [beam, aura, rays, core, gem, label])
+        .setDepth(8);
       scene.tweens.add({ targets: rays, angle: 360, duration: 2500, repeat: -1 });
       scene.tweens.add({ targets: core, angle: -360, duration: 1800, repeat: -1 });
       scene.tweens.add({

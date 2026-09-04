@@ -4,6 +4,7 @@ export type GameEvent =
   | { type: 'PhaseChanged'; phase: Phase }
   | { type: 'ActiveCatChanged'; activeCat: CatId }
   | { type: 'DamageTaken'; amount: number; remainingHealth: number }
+  | { type: 'HealingReceived'; amount: number; remainingHealth: number }
   | { type: 'AbilityUsed'; abilityId: string; catId: CatId; damage: number }
   | { type: 'EnemyDefeated'; enemyId: string }
   | { type: 'HeroLevelUp'; level: number }

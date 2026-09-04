@@ -97,6 +97,10 @@ export class GardenFlowerPuzzle {
   readonly #barrier: Phaser.GameObjects.Rectangle;
   readonly #flowers: FlowerView[];
   readonly #gameplay: GameplayController;
+  readonly #gateEnergy: Phaser.GameObjects.Rectangle;
+  readonly #gateSockets: Phaser.GameObjects.Arc[];
+  readonly #gateVisual: Phaser.GameObjects.Container;
+  readonly #instruction: Phaser.GameObjects.Text;
   readonly #scene: Phaser.Scene;
   readonly #sequence = new SequencePuzzle(FLOWERS.map((flower) => flower.id));
 
@@ -138,7 +142,65 @@ export class GardenFlowerPuzzle {
         .setDepth(8);
       return { activated: false, id: flower.id, idleTexture, pressedTexture, view };
     });
-    this.#barrier = scene.add.rectangle(1590, 510, 34, 220, 0x79e1e5, 0.5).setDepth(9);
+    const gateFrame = scene.add
+      .rectangle(0, 0, 96, 680, 0x10172f, 0.9)
+      .setStrokeStyle(6, 0xbfeff2, 0.95);
+    this.#gateEnergy = scene.add
+      .rectangle(0, 0, 64, 650, 0x63dfe6, 0.48)
+      .setStrokeStyle(3, 0xffffff, 0.8);
+    const leftRail = scene.add.rectangle(-36, 0, 10, 650, 0xe4cc78, 0.95);
+    const rightRail = scene.add.rectangle(36, 0, 10, 650, 0xe4cc78, 0.95);
+    const crest = scene.add.star(0, -294, 8, 17, 34, 0xffdd75, 1).setStrokeStyle(3, 0xffffff, 0.82);
+    this.#gateSockets = FLOWERS.map((flower, index) =>
+      scene.add
+        .circle(0, -142 + index * 142, 19, 0x171a3b, 1)
+        .setStrokeStyle(4, flower.color, 0.72),
+    );
+    const gateTitle = scene.add
+      .text(0, 278, 'ПЕЧАТЬ\nЗАТМЕНИЯ', {
+        align: 'center',
+        color: '#fff3c2',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        fontStyle: 'bold',
+        stroke: '#11162f',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5);
+    this.#gateVisual = scene.add
+      .container(1590, 300, [
+        gateFrame,
+        this.#gateEnergy,
+        leftRail,
+        rightRail,
+        crest,
+        ...this.#gateSockets,
+        gateTitle,
+      ])
+      .setDepth(9);
+    scene.tweens.add({
+      targets: this.#gateEnergy,
+      alpha: 0.2,
+      duration: 680,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
+    this.#instruction = scene.add
+      .text(1000, 385, 'ПЕЧАТЬ ЗАКРЫТА\n[E] Активируй руны: 1 → 2 → 3', {
+        align: 'center',
+        color: '#fff7d5',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '16px',
+        fontStyle: 'bold',
+        padding: { x: 14, y: 9 },
+        backgroundColor: 'rgba(15, 20, 48, 0.88)',
+        stroke: '#11162f',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(12);
+    this.#barrier = scene.add.rectangle(1590, 300, 96, 680, 0x79e1e5, 0.02).setDepth(9);
     scene.physics.add.existing(this.#barrier, true);
     scene.physics.add.collider(Object.values(actors), this.#barrier);
   }
@@ -157,12 +219,51 @@ export class GardenFlowerPuzzle {
     const result = this.#sequence.activate(nearest.id);
     if (!result.accepted) {
       this.#flowers.forEach((flower) => this.#setPressed(flower, false));
+      this.#updateGateProgress(0);
+      this.#showFeedback('ПОРЯДОК СБИЛСЯ · начни с руны 1', 0xff7890);
       nearest.view.setTint(0xff496f);
       this.#scene.time.delayedCall(180, () => nearest.view.clearTint());
       return;
     }
     this.#setPressed(nearest, true);
+    this.#updateGateProgress(result.progress);
+    this.#showFeedback(`РУНА ${result.progress} АКТИВИРОВАНА`, 0x9cf4ee);
     if (result.solved) this.#complete();
+  }
+
+  #updateGateProgress(progress: number): void {
+    this.#gateSockets.forEach((socket, index) => {
+      const active = index < progress;
+      socket
+        .setFillStyle(active ? FLOWERS[index]!.color : 0x171a3b, active ? 1 : 0.92)
+        .setScale(active ? 1.22 : 1);
+    });
+    this.#gateEnergy.setFillStyle(
+      progress === 3 ? 0xffe189 : 0x63dfe6,
+      progress === 3 ? 0.82 : 0.48,
+    );
+  }
+
+  #showFeedback(message: string, color: number): void {
+    const label = this.#scene.add
+      .text(1000, 335, message, {
+        color: Phaser.Display.Color.IntegerToColor(color).rgba,
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '15px',
+        fontStyle: 'bold',
+        stroke: '#11162f',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(15);
+    this.#scene.tweens.add({
+      targets: label,
+      y: label.y - 24,
+      alpha: 0,
+      duration: 750,
+      hold: 220,
+      onComplete: () => label.destroy(),
+    });
   }
 
   #setPressed(flower: FlowerView, pressed: boolean): void {
@@ -196,12 +297,18 @@ export class GardenFlowerPuzzle {
     this.#gameplay.rewardEclipse(25);
     const body = this.#barrier.body as Phaser.Physics.Arcade.StaticBody;
     body.enable = false;
+    this.#instruction.setText('ПЕЧАТЬ ОТКРЫТА').setColor('#9cf4ee');
+    this.#scene.tweens.killTweensOf(this.#gateEnergy);
     this.#scene.tweens.add({
-      targets: this.#barrier,
+      targets: [this.#barrier, this.#gateVisual],
       alpha: 0,
       scaleY: 0,
-      duration: 420,
-      onComplete: () => this.#barrier.destroy(),
+      duration: 620,
+      onComplete: () => {
+        this.#barrier.destroy();
+        this.#gateVisual.destroy(true);
+        this.#scene.time.delayedCall(650, () => this.#instruction.destroy());
+      },
     });
   }
 }

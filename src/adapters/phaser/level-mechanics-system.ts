@@ -100,5 +100,6 @@ export class LevelMechanicsSystem {
 
   applyPhase(phase: Phase): void {
     this.#phaseBridges.update(phase);
+    this.#constellations?.applyPhase(phase);
   }
 }
