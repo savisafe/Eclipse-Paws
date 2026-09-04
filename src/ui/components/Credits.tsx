@@ -12,12 +12,12 @@ export function Credits({ onMenu }: CreditsProps) {
         <p>Естественный цикл восстановлен</p>
         <h1 id="credits-title">Eclipse Paws</h1>
         <blockquote>
-          Рассвет пришёл не вместо ночи, а вслед за ней. Люма и Нокс свернулись рядом и впервые
+          Рассвет пришёл не вместо ночи, а вслед за ней. Кокс и Боня свернулись рядом и впервые
           услышали, как Маятник снова отсчитывает время.
         </blockquote>
         <div className="credits-names">
-          <span>Люма · Хранительница света</span>
-          <span>Нокс · Хранитель теней</span>
+          <span>Кокс · Хранительница света</span>
+          <span>Боня · Хранитель теней</span>
           <span>Сумеречник · Освобождён</span>
         </div>
         <button className="menu-button" onClick={onMenu} type="button">
