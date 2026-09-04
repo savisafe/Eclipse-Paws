@@ -8,7 +8,7 @@ describe('GameSession', () => {
 
     expect(session.attack('shadefang-1')?.damage).toBe(18);
     expect(session.switchActiveCat()).toBe('nox');
-    expect(session.attack('shadefang-2')?.damage).toBeCloseTo(3);
+    expect(session.attack('spore-beast-1')?.damage).toBeCloseTo(3);
   });
 
   it('uses stronger typed special abilities', () => {
@@ -32,11 +32,11 @@ describe('GameSession', () => {
   it('fills the Eclipse meter and spends 50 on a manual phase change', () => {
     const session = new GameSession(PROTOTYPE_CONTENT);
 
-    for (const enemyId of ['shadefang-1', 'shadefang-2']) {
-      session.attack(enemyId);
-      session.update(420);
-      session.attack(enemyId);
-      session.update(420);
+    for (const enemyId of ['shadefang-1', 'spore-beast-1']) {
+      while ((session.snapshot().enemies.find((enemy) => enemy.id === enemyId)?.health ?? 0) > 0) {
+        session.attack(enemyId);
+        session.update(420);
+      }
     }
 
     expect(session.snapshot().eclipseMeter).toBeGreaterThanOrEqual(50);

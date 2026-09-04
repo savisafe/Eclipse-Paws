@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
-import type { LevelPoint } from '@content/index';
+import type { LevelPoint, PlatformRect } from '@content/index';
 import { enemyAiProfileForLevel, type EnemyAiProfile, type EnemyConfig } from '@core/index';
 import type { EffectTarget } from './platformer-effects';
 import { GARDEN_ENEMY_FRAMES } from './garden-enemy-atlas';
@@ -23,10 +23,24 @@ interface EnemyView extends EffectTarget {
   healthFill: Phaser.GameObjects.Rectangle;
   jumpCooldownMs: number;
   lastX: number;
+  recoveryAttempts: number;
   spawn: LevelPoint & { configId: string };
   stuckMs: number;
   telegraphMs: number;
 }
+
+const COVER_SENSORS = new Set([
+  'light-wisp',
+  'lantern-moth',
+  'echo-owl',
+  'archivist-echo',
+  'twilight-golem',
+  'great-mushroom',
+  'pendulum-wraith',
+  'fortress-golem',
+  'eclipse-sentinel',
+  'dawn-devourer',
+]);
 
 function arcadeBody(sprite: Phaser.Physics.Arcade.Sprite): Phaser.Physics.Arcade.Body {
   return sprite.body as Phaser.Physics.Arcade.Body;
@@ -82,6 +96,7 @@ function anchorToNearestPlatform(
 export class PlatformerEnemySystem {
   readonly #ai: EnemyAiProfile;
   readonly #collectedDrops = new Set<string>();
+  readonly #coverZones: readonly PlatformRect[];
   readonly #drops = new Map<string, Phaser.GameObjects.Container>();
   readonly #enemies = new Map<string, EnemyView>();
   readonly #gameplay: GameplayController;
@@ -96,11 +111,13 @@ export class PlatformerEnemySystem {
     spawns: readonly (LevelPoint & { configId: string })[],
     enemyTypes: Readonly<Record<string, EnemyConfig>>,
     hazards: readonly LevelPoint[],
+    coverZones: readonly PlatformRect[],
     levelIndex: number,
   ) {
     this.#scene = scene;
     this.#gameplay = gameplay;
     this.#hazards = hazards;
+    this.#coverZones = coverZones;
     this.#platforms = platforms;
     this.#ai = enemyAiProfileForLevel(levelIndex);
     spawns.forEach((spawn, spawnIndex) => {
@@ -161,6 +178,7 @@ export class PlatformerEnemySystem {
         id: spawn.id,
         jumpCooldownMs: 350 + spawnIndex * 90,
         lastX: safeSpawn.x,
+        recoveryAttempts: 0,
         spawn: safeSpawn,
         sprite,
         stuckMs: 0,
@@ -173,7 +191,8 @@ export class PlatformerEnemySystem {
     return [...this.#enemies.values()].map(({ id, sprite }) => ({ id, sprite }));
   }
 
-  update(targetCat: Phaser.Physics.Arcade.Sprite, deltaMs: number): void {
+  update(targetCat: Phaser.Physics.Arcade.Sprite, deltaMs: number, hiding = false): void {
+    const concealed = hiding && this.#insideCover(targetCat.x, targetCat.y);
     const states = new Map(this.#gameplay.getSnapshot().enemies.map((enemy) => [enemy.id, enemy]));
     this.#enemies.forEach((enemy) => {
       const state = states.get(enemy.id);
@@ -199,17 +218,23 @@ export class PlatformerEnemySystem {
         targetCat.x,
         targetCat.y,
       );
+      const canDetectTarget = !concealed || COVER_SENSORS.has(enemy.config.id);
 
-      if (enemy.telegraphMs > 0) {
+      if (!canDetectTarget && enemy.telegraphMs > 0) {
+        enemy.telegraphMs = 0;
+        enemy.sprite.clearTint();
+      }
+
+      if (enemy.telegraphMs > 0 && canDetectTarget) {
         enemy.sprite.setVelocity(0, 0).setTint(0xff5578);
         enemy.telegraphMs -= deltaMs;
         if (enemy.telegraphMs <= 0) this.#resolveStrike(enemy, distance);
-      } else if (distance < this.#ai.attackRange && enemy.cooldownMs === 0) {
+      } else if (canDetectTarget && distance < this.#ai.attackRange && enemy.cooldownMs === 0) {
         enemy.telegraphMs = enemy.config.telegraphMs * this.#ai.telegraphMultiplier;
         enemy.sprite.clearTint().anims.play(`${enemy.config.id}-attack`, true);
       } else if (enemy.config.movement === 'flying') {
         this.#playMove(enemy);
-        if (distance <= this.#ai.aggressionRange) {
+        if (canDetectTarget && distance <= this.#ai.aggressionRange) {
           this.#scene.physics.moveTo(
             enemy.sprite,
             predictedX,
@@ -226,7 +251,13 @@ export class PlatformerEnemySystem {
         }
         enemy.sprite.setFlipX(dx < 0);
       } else {
-        this.#walkPlatform(enemy, dx, targetCat.y, distance <= this.#ai.aggressionRange, deltaMs);
+        this.#walkPlatform(
+          enemy,
+          dx,
+          targetCat.y,
+          canDetectTarget && distance <= this.#ai.aggressionRange,
+          deltaMs,
+        );
       }
     });
   }
@@ -241,6 +272,7 @@ export class PlatformerEnemySystem {
       enemy.direction = 1;
       enemy.jumpCooldownMs = 500;
       enemy.lastX = enemy.spawn.x;
+      enemy.recoveryAttempts = 0;
       enemy.stuckMs = 0;
       enemy.sprite.enableBody(true, enemy.spawn.x, enemy.spawn.y, true, true).clearTint();
       enemy.sprite.anims.stop();
@@ -275,10 +307,17 @@ export class PlatformerEnemySystem {
 
     const moved = Math.abs(enemy.sprite.x - enemy.lastX);
     enemy.lastX = enemy.sprite.x;
+    if (moved > 4) enemy.recoveryAttempts = 0;
     enemy.stuckMs = moved < 0.45 && Math.abs(body.velocity.x) > 8 ? enemy.stuckMs + deltaMs : 0;
     if (enemy.stuckMs > 680) {
+      if (enemy.recoveryAttempts >= 1) {
+        this.#recoverFallenEnemy(enemy);
+        enemy.recoveryAttempts = 0;
+        return;
+      }
       enemy.direction *= -1;
       this.#jump(enemy, enemy.direction, 0.78);
+      enemy.recoveryAttempts += 1;
       enemy.stuckMs = 0;
       return;
     }
@@ -365,10 +404,21 @@ export class PlatformerEnemySystem {
     });
   }
 
+  #insideCover(x: number, y: number): boolean {
+    return this.#coverZones.some(
+      (cover) =>
+        x >= cover.x - cover.width / 2 &&
+        x <= cover.x + cover.width / 2 &&
+        y >= cover.y - cover.height / 2 &&
+        y <= cover.y + cover.height / 2,
+    );
+  }
+
   #recoverFallenEnemy(enemy: EnemyView): void {
     enemy.sprite.setPosition(enemy.spawn.x, enemy.spawn.y).setVelocity(0, 0);
     enemy.direction *= -1;
     enemy.jumpCooldownMs = 700;
+    enemy.lastX = enemy.spawn.x;
     enemy.stuckMs = 0;
   }
 

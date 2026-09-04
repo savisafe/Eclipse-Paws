@@ -15,6 +15,8 @@ export class PlayerMovementSystem {
   readonly #input: GameInputState;
   #coyoteMs = 0;
   #jumpBufferMs = 0;
+  #lastX = Number.NaN;
+  #stuckMs = 0;
 
   constructor(options: {
     actionLockMs: Record<CatId, number>;
@@ -43,6 +45,14 @@ export class PlayerMovementSystem {
 
     const body = active.body as Phaser.Physics.Arcade.Body;
     const grounded = body.blocked.down;
+    if (!Number.isFinite(this.#lastX)) this.#lastX = active.x;
+    const moved = Math.abs(active.x - this.#lastX);
+    this.#lastX = active.x;
+    this.#stuckMs = horizontal !== 0 && grounded && moved < 0.35 ? this.#stuckMs + deltaMs : 0;
+    if (this.#stuckMs > 1400) {
+      active.setVelocity(horizontal * PLAYER_SPEED, -JUMP_SPEED * 0.72);
+      this.#stuckMs = 0;
+    }
     this.#coyoteMs = grounded ? 120 : Math.max(0, this.#coyoteMs - deltaMs);
     this.#jumpBufferMs = Math.max(0, this.#jumpBufferMs - deltaMs);
     if (this.#input.consume('jump')) this.#jumpBufferMs = 130;

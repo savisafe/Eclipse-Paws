@@ -54,6 +54,7 @@ export function TouchControls({ inputState }: TouchControlsProps) {
       </div>
       <div className="touch-actions">
         <TouchButton action="switch-cat" inputState={inputState} label="Сменить кота" symbol="↔" />
+        <TouchButton action="move-down" inputState={inputState} label="Спрятаться" symbol="◒" />
         <TouchButton action="mobility-ability" inputState={inputState} label="Рывок" symbol="➤" />
         <TouchButton
           action="support-ability"

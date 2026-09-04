@@ -36,6 +36,74 @@ export interface PlatformerWorldView {
   platforms: Phaser.Physics.Arcade.StaticGroup;
 }
 
+function addPlatformAccent(
+  scene: Phaser.Scene,
+  level: CampaignLevelDefinition,
+  platform: CampaignLevelDefinition['platforms'][number],
+  index: number,
+): void {
+  const top = platform.y - platform.height / 2;
+  if (level.background === 'garden') {
+    for (let offset = -platform.width / 2 + 34; offset < platform.width / 2; offset += 72) {
+      scene.add
+        .circle(platform.x + offset, top - 5, 4, index % 2 === 0 ? 0xffdf7b : 0x79d9ed, 0.9)
+        .setDepth(3);
+    }
+    return;
+  }
+  if (level.background === 'forest') {
+    const roots = scene.add.graphics().setDepth(2);
+    roots.lineStyle(5, 0x334d3b, 0.9);
+    for (let offset = -platform.width / 2 + 45; offset < platform.width / 2; offset += 95) {
+      roots.beginPath();
+      roots.moveTo(platform.x + offset, top + 5);
+      roots.lineTo(platform.x + offset + 12, top + 28 + (index % 3) * 8);
+      roots.lineTo(platform.x + offset - 5, top + 47 + (index % 2) * 10);
+      roots.strokePath();
+    }
+    return;
+  }
+  if (level.background === 'library') {
+    for (let offset = -platform.width / 2 + 38; offset < platform.width / 2; offset += 82) {
+      scene.add
+        .polygon(
+          platform.x + offset,
+          top + 3,
+          [0, -8, 8, 0, 0, 8, -8, 0],
+          index % 2 === 0 ? 0x9fe8ff : 0xffdc83,
+          0.9,
+        )
+        .setDepth(3);
+    }
+    return;
+  }
+  if (level.background === 'fortress') {
+    for (let offset = -platform.width / 2 + 24; offset < platform.width / 2; offset += 58) {
+      scene.add
+        .circle(platform.x + offset, top + 4, 5, 0x3b2e2a, 1)
+        .setStrokeStyle(2, 0xffbd68, 0.85)
+        .setDepth(3);
+    }
+    return;
+  }
+  for (let offset = -platform.width / 2 + 35; offset < platform.width / 2; offset += 76) {
+    scene.add
+      .triangle(
+        platform.x + offset,
+        top + 11,
+        -9,
+        7,
+        0,
+        -15 - (index % 3) * 4,
+        9,
+        7,
+        index % 2 === 0 ? 0xb774ff : 0xffc86b,
+        0.82,
+      )
+      .setDepth(3);
+  }
+}
+
 export function drawArena(
   scene: Phaser.Scene,
   level: CampaignLevelDefinition,
@@ -43,7 +111,7 @@ export function drawArena(
   addParallax(scene);
   const platforms = scene.physics.add.staticGroup();
 
-  level.platforms.forEach((platform) => {
+  level.platforms.forEach((platform, index) => {
     const edgeColor =
       level.background === 'garden'
         ? 0xf4d676
@@ -86,6 +154,33 @@ export function drawArena(
       )
       .setStrokeStyle(2, 0xffffff, 0.24)
       .setDepth(2);
+    addPlatformAccent(scene, level, platform, index);
+  });
+
+  level.coverZones.forEach((cover, index) => {
+    const color =
+      level.background === 'forest'
+        ? 0x315d4b
+        : level.background === 'library'
+          ? 0x354d75
+          : level.background === 'fortress'
+            ? 0x55453f
+            : 0x4b3269;
+    scene.add
+      .ellipse(cover.x, cover.y, cover.width, cover.height, color, 0.76)
+      .setStrokeStyle(4, index % 2 === 0 ? 0x83e0c4 : 0xc3a8ef, 0.7)
+      .setDepth(4);
+    scene.add
+      .text(cover.x, cover.y - cover.height / 2 - 18, 'УКРЫТИЕ · S / ↓', {
+        color: '#eafff6',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        fontStyle: 'bold',
+        stroke: '#10152e',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(5);
   });
 
   scene.add

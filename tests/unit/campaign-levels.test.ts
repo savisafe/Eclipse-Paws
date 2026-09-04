@@ -19,4 +19,25 @@ describe('campaign level content', () => {
       expect(createLevelContent(level.id).enemies.length).toBe(level.enemies.length);
     });
   });
+
+  it('uses unique layouts and a steadily rising difficulty curve', () => {
+    const levels = Object.values(CAMPAIGN_LEVELS);
+    const layoutSignatures = new Set(
+      levels.map((level) =>
+        level.platforms
+          .map((platform) => `${platform.x}:${platform.y}:${platform.width}:${platform.height}`)
+          .join('|'),
+      ),
+    );
+
+    expect(layoutSignatures.size).toBe(levels.length);
+    expect(levels.map((level) => level.difficulty)).toEqual([1, 2, 3, 4, 5]);
+    expect(levels.map((level) => level.enemies.length)).toEqual([4, 6, 7, 8, 9]);
+    expect(levels.map((level) => level.hazards.length)).toEqual([1, 2, 3, 5, 6]);
+    expect(levels.map((level) => level.phaseDurationMs)).toEqual([
+      45_000, 40_000, 35_000, 30_000, 26_000,
+    ]);
+    expect(levels[0]?.coverZones).toHaveLength(0);
+    expect(levels.slice(1).every((level) => level.coverZones.length > 0)).toBe(true);
+  });
 });

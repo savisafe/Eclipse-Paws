@@ -59,6 +59,7 @@ export class PrototypeScene extends Phaser.Scene {
   #accumulatorMs = 0;
   #actors!: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   #enemySystem!: PlatformerEnemySystem;
+  #hidingStatus!: Phaser.GameObjects.Text;
   #lastPhase: Phase = 'day';
   #lastRestartCount = 0;
   #combatSystem!: CombatAbilitySystem;
@@ -124,8 +125,24 @@ export class PrototypeScene extends Phaser.Scene {
       this.#level.enemies,
       enemyTypes,
       this.#level.hazards,
+      this.#level.coverZones,
       this.#level.index,
     );
+    this.#hidingStatus = this.add
+      .text(640, 165, 'УКРЫТИЕ · враги потеряли след', {
+        color: '#b9ffe4',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '16px',
+        fontStyle: 'bold',
+        padding: { x: 12, y: 6 },
+        backgroundColor: 'rgba(18, 45, 42, 0.9)',
+        stroke: '#10152e',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(35)
+      .setVisible(false);
     this.#combatSystem = new CombatAbilitySystem({
       actionLockMs: this.#actionLockMs,
       actors: this.#actors,
@@ -197,8 +214,10 @@ export class PrototypeScene extends Phaser.Scene {
     }
     if (this.#inputState.consume('restart-checkpoint')) this.#gameplay.restartCheckpoint();
     this.#playerMovement.update(deltaMs);
-    this.#enemySystem.update(this.#actors[this.#gameplay.getSnapshot().activeCat], deltaMs);
     const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
+    const hiding = this.#inputState.isPressed('move-down') && this.#insideCover(active.x, active.y);
+    this.#hidingStatus.setVisible(hiding);
+    this.#enemySystem.update(active, deltaMs, hiding);
     this.#levelMechanics.update(active, deltaMs);
 
     const snapshot = this.#gameplay.getSnapshot();
@@ -213,6 +232,16 @@ export class PrototypeScene extends Phaser.Scene {
     setCatPose(sprite, catId, 'idle');
     sprite.setScale(0.58).setSize(125, 120).setOffset(65, 105).setCollideWorldBounds(true);
     return sprite;
+  }
+
+  #insideCover(x: number, y: number): boolean {
+    return this.#level.coverZones.some(
+      (cover) =>
+        x >= cover.x - cover.width / 2 &&
+        x <= cover.x + cover.width / 2 &&
+        y >= cover.y - cover.height / 2 &&
+        y <= cover.y + cover.height / 2,
+    );
   }
 
   #switchCat(): void {
