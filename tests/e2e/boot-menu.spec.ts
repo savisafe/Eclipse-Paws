@@ -125,7 +125,7 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
     if (message.type() === 'error') errors.push(message.text());
   });
 
-  await page.goto('/?startNearCombat=1');
+  await page.goto('/?startNearCombat=1&heroLevel=2');
   await startGame(page);
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
@@ -136,8 +136,8 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
   await page.waitForTimeout(1_300);
   await page.keyboard.up('KeyD');
   await page.keyboard.press('Space');
-  await page.keyboard.press('KeyJ');
-  await page.keyboard.press('KeyF');
+  await page.keyboard.press('Digit1');
+  await page.keyboard.press('Digit2');
   await expect(page.locator('[aria-label^="luma-sky-lightning"]')).toHaveAttribute(
     'aria-label',
     /[1-3] сек\./,
@@ -145,7 +145,7 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
 
   await page.keyboard.press('Tab');
   await expect(page.locator('.hud-cat--nox')).toHaveAttribute('aria-current', 'true');
-  await page.keyboard.press('KeyQ');
+  await page.keyboard.press('Digit1');
 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Пауза' })).toBeVisible();

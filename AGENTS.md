@@ -1,0 +1,2 @@
+- файл сценария и источник истины `docs/ECLIPSE_PAWS_SCENARIO.md`
+- релиз план которому нужно следовать безусловно `docs/ECLIPSE_PAWS_RECONSTRUCTION_PLAN.md`

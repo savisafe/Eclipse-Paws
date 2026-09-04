@@ -14,6 +14,7 @@ export { EclipseMeter } from './eclipse-meter';
 export { enemyAiProfileForLevel, type EnemyAiProfile } from './enemy-ai-profile';
 export type {
   AbilityConfig,
+  AbilitySlot,
   AbilityUseResult,
   AttackResult,
   CatId,
@@ -25,6 +26,6 @@ export type {
   Phase,
   PrototypeContentConfig,
 } from './models';
-export { createDefaultHeroProgress } from './models';
+export { ABILITY_UNLOCK_LEVEL, createDefaultHeroProgress } from './models';
 export { PhaseCycle, type PhaseAdvanceResult } from './phase-cycle';
 export { SequencePuzzle, type SequenceResult } from './sequence-puzzle';

@@ -3,6 +3,7 @@ import { CooldownTracker } from './cooldown-tracker';
 import { EclipseMeter } from './eclipse-meter';
 import { powerModifierFor } from './combat-rules';
 import type { GameEvent } from './game-event';
+import { ABILITY_UNLOCK_LEVEL } from './models';
 import type {
   AbilityConfig,
   AttackResult,
@@ -85,6 +86,7 @@ export class GameSession {
 
   attack(enemyId: string, special = false): AttackResult | null {
     if (this.#paused) return null;
+    if (this.#heroLevel < ABILITY_UNLOCK_LEVEL[special ? 'special' : 'primary']) return null;
     const enemy = this.#enemies.find((candidate) => candidate.id === enemyId);
     if (!enemy || enemy.health <= 0) return null;
 
@@ -122,6 +124,7 @@ export class GameSession {
   }
 
   useSupport(): AbilityUseResult | null {
+    if (this.#heroLevel < ABILITY_UNLOCK_LEVEL.support) return null;
     const result = this.#useUtility(this.#content.supportAbilities[this.#activeCat], 6);
     if (result) {
       if (this.#bondHealth.current < this.#bondHealth.maximum) {
@@ -139,14 +142,8 @@ export class GameSession {
     return result;
   }
 
-  manualChangePhase(): boolean {
-    if (!this.#meter.spend(50)) return false;
-    const phase = this.#phaseCycle.changePhase();
-    this.#events.push({ type: 'PhaseChanged', phase });
-    return true;
-  }
-
   useUltimate(enemyIds: readonly string[]): boolean {
+    if (this.#heroLevel < ABILITY_UNLOCK_LEVEL.ultimate) return false;
     if (!this.#meter.spend(this.#meter.maximum)) return false;
     this.#shieldCharges = Math.max(1, this.#shieldCharges);
     enemyIds.forEach((enemyId) => {

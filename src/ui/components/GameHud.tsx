@@ -12,7 +12,6 @@ export function GameHud({ gameplay }: GameHudProps) {
   const seconds = Math.max(0, Math.ceil(snapshot.phaseRemainingMs / 1000));
   const enemiesRemaining = snapshot.enemies.filter((enemy) => enemy.health > 0).length;
   const dominantCat = dominantCatForPhase(snapshot.phase);
-  const lootTotal = Object.values(snapshot.loot).reduce((total, count) => total + count, 0);
 
   return (
     <header className="game-hud" aria-label="Игровой интерфейс">
@@ -56,7 +55,9 @@ export function GameHud({ gameplay }: GameHudProps) {
       <div className="eclipse-meter" aria-label={`Затмение: ${Math.round(snapshot.eclipseMeter)}%`}>
         <span style={{ width: `${snapshot.eclipseMeter}%` }} />
         <strong>
-          {snapshot.eclipseMeter >= snapshot.maxEclipseMeter ? 'X · ОБЪЯТИЕ' : 'R · 50%'}
+          {snapshot.eclipseMeter >= snapshot.maxEclipseMeter
+            ? 'X · ОБЪЯТИЕ'
+            : `${Math.round(snapshot.eclipseMeter)}%`}
         </strong>
       </div>
 
@@ -85,7 +86,6 @@ export function GameHud({ gameplay }: GameHudProps) {
           <span className="hero-progress__track" aria-hidden="true">
             <i style={{ width: `${(snapshot.heroXp / snapshot.heroXpToNext) * 100}%` }} />
           </span>
-          <small>Лут ✦ {lootTotal}</small>
         </div>
       </div>
 
@@ -94,7 +94,11 @@ export function GameHud({ gameplay }: GameHudProps) {
           Связь восстановлена у контрольной точки
         </p>
       ) : null}
-      <AbilityCooldowns activeCat={snapshot.activeCat} cooldowns={snapshot.cooldowns} />
+      <AbilityCooldowns
+        activeCat={snapshot.activeCat}
+        cooldowns={snapshot.cooldowns}
+        heroLevel={snapshot.heroLevel}
+      />
     </header>
   );
 }

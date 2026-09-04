@@ -79,6 +79,15 @@ export function createDefaultHeroProgress(): HeroProgress {
   };
 }
 
+export type AbilitySlot = 'primary' | 'special' | 'support' | 'ultimate';
+
+export const ABILITY_UNLOCK_LEVEL: Readonly<Record<AbilitySlot, number>> = {
+  primary: 1,
+  special: 2,
+  support: 3,
+  ultimate: 4,
+};
+
 export interface AttackResult {
   damage: number;
   defeated: boolean;

@@ -126,12 +126,6 @@ export class CombatAbilitySystem {
     this.#sfx.play(420, 320, 'sine');
   }
 
-  changePhase(): void {
-    if (!this.#gameplay.manualChangePhase()) return;
-    if (!this.#reducedMotion) this.#scene.cameras.main.flash(160, 210, 190, 255, false);
-    this.#sfx.play(320, 380, 'triangle');
-  }
-
   ultimate(): void {
     const targets = this.#enemies.targets();
     if (!this.#gameplay.useUltimate(targets.map((target) => target.id))) return;

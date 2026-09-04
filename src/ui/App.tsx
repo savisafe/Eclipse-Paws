@@ -33,6 +33,16 @@ function createCampaignGameplay(
   return new GameplayController(content, progress);
 }
 
+function devHeroLevelOverride(): number | null {
+  const requested = Number(new URLSearchParams(window.location.search).get('heroLevel'));
+  return import.meta.env.DEV && Number.isInteger(requested) && requested >= 1 ? requested : null;
+}
+
+function applyDevHeroLevelOverride(progress: HeroProgress): HeroProgress {
+  const level = devHeroLevelOverride();
+  return level === null ? progress : { ...progress, level };
+}
+
 function initialLevelFromLocation(): CampaignLevelId {
   const requested = new URLSearchParams(window.location.search).get('level');
   return import.meta.env.DEV &&
@@ -50,7 +60,9 @@ export function App() {
   );
   const [selectedLevel, setSelectedLevel] = useState<CampaignLevelId>(initialLevelFromLocation);
   const [unlockedLevels, setUnlockedLevels] = useState<CampaignLevelId[]>(['garden-first-dawn']);
-  const [heroProgress, setHeroProgress] = useState<HeroProgress>(createDefaultHeroProgress);
+  const [heroProgress, setHeroProgress] = useState<HeroProgress>(() =>
+    applyDevHeroLevelOverride(createDefaultHeroProgress()),
+  );
   const [gameplay, setGameplay] = useState(() =>
     createCampaignGameplay(initialLevelFromLocation()),
   );
@@ -70,7 +82,7 @@ export function App() {
       if (disposed) return;
       useSettingsStore.setState(save.settings);
       setUnlockedLevels(save.unlockedLevels as CampaignLevelId[]);
-      setHeroProgress(save.heroProgress);
+      setHeroProgress(applyDevHeroLevelOverride(save.heroProgress));
       unsubscribe = useSettingsStore.subscribe((settings) => {
         void progressService.saveSettings({
           effectsVolume: settings.effectsVolume,

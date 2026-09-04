@@ -97,7 +97,6 @@ export class PlatformerEnemySystem {
   readonly #ai: EnemyAiProfile;
   readonly #collectedDrops = new Set<string>();
   readonly #coverZones: readonly PlatformRect[];
-  readonly #drops = new Map<string, Phaser.GameObjects.Container>();
   readonly #enemies = new Map<string, EnemyView>();
   readonly #gameplay: GameplayController;
   readonly #hazards: readonly LevelPoint[];
@@ -197,7 +196,7 @@ export class PlatformerEnemySystem {
     this.#enemies.forEach((enemy) => {
       const state = states.get(enemy.id);
       if (!state || state.health <= 0) {
-        this.#updateLootDrop(enemy, targetCat);
+        this.#updateLootDrop(enemy);
         enemy.sprite.disableBody(true, true);
         enemy.healthBack.setVisible(false);
         enemy.healthFill.setVisible(false);
@@ -263,8 +262,6 @@ export class PlatformerEnemySystem {
   }
 
   reset(): void {
-    this.#drops.forEach((drop) => drop.destroy());
-    this.#drops.clear();
     this.#collectedDrops.clear();
     this.#enemies.forEach((enemy) => {
       enemy.cooldownMs = 800;
@@ -422,48 +419,10 @@ export class PlatformerEnemySystem {
     enemy.stuckMs = 0;
   }
 
-  #updateLootDrop(enemy: EnemyView, targetCat: Phaser.Physics.Arcade.Sprite): void {
+  #updateLootDrop(enemy: EnemyView): void {
     if (this.#collectedDrops.has(enemy.id)) return;
-    let drop = this.#drops.get(enemy.id);
-    if (!drop) {
-      const aura = this.#scene.add.circle(0, 0, 22, 0x8a65ef, 0.2).setStrokeStyle(2, 0xf3d884, 0.8);
-      const diamond = this.#scene.add
-        .polygon(0, 0, [0, -15, 11, 0, 0, 15, -11, 0], 0x80e8ff, 1)
-        .setStrokeStyle(2, 0xffffff, 0.9);
-      const spark = this.#scene.add.star(0, 0, 6, 5, 12, 0xffdc76, 0.85);
-      const beam = this.#scene.add
-        .rectangle(0, 18, 5, 74, 0x9ceeff, 0.22)
-        .setBlendMode(Phaser.BlendModes.ADD);
-      const label = this.#scene.add
-        .text(0, -36, 'ДОБЫЧА · коснись', {
-          color: '#fff0a6',
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '11px',
-          fontStyle: 'bold',
-          stroke: '#14132c',
-          strokeThickness: 4,
-        })
-        .setOrigin(0.5);
-      drop = this.#scene.add
-        .container(enemy.sprite.x, enemy.sprite.y - 10, [beam, aura, diamond, spark, label])
-        .setDepth(17);
-      this.#scene.tweens.add({
-        targets: drop,
-        y: drop.y - 12,
-        duration: 720,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.inOut',
-      });
-      this.#scene.tweens.add({ targets: diamond, angle: 360, duration: 1900, repeat: -1 });
-      this.#drops.set(enemy.id, drop);
-    }
-    if (Phaser.Math.Distance.Between(targetCat.x, targetCat.y, drop.x, drop.y) > 74) return;
     this.#gameplay.collectLoot(enemy.id);
     this.#collectedDrops.add(enemy.id);
-    this.#scene.tweens.killTweensOf(drop);
-    drop.destroy();
-    this.#drops.delete(enemy.id);
   }
 
   #updateHealthBar(enemy: EnemyView, health: number): void {

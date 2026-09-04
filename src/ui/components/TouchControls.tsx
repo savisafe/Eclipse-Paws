@@ -74,12 +74,6 @@ export function TouchControls({ inputState }: TouchControlsProps) {
           symbol="ϟ"
         />
         <TouchButton
-          action="change-phase"
-          inputState={inputState}
-          label="Сменить фазу"
-          symbol="☯"
-        />
-        <TouchButton
           action="ultimate"
           inputState={inputState}
           label="Объятие затмения"

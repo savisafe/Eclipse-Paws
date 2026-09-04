@@ -11,13 +11,25 @@ describe('GameSession', () => {
     expect(session.attack('spore-beast-1')?.damage).toBeCloseTo(3);
   });
 
-  it('uses stronger typed special abilities', () => {
-    const session = new GameSession(PROTOTYPE_CONTENT);
+  it('uses stronger typed special abilities once unlocked', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT, {
+      level: 2,
+      loot: { 'dawn-crystal': 0, 'moon-petal': 0, 'eclipse-ore': 0 },
+      xp: 0,
+    });
 
-    expect(session.attack('shadefang-1', true)?.damage).toBe(27);
+    expect(session.attack('shadefang-1', true)?.damage).toBeCloseTo(29.16);
     expect(session.drainEvents()).toContainEqual(
       expect.objectContaining({ type: 'AbilityUsed', abilityId: 'luma-sky-lightning' }),
     );
+  });
+
+  it('locks special, support and ultimate abilities until the hero levels up', () => {
+    const session = new GameSession(PROTOTYPE_CONTENT);
+
+    expect(session.attack('shadefang-1', true)).toBeNull();
+    expect(session.useSupport()).toBeNull();
+    expect(session.useUltimate(['shadefang-1'])).toBe(false);
   });
 
   it('enforces cooldowns before another attack', () => {
@@ -29,7 +41,7 @@ describe('GameSession', () => {
     expect(session.attack('shadefang-1')).not.toBeNull();
   });
 
-  it('fills the Eclipse meter and spends 50 on a manual phase change', () => {
+  it('fills the Eclipse meter from combat and only changes phase on its own timer', () => {
     const session = new GameSession(PROTOTYPE_CONTENT);
 
     for (const enemyId of ['shadefang-1', 'spore-beast-1']) {
@@ -40,13 +52,17 @@ describe('GameSession', () => {
     }
 
     expect(session.snapshot().eclipseMeter).toBeGreaterThanOrEqual(50);
-    expect(session.manualChangePhase()).toBe(true);
+    expect(session.snapshot().phase).toBe('day');
+    session.update(PROTOTYPE_CONTENT.phaseDurationMs);
     expect(session.snapshot().phase).toBe('night');
-    expect(session.snapshot().eclipseMeter).toBeLessThan(50);
   });
 
   it('uses a support shield before shared health', () => {
-    const session = new GameSession(PROTOTYPE_CONTENT);
+    const session = new GameSession(PROTOTYPE_CONTENT, {
+      level: 3,
+      loot: { 'dawn-crystal': 0, 'moon-petal': 0, 'eclipse-ore': 0 },
+      xp: 0,
+    });
 
     expect(session.useSupport()).not.toBeNull();
     expect(session.snapshot().shieldCharges).toBe(1);
@@ -58,7 +74,11 @@ describe('GameSession', () => {
   });
 
   it('uses the support ability as healing when bond health is missing', () => {
-    const session = new GameSession(PROTOTYPE_CONTENT);
+    const session = new GameSession(PROTOTYPE_CONTENT, {
+      level: 3,
+      loot: { 'dawn-crystal': 0, 'moon-petal': 0, 'eclipse-ore': 0 },
+      xp: 0,
+    });
     session.takeDamage(1);
 
     expect(session.snapshot().bondHealth).toBe(2);
@@ -71,7 +91,11 @@ describe('GameSession', () => {
   });
 
   it('spends a full meter on the shared Eclipse ultimate', () => {
-    const session = new GameSession(PROTOTYPE_CONTENT);
+    const session = new GameSession(PROTOTYPE_CONTENT, {
+      level: 4,
+      loot: { 'dawn-crystal': 0, 'moon-petal': 0, 'eclipse-ore': 0 },
+      xp: 0,
+    });
     const targets = ['shadefang-1', 'light-wisp-1', 'spore-beast-1', 'shadefang-2'];
 
     targets.forEach((enemyId) => {

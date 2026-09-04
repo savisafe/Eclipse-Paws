@@ -211,8 +211,7 @@ export class PrototypeScene extends Phaser.Scene {
         attacked: this.#inputState.isPressed('primary-ability'),
         interacted: this.#inputState.isPressed('interact'),
         jumped: this.#inputState.isPressed('jump'),
-        moved:
-          this.#inputState.isPressed('move-left') || this.#inputState.isPressed('move-right'),
+        moved: this.#inputState.isPressed('move-left') || this.#inputState.isPressed('move-right'),
         switched: this.#inputState.isPressed('switch-cat'),
       },
       tutorialActor,
@@ -222,7 +221,6 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.#inputState.consume('primary-ability')) this.#combatSystem.primary();
     if (this.#inputState.consume('special-ability')) this.#combatSystem.special();
     if (this.#inputState.consume('support-ability')) this.#combatSystem.support();
-    if (this.#inputState.consume('change-phase')) this.#combatSystem.changePhase();
     if (this.#inputState.consume('ultimate')) this.#combatSystem.ultimate();
     if (this.#inputState.consume('interact')) {
       const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
@@ -321,18 +319,13 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   #showProgressEvent(event: GameEvent): void {
-    const message =
-      event.type === 'HeroLevelUp'
-        ? `УРОВЕНЬ ${event.level} · СИЛА ПАРЫ ВОЗРОСЛА`
-        : event.type === 'LootCollected'
-          ? `ДОБЫЧА · ${event.kind === 'dawn-crystal' ? 'Кристалл зари' : event.kind === 'moon-petal' ? 'Лунный лепесток' : 'Руда затмения'}`
-          : null;
-    if (!message) return;
+    if (event.type !== 'HeroLevelUp') return;
+    const message = `УРОВЕНЬ ${event.level} · СИЛА ПАРЫ ВОЗРОСЛА`;
     const label = this.add
-      .text(640, event.type === 'HeroLevelUp' ? 190 : 245, message, {
-        color: event.type === 'HeroLevelUp' ? '#ffe291' : '#91f3ef',
+      .text(640, 190, message, {
+        color: '#ffe291',
         fontFamily: 'system-ui, sans-serif',
-        fontSize: event.type === 'HeroLevelUp' ? '25px' : '17px',
+        fontSize: '25px',
         fontStyle: 'bold',
         stroke: '#17152f',
         strokeThickness: 6,

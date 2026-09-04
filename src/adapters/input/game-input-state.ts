@@ -6,7 +6,6 @@ const ONE_SHOT_ACTIONS = new Set<GameAction>([
   'jump',
   'support-ability',
   'interact',
-  'change-phase',
   'switch-cat',
   'restart-checkpoint',
   'ultimate',

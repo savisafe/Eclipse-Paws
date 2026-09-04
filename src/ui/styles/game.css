@@ -218,6 +218,12 @@
   color: #fff;
 }
 
+.ability-chip.is-locked {
+  color: rgb(23 22 55 / 55%);
+  background: rgb(255 255 255 / 35%);
+  font-size: 0.5rem;
+}
+
 .hud-status {
   display: grid;
   justify-items: end;

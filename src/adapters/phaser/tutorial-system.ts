@@ -11,7 +11,7 @@ export interface TutorialSignals {
 const STEPS = [
   '1/5 · ДВИЖЕНИЕ\nA / D или ◀ / ▶',
   '2/5 · ПРЫЖОК\nSPACE / W или ▲',
-  '3/5 · АТАКА\nJ или ✦',
+  '3/5 · АТАКА\n1 или ✦',
   '4/5 · СМЕНА КОТА\nTAB или ↔',
   '5/5 · ПЕРВАЯ ПЕЧАТЬ\nПодойди к руне 1 и нажми E',
 ] as const;
@@ -28,9 +28,7 @@ export class TutorialSystem {
     const backdrop = scene.add
       .rectangle(0, 0, 310, 76, 0x111633, 0.94)
       .setStrokeStyle(3, 0x80e9e2, 0.82);
-    const icon = scene.add
-      .circle(-126, 0, 23, 0x2d315d, 1)
-      .setStrokeStyle(3, 0xffd873, 0.9);
+    const icon = scene.add.circle(-126, 0, 23, 0x2d315d, 1).setStrokeStyle(3, 0xffd873, 0.9);
     const paw = scene.add
       .text(-126, -1, '✦', {
         color: '#ffe49a',

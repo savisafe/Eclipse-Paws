@@ -76,13 +76,6 @@ export class GameplayController {
     return result !== null;
   }
 
-  manualChangePhase(): boolean {
-    const changed = this.#session.manualChangePhase();
-    this.#flushEvents();
-    this.#publish();
-    return changed;
-  }
-
   useUltimate(enemyIds: readonly string[]): boolean {
     const used = this.#session.useUltimate(enemyIds);
     this.#flushEvents();
