@@ -38,25 +38,6 @@ export const PROTOTYPE_SPECIAL_ABILITIES: Readonly<Record<CatId, AbilityConfig>>
   },
 };
 
-export const PROTOTYPE_MOBILITY_ABILITIES: Readonly<Record<CatId, AbilityConfig>> = {
-  luma: {
-    id: 'luma-solar-dash',
-    owner: 'luma',
-    baseDamage: 0,
-    cooldownMs: 1500,
-    effect: 'solar-dash',
-    range: 230,
-  },
-  nox: {
-    id: 'nox-shadow-step',
-    owner: 'nox',
-    baseDamage: 0,
-    cooldownMs: 1500,
-    effect: 'shadow-step',
-    range: 230,
-  },
-};
-
 export const PROTOTYPE_SUPPORT_ABILITIES: Readonly<Record<CatId, AbilityConfig>> = {
   luma: {
     id: 'luma-purring-shield',

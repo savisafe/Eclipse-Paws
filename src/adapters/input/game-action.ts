@@ -6,7 +6,6 @@ export type GameAction =
   | 'jump'
   | 'primary-ability'
   | 'special-ability'
-  | 'mobility-ability'
   | 'support-ability'
   | 'interact'
   | 'change-phase'

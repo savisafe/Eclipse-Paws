@@ -9,8 +9,6 @@ export interface AbilityConfig {
     | 'lightning'
     | 'shadow-spikes'
     | 'twilight-claw'
-    | 'solar-dash'
-    | 'shadow-step'
     | 'purring-shield'
     | 'shadow-decoy';
   id: string;
@@ -37,7 +35,6 @@ export interface PrototypeContentConfig {
   abilities: Readonly<Record<CatId, AbilityConfig>>;
   enemies: readonly EnemyState[];
   enemyTypes: Readonly<Record<string, EnemyConfig>>;
-  mobilityAbilities: Readonly<Record<CatId, AbilityConfig>>;
   phaseDurationMs: number;
   specialAbilities: Readonly<Record<CatId, AbilityConfig>>;
   supportAbilities: Readonly<Record<CatId, AbilityConfig>>;

@@ -20,7 +20,6 @@ const KEY_ACTIONS: Readonly<Record<string, GameAction>> = {
   KeyS: 'move-down',
   KeyW: 'jump',
   Space: 'jump',
-  ShiftLeft: 'mobility-ability',
   Tab: 'switch-cat',
 };
 

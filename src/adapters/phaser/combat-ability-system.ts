@@ -87,16 +87,6 @@ export class CombatAbilitySystem {
     void this.#haptics.impact('medium');
   }
 
-  mobility(): void {
-    if (!this.#gameplay.useMobility()) return;
-    const catId = this.#activeCat();
-    const actor = this.#actors[catId];
-    actor.setVelocityX(this.#facing[catId] * 690).setAlpha(0.55);
-    this.#actionLockMs[catId] = 180;
-    this.#scene.tweens.add({ targets: actor, alpha: 1, duration: 180 });
-    this.#sfx.play(catId === 'luma' ? 740 : 130, 140, 'triangle');
-  }
-
   support(): void {
     const healthBefore = this.#gameplay.getSnapshot().bondHealth;
     if (!this.#gameplay.useSupport()) return;

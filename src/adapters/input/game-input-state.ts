@@ -4,7 +4,6 @@ const ONE_SHOT_ACTIONS = new Set<GameAction>([
   'primary-ability',
   'special-ability',
   'jump',
-  'mobility-ability',
   'support-ability',
   'interact',
   'change-phase',

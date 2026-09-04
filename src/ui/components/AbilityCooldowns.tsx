@@ -1,6 +1,5 @@
 import {
   PROTOTYPE_ABILITIES,
-  PROTOTYPE_MOBILITY_ABILITIES,
   PROTOTYPE_SPECIAL_ABILITIES,
   PROTOTYPE_SUPPORT_ABILITIES,
 } from '@content/index';
@@ -11,12 +10,11 @@ interface AbilityCooldownsProps {
   cooldowns: GameplaySnapshot['cooldowns'];
 }
 
-const SLOT_LABELS = ['J', 'Shift', 'Q', 'F'] as const;
+const SLOT_LABELS = ['J', 'Q', 'F'] as const;
 
 export function AbilityCooldowns({ activeCat, cooldowns }: AbilityCooldownsProps) {
   const abilities = [
     PROTOTYPE_ABILITIES[activeCat],
-    PROTOTYPE_MOBILITY_ABILITIES[activeCat],
     PROTOTYPE_SUPPORT_ABILITIES[activeCat],
     PROTOTYPE_SPECIAL_ABILITIES[activeCat],
   ];

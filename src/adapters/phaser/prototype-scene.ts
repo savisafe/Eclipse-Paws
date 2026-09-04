@@ -25,6 +25,7 @@ import { TagSwitchSystem } from './tag-switch-system';
 import { preloadGardenEnemyAtlas, prepareGardenEnemyAtlas } from './garden-enemy-atlas';
 import { preloadStage4EnemyAtlas, prepareStage4EnemyAtlas } from './stage4-enemy-atlas';
 import { preloadStage5EnemyAtlas, prepareStage5EnemyAtlas } from './stage5-enemy-atlas';
+import { TutorialSystem } from './tutorial-system';
 
 const FIXED_STEP_MS = 1000 / 60;
 
@@ -70,6 +71,7 @@ export class PrototypeScene extends Phaser.Scene {
   #selection!: Phaser.GameObjects.Ellipse;
   #switching = false;
   #tagSwitchSystem!: TagSwitchSystem;
+  #tutorialSystem: TutorialSystem | null = null;
   #unsubscribeEvents?: () => void;
 
   constructor(options: PrototypeSceneOptions) {
@@ -143,6 +145,9 @@ export class PrototypeScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(35)
       .setVisible(false);
+    if (this.#level.index === 1 && !this.#startNearCombat && !this.#startNearFinish) {
+      this.#tutorialSystem = new TutorialSystem(this, this.#reducedMotion);
+    }
     this.#combatSystem = new CombatAbilitySystem({
       actionLockMs: this.#actionLockMs,
       actors: this.#actors,
@@ -200,11 +205,22 @@ export class PrototypeScene extends Phaser.Scene {
 
   #fixedUpdate(deltaMs: number): void {
     this.#gameplay.tick(deltaMs);
+    const tutorialActor = this.#actors[this.#gameplay.getSnapshot().activeCat];
+    this.#tutorialSystem?.observe(
+      {
+        attacked: this.#inputState.isPressed('primary-ability'),
+        interacted: this.#inputState.isPressed('interact'),
+        jumped: this.#inputState.isPressed('jump'),
+        moved:
+          this.#inputState.isPressed('move-left') || this.#inputState.isPressed('move-right'),
+        switched: this.#inputState.isPressed('switch-cat'),
+      },
+      tutorialActor,
+    );
     if (this.#inputState.consume('switch-cat') && !this.#switching) this.#switchCat();
     if (this.#switching) return;
     if (this.#inputState.consume('primary-ability')) this.#combatSystem.primary();
     if (this.#inputState.consume('special-ability')) this.#combatSystem.special();
-    if (this.#inputState.consume('mobility-ability')) this.#combatSystem.mobility();
     if (this.#inputState.consume('support-ability')) this.#combatSystem.support();
     if (this.#inputState.consume('change-phase')) this.#combatSystem.changePhase();
     if (this.#inputState.consume('ultimate')) this.#combatSystem.ultimate();

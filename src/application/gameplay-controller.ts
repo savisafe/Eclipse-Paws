@@ -69,13 +69,6 @@ export class GameplayController {
     return result;
   }
 
-  useMobility(): boolean {
-    const result = this.#session.useMobility();
-    this.#flushEvents();
-    this.#publish();
-    return result !== null;
-  }
-
   useSupport(): boolean {
     const result = this.#session.useSupport();
     this.#flushEvents();

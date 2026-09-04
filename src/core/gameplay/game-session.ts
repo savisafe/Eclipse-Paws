@@ -121,10 +121,6 @@ export class GameSession {
     return { damage, defeated, enemyId };
   }
 
-  useMobility(): AbilityUseResult | null {
-    return this.#useUtility(this.#content.mobilityAbilities[this.#activeCat], 3);
-  }
-
   useSupport(): AbilityUseResult | null {
     const result = this.#useUtility(this.#content.supportAbilities[this.#activeCat], 6);
     if (result) {

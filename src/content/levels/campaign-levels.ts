@@ -1,7 +1,6 @@
 import type { PrototypeContentConfig } from '@core/index';
 import {
   PROTOTYPE_ABILITIES,
-  PROTOTYPE_MOBILITY_ABILITIES,
   PROTOTYPE_SPECIAL_ABILITIES,
   PROTOTYPE_SUPPORT_ABILITIES,
 } from '../abilities/prototype-abilities';
@@ -383,7 +382,6 @@ export function createLevelContent(levelId: CampaignLevelId): PrototypeContentCo
   const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES };
   return {
     abilities: PROTOTYPE_ABILITIES,
-    mobilityAbilities: PROTOTYPE_MOBILITY_ABILITIES,
     supportAbilities: PROTOTYPE_SUPPORT_ABILITIES,
     specialAbilities: PROTOTYPE_SPECIAL_ABILITIES,
     phaseDurationMs: level.phaseDurationMs,

@@ -320,22 +320,6 @@
   font-weight: 850;
 }
 
-.control-hint {
-  position: absolute;
-  z-index: 12;
-  bottom: max(0.8rem, env(safe-area-inset-bottom));
-  left: 50%;
-  width: max-content;
-  max-width: calc(100vw - 2rem);
-  padding: 0.5rem 0.8rem;
-  translate: -50% 0;
-  border-radius: 999px;
-  color: #e9e9fa;
-  background: rgb(17 19 47 / 82%);
-  font-size: clamp(0.65rem, 1.4vw, 0.78rem);
-  text-align: center;
-}
-
 .dialogue-overlay {
   position: fixed;
   z-index: 24;
@@ -586,10 +570,6 @@
 @media (pointer: coarse), (max-width: 760px) {
   .touch-controls {
     display: flex;
-  }
-
-  .control-hint {
-    display: none;
   }
 
   .dialogue-overlay {

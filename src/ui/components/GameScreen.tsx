@@ -51,10 +51,6 @@ export function GameScreen({
       />
       <GameHud gameplay={gameplay} />
       <DialogueOverlay levelId={level.id} reducedMotion={reducedMotion} />
-      <div className="control-hint" aria-hidden="true">
-        A/D — бег · Space — прыжок · S — укрытие · J — атака · Shift — рывок · Q — лечение/щит · F —
-        магия · R — фаза · X — приём
-      </div>
       <TouchControls inputState={inputState} />
       <div className="orientation-hint" role="status">
         ↻ Поверните устройство горизонтально для лучшего обзора
