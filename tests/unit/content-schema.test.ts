@@ -38,6 +38,7 @@ describe('content schema validation (ARC-002)', () => {
           abilities: {
             luma: {
               id: 'a',
+              name: 'Оглушающий крик',
               owner: 'luma',
               baseDamage: 1,
               cooldownMs: 100,
@@ -82,6 +83,7 @@ describe('content schema validation (ARC-002)', () => {
           abilities: {
             luma: {
               id: 'a',
+              name: 'Оглушающий крик',
               owner: 'luma',
               baseDamage: -1,
               cooldownMs: 100,

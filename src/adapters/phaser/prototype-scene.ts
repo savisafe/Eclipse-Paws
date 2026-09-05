@@ -229,7 +229,7 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.#inputState.consume('primary-ability')) this.#combatSystem.primary();
     if (this.#inputState.consume('special-ability')) this.#combatSystem.special();
     if (this.#inputState.consume('support-ability')) this.#combatSystem.support();
-    if (this.#inputState.consume('ultimate')) this.#combatSystem.ultimate();
+    if (this.#inputState.consume('ultimate')) this.#combatSystem.eclipse();
     if (this.#inputState.consume('interact')) {
       const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
       this.#levelMechanics.interact(active);
@@ -238,12 +238,19 @@ export class PrototypeScene extends Phaser.Scene {
     this.#playerMovement.update(deltaMs);
     this.#companionSystem.update(deltaMs);
     const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
-    const hiding = this.#inputState.isPressed('move-down') && this.#insideCover(active.x, active.y);
-    this.#hidingStatus.setVisible(hiding);
+    const snapshot = this.#gameplay.getSnapshot();
+    // Теневой покров hides both cats anywhere for a few seconds; crouching in a cover zone stays
+    // the always-available alternative (§12).
+    const veiled = snapshot.shadowVeilMs > 0;
+    const hiding =
+      veiled || (this.#inputState.isPressed('move-down') && this.#insideCover(active.x, active.y));
+    this.#hidingStatus
+      .setText(veiled ? 'ТЕНЕВОЙ ПОКРОВ · сон не видит вас' : 'УКРЫТИЕ · враги потеряли след')
+      .setVisible(hiding);
     this.#enemySystem.update(active, deltaMs, hiding);
     this.#levelMechanics.update(active, deltaMs);
+    this.#levelMechanics.setEclipse(snapshot.eclipseActiveMs > 0);
 
-    const snapshot = this.#gameplay.getSnapshot();
     if (snapshot.phase !== this.#lastPhase) this.#applyPhase(snapshot.phase);
     if (snapshot.checkpointRestartCount !== this.#lastRestartCount) this.#resetWorld();
   }

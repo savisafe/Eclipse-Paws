@@ -195,10 +195,29 @@
 
 .ability-cooldowns {
   position: fixed;
-  top: max(4.1rem, calc(env(safe-area-inset-top) + 4.1rem));
+  /* Sits below the in-canvas level title and objective lines (drawn at y=70/105 of the fixed
+     1280x720 scene, so they can never reach further down than this). */
+  top: max(8.2rem, calc(env(safe-area-inset-top) + 8.2rem));
   left: max(0.8rem, env(safe-area-inset-left));
   display: flex;
   gap: 0.35rem;
+}
+
+.ability-slot {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  width: 5rem;
+}
+
+/* Canon ability names from ECLIPSE_PAWS_SCENARIO.md §12 sit under the key the player presses. */
+.ability-slot__name {
+  color: rgb(255 246 219 / 88%);
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 1px 2px rgb(12 10 32 / 80%);
 }
 
 .ability-chip {
@@ -644,11 +663,19 @@
   }
 
   .ability-cooldowns {
-    top: max(3.5rem, calc(env(safe-area-inset-top) + 3.5rem));
+    top: max(7rem, calc(env(safe-area-inset-top) + 7rem));
   }
 
   .ability-chip {
     width: 1.9rem;
+  }
+
+  .ability-slot {
+    width: 4rem;
+  }
+
+  .ability-slot__name {
+    font-size: 0.5rem;
   }
 
   .hud-status {

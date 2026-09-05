@@ -3,6 +3,7 @@ import type { GameplayController } from '@application/index';
 import type { LevelPoint, PlatformRect } from '@content/index';
 import {
   canEnemyDetectTarget,
+  ECLIPSE_SLOW_FACTOR,
   enemyAiProfileForLevel,
   isHazardAhead,
   isStrikeHit,
@@ -201,7 +202,11 @@ export class PlatformerEnemySystem implements Destroyable {
 
   update(targetCat: Phaser.Physics.Arcade.Sprite, deltaMs: number, hiding = false): void {
     const concealed = isTargetConcealed(targetCat.x, targetCat.y, this.#coverZones, hiding);
-    const states = new Map(this.#gameplay.getSnapshot().enemies.map((enemy) => [enemy.id, enemy]));
+    const snapshot = this.#gameplay.getSnapshot();
+    const states = new Map(snapshot.enemies.map((enemy) => [enemy.id, enemy]));
+    const stunned = new Set(snapshot.stunnedEnemyIds);
+    // Затмение slows the sleep's creatures instead of damaging them (§12).
+    const speedFactor = snapshot.eclipseActiveMs > 0 ? ECLIPSE_SLOW_FACTOR : 1;
     this.#enemies.forEach((enemy) => {
       const state = states.get(enemy.id);
       if (!state || state.health <= 0) {
@@ -215,6 +220,18 @@ export class PlatformerEnemySystem implements Destroyable {
         enemy.sprite.enableBody(true, enemy.spawn.x, enemy.spawn.y, true, true);
       this.#updateHealthBar(enemy, state.health);
       if (enemy.sprite.y > 790) this.#recoverFallenEnemy(enemy);
+      // Оглушающий крик buys a safe window: a stunned enemy holds still and drops its telegraph
+      // instead of resolving the strike (§12).
+      if (stunned.has(enemy.id)) {
+        enemy.telegraphMs = 0;
+        enemy.cooldownMs = Math.max(enemy.cooldownMs, 220);
+        enemy.sprite
+          .setVelocity(0, enemy.config.movement === 'flying' ? 0 : enemy.sprite.body!.velocity.y)
+          .setTint(0x8fd7ff);
+        enemy.sprite.anims.stop();
+        return;
+      }
+      if (enemy.sprite.tintTopLeft === 0x8fd7ff) enemy.sprite.clearTint();
       enemy.cooldownMs = Math.max(0, enemy.cooldownMs - deltaMs);
       enemy.jumpCooldownMs = Math.max(0, enemy.jumpCooldownMs - deltaMs);
       const targetBody = arcadeBody(targetCat);
@@ -247,14 +264,14 @@ export class PlatformerEnemySystem implements Destroyable {
             enemy.sprite,
             predictedX,
             targetCat.y + targetBody.velocity.y * this.#ai.predictionSeconds,
-            enemy.config.speed,
+            enemy.config.speed * speedFactor,
           );
         } else {
           this.#scene.physics.moveTo(
             enemy.sprite,
             enemy.spawn.x,
             enemy.spawn.y,
-            enemy.config.speed * 0.55,
+            enemy.config.speed * 0.55 * speedFactor,
           );
         }
         enemy.sprite.setFlipX(dx < 0);
@@ -265,6 +282,7 @@ export class PlatformerEnemySystem implements Destroyable {
           targetCat.y,
           canDetectTarget && distance <= this.#ai.aggressionRange,
           deltaMs,
+          speedFactor,
         );
       }
     });
@@ -304,6 +322,7 @@ export class PlatformerEnemySystem implements Destroyable {
     targetY: number,
     aggressive: boolean,
     deltaMs: number,
+    speedFactor = 1,
   ): void {
     const body = arcadeBody(enemy.sprite);
     if (!body.blocked.down && !body.touching.down) {
@@ -370,7 +389,9 @@ export class PlatformerEnemySystem implements Destroyable {
       if (!(aggressive && this.#ai.canDropFromLedges && targetBelow)) enemy.direction *= -1;
     }
     this.#playMove(enemy);
-    enemy.sprite.setVelocityX(enemy.direction * enemy.config.speed).setFlipX(enemy.direction < 0);
+    enemy.sprite
+      .setVelocityX(enemy.direction * enemy.config.speed * speedFactor)
+      .setFlipX(enemy.direction < 0);
   }
 
   #jump(enemy: EnemyView, direction: number, heightMultiplier = 1): void {

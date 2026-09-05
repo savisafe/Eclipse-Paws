@@ -10,6 +10,8 @@ interface BridgeView {
 
 export class PhaseBridgeSystem {
   readonly #bridges: BridgeView[];
+  #eclipse = false;
+  #phase: Phase = 'day';
 
   constructor(
     scene: Phaser.Scene,
@@ -33,10 +35,25 @@ export class PhaseBridgeSystem {
   }
 
   update(phase: Phase): void {
+    this.#phase = phase;
+    this.#refresh();
+  }
+
+  // Затмение (§12): "скрытые элементы обеих фаз видны одновременно" — during the twilight window
+  // both the day and the night geometry is solid and visible at once.
+  setEclipse(active: boolean): void {
+    if (this.#eclipse === active) return;
+    this.#eclipse = active;
+    this.#refresh();
+  }
+
+  #refresh(): void {
     this.#bridges.forEach((bridge) => {
-      const active = bridge.requiredPhase === phase;
+      const active = this.#eclipse || bridge.requiredPhase === this.#phase;
       bridge.body.enable = active;
-      bridge.view.setAlpha(active ? 0.92 : 0.12);
+      bridge.view.setAlpha(
+        bridge.requiredPhase === this.#phase ? 0.92 : this.#eclipse ? 0.66 : 0.12,
+      );
     });
   }
 }

@@ -3,7 +3,12 @@ import { CooldownTracker } from './abilities/cooldown-tracker';
 import { EclipseMeter } from './abilities/eclipse-meter';
 import { powerModifierFor } from './combat/combat-rules';
 import type { GameEvent } from './events/game-event';
-import { ABILITY_UNLOCK_LEVEL } from './models';
+import {
+  ABILITY_UNLOCK_LEVEL,
+  ECLIPSE_DURATION_MS,
+  SHADOW_VEIL_DURATION_MS,
+  STUN_DURATION_MS,
+} from './models';
 import type {
   AbilityConfig,
   AttackResult,
@@ -31,6 +36,10 @@ export class GameSession {
   #elapsedMs = 0;
   #paused = false;
   #shieldCharges = 0;
+  #eclipseActiveMs = 0;
+  #invulnerableMs = 0;
+  #shadowVeilMs = 0;
+  readonly #stuns = new Map<string, number>();
   readonly #sparks = new Set<string>();
   #heroLevel: number;
   #heroXp: number;
@@ -64,8 +73,11 @@ export class GameSession {
       paused: this.#paused,
       phase: this.#phaseCycle.phase,
       phaseRemainingMs: this.#phaseCycle.remainingMs,
+      eclipseActiveMs: this.#eclipseActiveMs,
+      shadowVeilMs: this.#shadowVeilMs,
       shieldCharges: this.#shieldCharges,
       sparksCollected: this.#sparks.size,
+      stunnedEnemyIds: [...this.#stuns.keys()],
       totalSparks: 3,
     };
   }
@@ -74,6 +86,7 @@ export class GameSession {
     if (this.#paused) return;
     this.#elapsedMs += deltaMs;
     this.#cooldowns.update(deltaMs);
+    this.#advanceTimers(deltaMs);
     const result = this.#phaseCycle.advance(deltaMs);
     if (result.changed) this.#events.push({ type: 'PhaseChanged', phase: result.phase });
   }
@@ -119,15 +132,45 @@ export class GameSession {
       );
     }
     this.#meter.gain((special ? 12 : 8) + (defeated ? 15 : 0));
+    // "Теневой покров ... исчезает при агрессивном действии" (§12).
+    this.#shadowVeilMs = 0;
 
     return { damage, defeated, enemyId };
+  }
+
+  // Оглушающий крик: "Атака не наносит большой урон: её задача — создать безопасное окно"
+  // (§12). The shout's damage goes through `attack()`; this is the control half of it.
+  stunEnemies(enemyIds: readonly string[], durationMs = STUN_DURATION_MS): readonly string[] {
+    if (this.#paused) return [];
+    const stunned = enemyIds.filter((enemyId) => {
+      const enemy = this.#enemies.find((candidate) => candidate.id === enemyId);
+      return Boolean(enemy) && enemy!.health > 0;
+    });
+    stunned.forEach((enemyId) => {
+      this.#stuns.set(enemyId, Math.max(this.#stuns.get(enemyId) ?? 0, durationMs));
+    });
+    if (stunned.length > 0) this.#events.push({ type: 'EnemiesStunned', enemyIds: stunned });
+    return stunned;
+  }
+
+  // Теневой наскок: "Во время движения он неуязвим" (§12).
+  grantInvulnerability(durationMs: number): void {
+    this.#invulnerableMs = Math.max(this.#invulnerableMs, durationMs);
+  }
+
+  isEnemyStunned(enemyId: string): boolean {
+    return (this.#stuns.get(enemyId) ?? 0) > 0;
   }
 
   useSupport(): AbilityUseResult | null {
     if (this.#heroLevel < ABILITY_UNLOCK_LEVEL.support) return null;
     const result = this.#useUtility(this.#content.supportAbilities[this.#activeCat], 6);
     if (result) {
-      if (this.#bondHealth.current < this.#bondHealth.maximum) {
+      // Теневой покров hides both cats instead of healing; Световой круг keeps the protective
+      // shield/heal behaviour.
+      if (this.#activeCat === 'nox') {
+        this.#shadowVeilMs = SHADOW_VEIL_DURATION_MS;
+      } else if (this.#bondHealth.current < this.#bondHealth.maximum) {
         const before = this.#bondHealth.current;
         const remainingHealth = this.#bondHealth.heal(1);
         this.#events.push({
@@ -142,16 +185,14 @@ export class GameSession {
     return result;
   }
 
-  useUltimate(enemyIds: readonly string[]): boolean {
+  // Затмение (§12): "не является кнопкой массового уничтожения". It spends the full bond meter
+  // to open a twilight window — enemies slow down and both phases are visible at once — and
+  // deals no damage at all.
+  useEclipse(): boolean {
     if (this.#heroLevel < ABILITY_UNLOCK_LEVEL.ultimate) return false;
     if (!this.#meter.spend(this.#meter.maximum)) return false;
-    this.#shieldCharges = Math.max(1, this.#shieldCharges);
-    enemyIds.forEach((enemyId) => {
-      const enemy = this.#enemies.find((candidate) => candidate.id === enemyId);
-      if (!enemy || enemy.health <= 0) return;
-      enemy.health = Math.max(0, enemy.health - 30);
-      if (enemy.health === 0) this.#events.push({ type: 'EnemyDefeated', enemyId });
-    });
+    this.#eclipseActiveMs = ECLIPSE_DURATION_MS;
+    this.#events.push({ type: 'EclipseStarted', durationMs: ECLIPSE_DURATION_MS });
     return true;
   }
 
@@ -178,6 +219,7 @@ export class GameSession {
 
   takeDamage(amount: number): boolean {
     if (this.#paused) return false;
+    if (this.#invulnerableMs > 0) return false;
     if (this.#shieldCharges > 0) {
       this.#shieldCharges -= 1;
       this.#events.push({
@@ -205,6 +247,10 @@ export class GameSession {
   restartCheckpoint(): void {
     this.#bondHealth.restore();
     this.#enemies = this.#createEnemyStates();
+    this.#stuns.clear();
+    this.#eclipseActiveMs = 0;
+    this.#invulnerableMs = 0;
+    this.#shadowVeilMs = 0;
     this.#checkpointRestartCount += 1;
     this.#events.push({
       type: 'CheckpointRestarted',
@@ -221,6 +267,17 @@ export class GameSession {
 
   drainEvents(): readonly GameEvent[] {
     return this.#events.splice(0);
+  }
+
+  #advanceTimers(deltaMs: number): void {
+    this.#eclipseActiveMs = Math.max(0, this.#eclipseActiveMs - deltaMs);
+    this.#invulnerableMs = Math.max(0, this.#invulnerableMs - deltaMs);
+    this.#shadowVeilMs = Math.max(0, this.#shadowVeilMs - deltaMs);
+    this.#stuns.forEach((remainingMs, enemyId) => {
+      const next = remainingMs - deltaMs;
+      if (next <= 0) this.#stuns.delete(enemyId);
+      else this.#stuns.set(enemyId, next);
+    });
   }
 
   #useUtility(ability: AbilityConfig, meterGain: number): AbilityUseResult | null {

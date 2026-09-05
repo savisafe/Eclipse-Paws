@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
-import { PROTOTYPE_ABILITIES, PROTOTYPE_SPECIAL_ABILITIES } from '@content/index';
+import { PRIMARY_ABILITIES, SPECIAL_ABILITIES } from '@content/index';
 import { dominantCatForPhase, type CatId } from '@core/index';
 import { ATLAS_TEXTURE_KEY, EFFECT_FRAMES } from './sprite-atlas';
+
+// Kept in the adapter: it is a feel/animation length, not a rule the core needs to know about.
+const DASH_INVULNERABILITY_MS = 320;
 
 export interface EffectTarget {
   id: string;
@@ -88,59 +91,126 @@ function showHitFeedback(
   });
 }
 
-export function playPrimaryAttack(
+// Оглушающий крик (§12): a shout that briefly stuns everyone nearby and deals little damage —
+// its job is to open a safe window, wake sleeping plants and trigger sound mechanisms.
+export function playStunningShout(
   scene: Phaser.Scene,
   gameplay: GameplayController,
   actor: Phaser.Physics.Arcade.Sprite,
-  catId: CatId,
-  facing: number,
+  reducedMotion: boolean,
   targets: readonly EffectTarget[],
-  _reducedMotion = false,
 ): void {
-  const config = PROTOTYPE_ABILITIES[catId];
-  const empowered = dominantCatForPhase(gameplay.getSnapshot().phase) === catId;
-  const graphics = scene.add.graphics().setDepth(12);
-  const color = catId === 'luma' ? 0xffe38a : 0x9b67ef;
-  graphics.lineStyle(catId === 'luma' ? 12 : 18, color, empowered ? 0.95 : 0.28);
-  graphics.beginPath();
-  graphics.arc(
-    actor.x + facing * 52,
-    actor.y,
-    48,
-    facing > 0 ? -0.9 : 2.2,
-    facing > 0 ? 0.9 : 4.05,
-  );
-  graphics.strokePath();
-  fadeGraphics(scene, graphics, _reducedMotion ? 1 : 180);
+  const config = PRIMARY_ABILITIES.luma;
+  const empowered = dominantCatForPhase(gameplay.getSnapshot().phase) === 'luma';
+  const ring = scene.add
+    .circle(actor.x, actor.y - 10, config.range * 0.35, 0xffe38a, 0)
+    .setStrokeStyle(9, 0xffe9a8, empowered ? 0.95 : 0.45)
+    .setDepth(12);
+  scene.tweens.add({
+    targets: ring,
+    scale: 2.6,
+    alpha: 0,
+    duration: reducedMotion ? 1 : 320,
+    onComplete: () => ring.destroy(),
+  });
 
-  const target = targetsInFront(actor, targets, facing, config.range)[0];
-  if (target) {
-    const result = gameplay.attackEnemy(target.id);
-    if (result) showHitFeedback(scene, target, result.damage, empowered);
-  }
+  const inRange = targetsInRadius(actor, targets, config.range);
+  if (inRange.length === 0) return;
+  gameplay.stunEnemies(inRange.map((target) => target.id));
+  inRange.forEach((target) => showStunMark(scene, target, reducedMotion));
+  const nearest = inRange[0]!;
+  const result = gameplay.attackEnemy(nearest.id);
+  if (result) showHitFeedback(scene, nearest, result.damage, empowered);
 }
 
-function drawLightning(
+function showStunMark(scene: Phaser.Scene, target: EffectTarget, reducedMotion: boolean): void {
+  const mark = scene.add
+    .text(target.sprite.x, target.sprite.y - 84, '✷', {
+      color: '#ffe9a8',
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '26px',
+      fontStyle: 'bold',
+      stroke: '#17152f',
+      strokeThickness: 4,
+    })
+    .setOrigin(0.5)
+    .setDepth(21);
+  scene.tweens.add({
+    targets: mark,
+    angle: reducedMotion ? 0 : 30,
+    alpha: 0,
+    duration: reducedMotion ? 1 : 900,
+    onComplete: () => mark.destroy(),
+  });
+}
+
+// Теневой наскок (§12): Нокс переносится к отмеченной цели, наносит удар и возвращается в
+// исходную точку; во время движения он неуязвим. The return is instant, so the strike is drawn
+// as a shadow streak out and back rather than by moving the physics body away from the player.
+export function playShadowDash(
+  scene: Phaser.Scene,
+  gameplay: GameplayController,
+  actor: Phaser.Physics.Arcade.Sprite,
+  facing: number,
+  targets: readonly EffectTarget[],
+  reducedMotion = false,
+): boolean {
+  const config = PRIMARY_ABILITIES.nox;
+  const target = targetsInFront(actor, targets, facing, config.range)[0];
+  if (!target) return false;
+
+  gameplay.grantInvulnerability(DASH_INVULNERABILITY_MS);
+  const streak = scene.add
+    .line(0, 0, actor.x, actor.y, target.sprite.x, target.sprite.y, 0x9b67ef, 0.9)
+    .setOrigin(0, 0)
+    .setLineWidth(10)
+    .setDepth(13);
+  const afterimage = scene.add
+    .image(actor.x, actor.y, actor.texture.key, actor.frame.name)
+    .setScale(actor.scaleX, actor.scaleY)
+    .setFlipX(actor.flipX)
+    .setTint(0x9b67ef)
+    .setAlpha(0.85)
+    .setDepth(14);
+  scene.tweens.add({
+    targets: afterimage,
+    x: target.sprite.x,
+    y: target.sprite.y,
+    alpha: 0.2,
+    duration: reducedMotion ? 1 : DASH_INVULNERABILITY_MS * 0.45,
+    yoyo: true,
+    onComplete: () => afterimage.destroy(),
+  });
+  scene.tweens.add({
+    targets: streak,
+    alpha: 0,
+    duration: reducedMotion ? 1 : 260,
+    onComplete: () => streak.destroy(),
+  });
+
+  const result = gameplay.attackEnemy(target.id);
+  if (!result) return false;
+  showHitFeedback(
+    scene,
+    target,
+    result.damage,
+    dominantCatForPhase(gameplay.getSnapshot().phase) === 'nox',
+  );
+  return true;
+}
+
+// Луч света (§12): a directed mid-range beam, not a lightning strike from above.
+function drawLightBeam(
   scene: Phaser.Scene,
   actor: Phaser.Physics.Arcade.Sprite,
   target: Phaser.Physics.Arcade.Sprite,
   reducedMotion: boolean,
 ): void {
   const graphics = scene.add.graphics().setDepth(14);
-  graphics.lineStyle(8, 0xffef9b, 1);
-  graphics.beginPath();
-  graphics.moveTo(actor.x + 20, actor.y - 18);
-  const segments = 7;
-  for (let index = 1; index <= segments; index += 1) {
-    const progress = index / segments;
-    const x = Phaser.Math.Linear(actor.x + 20, target.x, progress);
-    const y = Phaser.Math.Linear(actor.y - 18, target.y, progress) + (index % 2 === 0 ? 18 : -18);
-    graphics.lineTo(x, y);
-  }
-  graphics.strokePath();
-  graphics.lineStyle(3, 0x63dcff, 0.85);
-  graphics.lineBetween(target.x, target.y, target.x - 40, target.y - 55);
-  graphics.lineBetween(target.x, target.y, target.x + 48, target.y - 45);
+  graphics.lineStyle(16, 0xffef9b, 0.55);
+  graphics.lineBetween(actor.x + 20, actor.y - 8, target.x, target.y);
+  graphics.lineStyle(6, 0xfff8d8, 1);
+  graphics.lineBetween(actor.x + 20, actor.y - 8, target.x, target.y);
   fadeGraphics(scene, graphics, 320);
   const paintedLightning = scene.add
     .image(target.x, target.y - 55, ATLAS_TEXTURE_KEY, EFFECT_FRAMES.lightning)
@@ -156,7 +226,8 @@ function drawLightning(
   if (!reducedMotion) scene.cameras.main.flash(90, 255, 233, 130, false);
 }
 
-function drawShadowSpike(scene: Phaser.Scene, x: number, y: number, index: number): void {
+// Теневые иглы (§12): a row of soft magical spikes that fade into smoke.
+function drawShadowNeedle(scene: Phaser.Scene, x: number, y: number, index: number): void {
   const spike = scene.add
     .image(x, y, ATLAS_TEXTURE_KEY, EFFECT_FRAMES.shadowSpikes)
     .setOrigin(0.5, 0.78)
@@ -181,11 +252,10 @@ export function playSpecialAbility(
   targets: readonly EffectTarget[],
   reducedMotion = false,
 ): boolean {
-  const config = PROTOTYPE_SPECIAL_ABILITIES[catId];
-  const inRange =
-    catId === 'luma'
-      ? targetsInRadius(actor, targets, config.range)
-      : targetsInFront(actor, targets, facing, config.range);
+  const config = SPECIAL_ABILITIES[catId];
+  // Both level-2 abilities are directional: Луч света is "направленный луч средней дальности"
+  // and Теневые иглы rise from the ground in a row in front of Нокс (§12).
+  const inRange = targetsInFront(actor, targets, facing, config.range);
 
   const target = inRange[0];
   if (!target) return false;
@@ -193,7 +263,7 @@ export function playSpecialAbility(
   if (!result) return false;
 
   if (catId === 'luma') {
-    drawLightning(scene, actor, target.sprite, reducedMotion);
+    drawLightBeam(scene, actor, target.sprite, reducedMotion);
     showHitFeedback(
       scene,
       target,
@@ -205,7 +275,7 @@ export function playSpecialAbility(
 
   const groundY = actor.y + 45;
   for (let index = 0; index < 5; index += 1) {
-    drawShadowSpike(scene, actor.x + facing * (55 + index * 52), groundY, index);
+    drawShadowNeedle(scene, actor.x + facing * (55 + index * 52), groundY, index);
   }
   showHitFeedback(
     scene,

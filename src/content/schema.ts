@@ -14,6 +14,7 @@ export const abilityConfigSchema = z.object({
   cooldownMs: z.number().nonnegative(),
   effect: z.string().min(1),
   id: z.string().min(1),
+  name: z.string().min(1),
   owner: z.string().min(1),
   range: z.number().nonnegative(),
 });

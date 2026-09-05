@@ -1,9 +1,9 @@
 import type { PrototypeContentConfig } from '@core/index';
 import {
-  PROTOTYPE_ABILITIES,
-  PROTOTYPE_SPECIAL_ABILITIES,
-  PROTOTYPE_SUPPORT_ABILITIES,
-} from '../abilities/prototype-abilities';
+  PRIMARY_ABILITIES,
+  SPECIAL_ABILITIES,
+  SUPPORT_ABILITIES,
+} from '../abilities/canon-abilities';
 import { PROTOTYPE_MONSTERS } from '../enemies/prototype-monsters';
 import { STAGE4_ENEMIES } from '../enemies/stage4-enemies';
 import { STAGE5_ENEMIES } from '../enemies/stage5-enemies';
@@ -517,9 +517,9 @@ export const CAMPAIGN_LEVEL_ORDER: readonly CampaignLevelId[] = [
 // (see `createLevelContent` below, which used to fall back to `health: 1` for unknown configIds).
 validateCampaignContent({
   abilities: {
-    abilities: PROTOTYPE_ABILITIES,
-    specialAbilities: PROTOTYPE_SPECIAL_ABILITIES,
-    supportAbilities: PROTOTYPE_SUPPORT_ABILITIES,
+    abilities: PRIMARY_ABILITIES,
+    specialAbilities: SPECIAL_ABILITIES,
+    supportAbilities: SUPPORT_ABILITIES,
   },
   enemyTypes: { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES },
   levels: CAMPAIGN_LEVELS,
@@ -529,9 +529,9 @@ export function createLevelContent(levelId: CampaignLevelId): PrototypeContentCo
   const level = CAMPAIGN_LEVELS[levelId];
   const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES };
   return {
-    abilities: PROTOTYPE_ABILITIES,
-    supportAbilities: PROTOTYPE_SUPPORT_ABILITIES,
-    specialAbilities: PROTOTYPE_SPECIAL_ABILITIES,
+    abilities: PRIMARY_ABILITIES,
+    supportAbilities: SUPPORT_ABILITIES,
+    specialAbilities: SPECIAL_ABILITIES,
     phaseDurationMs: level.phaseDurationMs,
     enemyTypes,
     enemies: level.enemies.map((spawn) => ({

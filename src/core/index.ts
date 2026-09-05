@@ -22,6 +22,7 @@ export type { GameEvent } from './events/game-event';
 export { GameSession } from './game-session';
 export type {
   AbilityConfig,
+  AbilityEffect,
   AbilitySlot,
   AbilityUseResult,
   AttackResult,
@@ -34,7 +35,14 @@ export type {
   Phase,
   PrototypeContentConfig,
 } from './models';
-export { ABILITY_UNLOCK_LEVEL, createDefaultHeroProgress } from './models';
+export {
+  ABILITY_UNLOCK_LEVEL,
+  ECLIPSE_DURATION_MS,
+  ECLIPSE_SLOW_FACTOR,
+  SHADOW_VEIL_DURATION_MS,
+  STUN_DURATION_MS,
+  createDefaultHeroProgress,
+} from './models';
 export { BossPhaseTracker } from './phase/boss-phase-tracker';
 export { PhaseCycle, type PhaseAdvanceResult } from './phase/phase-cycle';
 export { SequencePuzzle, type SequenceResult } from './puzzle/sequence-puzzle';

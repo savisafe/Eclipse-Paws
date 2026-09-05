@@ -12,4 +12,6 @@ export type GameEvent =
   | { type: 'CheckpointReached'; checkpointId: string }
   | { type: 'CheckpointRestarted'; checkpointId: string; restartCount: number }
   | { type: 'SparkCollected'; sparkId: string; total: number }
+  | { type: 'EnemiesStunned'; enemyIds: readonly string[] }
+  | { type: 'EclipseStarted'; durationMs: number }
   | { type: 'GamePaused'; paused: boolean };

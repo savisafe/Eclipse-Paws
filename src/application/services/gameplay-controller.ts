@@ -76,11 +76,26 @@ export class GameplayController {
     return result !== null;
   }
 
-  useUltimate(enemyIds: readonly string[]): boolean {
-    const used = this.#session.useUltimate(enemyIds);
+  useEclipse(): boolean {
+    const used = this.#session.useEclipse();
     this.#flushEvents();
     this.#publish();
     return used;
+  }
+
+  stunEnemies(enemyIds: readonly string[]): readonly string[] {
+    const stunned = this.#session.stunEnemies(enemyIds);
+    this.#flushEvents();
+    this.#publish();
+    return stunned;
+  }
+
+  grantInvulnerability(durationMs: number): void {
+    this.#session.grantInvulnerability(durationMs);
+  }
+
+  isEnemyStunned(enemyId: string): boolean {
+    return this.#session.isEnemyStunned(enemyId);
   }
 
   collectSpark(sparkId: string): boolean {

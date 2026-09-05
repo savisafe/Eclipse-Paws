@@ -104,6 +104,10 @@ export class LevelMechanicsSystem implements Destroyable {
     this.#constellations?.applyPhase(phase);
   }
 
+  setEclipse(active: boolean): void {
+    this.#phaseBridges.setEclipse(active);
+  }
+
   // All 7 sub-systems here only own Phaser display objects and tweens/delayedCalls created via
   // `scene.add`/`scene.tweens`/`scene.time` — Phaser's DisplayList/TweenManager/Clock already
   // destroy those on scene shutdown (verified against the installed Phaser 3.90 source). None of

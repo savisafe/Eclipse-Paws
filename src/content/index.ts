@@ -1,8 +1,9 @@
 export {
-  PROTOTYPE_ABILITIES,
-  PROTOTYPE_SPECIAL_ABILITIES,
-  PROTOTYPE_SUPPORT_ABILITIES,
-} from './abilities/prototype-abilities';
+  ECLIPSE_ABILITY,
+  PRIMARY_ABILITIES,
+  SPECIAL_ABILITIES,
+  SUPPORT_ABILITIES,
+} from './abilities/canon-abilities';
 export {
   LIGHT_WISP_CONFIG,
   PROTOTYPE_MONSTERS,

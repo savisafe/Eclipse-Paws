@@ -159,7 +159,7 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
   await page.keyboard.press('Space');
   await page.keyboard.press('Digit1');
   await page.keyboard.press('Digit2');
-  await expect(page.locator('[aria-label^="luma-sky-lightning"]')).toHaveAttribute(
+  await expect(page.locator('[aria-label^="Луч света"]')).toHaveAttribute(
     'aria-label',
     /[1-3] сек\./,
   );

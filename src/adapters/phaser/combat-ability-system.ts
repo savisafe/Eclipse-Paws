@@ -4,7 +4,7 @@ import type { CatId } from '@core/index';
 import type { HapticsPort } from '@adapters/haptics/index';
 import type { Destroyable } from './destroyable';
 import type { PlatformerEnemySystem } from './platformer-enemy-system';
-import { playPrimaryAttack, playSpecialAbility } from './platformer-effects';
+import { playShadowDash, playSpecialAbility, playStunningShout } from './platformer-effects';
 import { SfxSynth } from './sfx-synth';
 import { setCatPose } from './sprite-atlas';
 import { GameObjectPool } from './game-object-pool';
@@ -49,22 +49,40 @@ export class CombatAbilitySystem implements Destroyable {
     );
   }
 
+  // Level-1 pair (§12): Лумус — Оглушающий крик, Нокс — Теневой наскок. The two share a slot but
+  // not a shape: the shout is an area control move, the dash is a single-target strike at range.
   primary(): void {
     const catId = this.#activeCat();
     const actor = this.#actors[catId];
-    actor.anims.stop();
-    setCatPose(actor, catId, 'attack');
-    this.#actionLockMs[catId] = 240;
-    playPrimaryAttack(
+    if (catId === 'luma') {
+      actor.anims.stop();
+      setCatPose(actor, catId, 'attack');
+      this.#actionLockMs[catId] = 240;
+      playStunningShout(
+        this.#scene,
+        this.#gameplay,
+        actor,
+        this.#reducedMotion,
+        this.#enemies.targets(),
+      );
+      this.#sfx.play(660, 160, 'sine');
+      void this.#haptics.impact('light');
+      return;
+    }
+
+    const dashed = playShadowDash(
       this.#scene,
       this.#gameplay,
       actor,
-      catId,
       this.#facing[catId],
       this.#enemies.targets(),
       this.#reducedMotion,
     );
-    this.#sfx.play(catId === 'luma' ? 660 : 190, 110, catId === 'luma' ? 'sine' : 'sawtooth');
+    if (!dashed) return;
+    actor.anims.stop();
+    setCatPose(actor, catId, 'attack');
+    this.#actionLockMs[catId] = 280;
+    this.#sfx.play(190, 130, 'sawtooth');
     void this.#haptics.impact('light');
   }
 
@@ -88,11 +106,14 @@ export class CombatAbilitySystem implements Destroyable {
     void this.#haptics.impact('medium');
   }
 
+  // Level-3 pair (§12): Световой круг protects and heals, Теневой покров hides both cats.
   support(): void {
     const healthBefore = this.#gameplay.getSnapshot().bondHealth;
+    const catId = this.#activeCat();
     if (!this.#gameplay.useSupport()) return;
     const healed = this.#gameplay.getSnapshot().bondHealth > healthBefore;
-    const color = healed ? 0x77efad : this.#activeCat() === 'luma' ? 0x7de8ff : 0x9f66ef;
+    const veiled = catId === 'nox';
+    const color = healed ? 0x77efad : catId === 'luma' ? 0x7de8ff : 0x9f66ef;
     const ring = this.#scene.add
       .ellipse(0, 0, 240, 150)
       .setStrokeStyle(7, color, 0.85)
@@ -100,14 +121,19 @@ export class CombatAbilitySystem implements Destroyable {
     const active = this.#actors[this.#activeCat()];
     ring.setPosition(active.x, active.y);
     const icon = this.#scene.add
-      .text(active.x, active.y - 68, healed ? '+1 ♥' : 'ЩИТ', {
-        color: healed ? '#baffcf' : '#d7eeff',
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: healed ? '24px' : '16px',
-        fontStyle: 'bold',
-        stroke: '#142039',
-        strokeThickness: 5,
-      })
+      .text(
+        active.x,
+        active.y - 68,
+        healed ? '+1 ♥' : veiled ? 'ТЕНЕВОЙ ПОКРОВ' : 'СВЕТОВОЙ КРУГ',
+        {
+          color: healed ? '#baffcf' : '#d7eeff',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: healed ? '24px' : '16px',
+          fontStyle: 'bold',
+          stroke: '#142039',
+          strokeThickness: 5,
+        },
+      )
       .setOrigin(0.5)
       .setDepth(18);
     this.#scene.tweens.add({
@@ -127,9 +153,11 @@ export class CombatAbilitySystem implements Destroyable {
     this.#sfx.play(420, 320, 'sine');
   }
 
-  ultimate(): void {
-    const targets = this.#enemies.targets();
-    if (!this.#gameplay.useUltimate(targets.map((target) => target.id))) return;
+  // Затмение (§12) is a twilight window, not a damage button: it deals nothing, slows the sleep's
+  // creatures and shows both phases at once. The damage-dealing wave it used to be contradicted
+  // the scenario outright ("не является кнопкой массового уничтожения").
+  eclipse(): void {
+    if (!this.#gameplay.useEclipse()) return;
     const active = this.#actors[this.#activeCat()];
     const wave = this.#waves.acquire();
     if (!wave) return;
@@ -138,12 +166,11 @@ export class CombatAbilitySystem implements Destroyable {
       targets: wave,
       scale: 7,
       alpha: 0,
-      duration: 700,
+      duration: this.#reducedMotion ? 1 : 900,
       onComplete: () => this.#waves.release(wave),
     });
-    if (!this.#reducedMotion) this.#scene.cameras.main.shake(320, 0.012);
     this.#sfx.play(110, 650, 'sine');
-    void this.#haptics.impact('heavy');
+    void this.#haptics.impact('medium');
   }
 
   destroy(): void {
