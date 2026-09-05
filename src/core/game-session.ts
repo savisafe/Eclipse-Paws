@@ -15,6 +15,7 @@ import type {
   AbilityUseResult,
   CatId,
   EnemyState,
+  Phase,
   GameplaySnapshot,
   HeroProgress,
   LootKind,
@@ -30,7 +31,7 @@ export class GameSession {
   readonly #meter = new EclipseMeter();
   readonly #phaseCycle: PhaseCycle;
   #activeCat: CatId = 'luma';
-  #checkpointId = 'garden-gate';
+  #checkpointId: string;
   #checkpointRestartCount = 0;
   #enemies: EnemyState[];
   #elapsedMs = 0;
@@ -47,7 +48,12 @@ export class GameSession {
 
   constructor(content: PrototypeContentConfig, progress?: HeroProgress) {
     this.#content = content;
-    this.#phaseCycle = new PhaseCycle(content.phaseDurationMs);
+    this.#checkpointId = content.initialCheckpointId ?? 'level-start';
+    this.#phaseCycle = new PhaseCycle(
+      content.phaseDurationMs,
+      'day',
+      content.phaseMode === 'story',
+    );
     this.#enemies = this.#createEnemyStates();
     this.#heroLevel = progress?.level ?? 1;
     this.#heroXp = progress?.xp ?? 0;
@@ -89,6 +95,13 @@ export class GameSession {
     this.#advanceTimers(deltaMs);
     const result = this.#phaseCycle.advance(deltaMs);
     if (result.changed) this.#events.push({ type: 'PhaseChanged', phase: result.phase });
+  }
+
+  // Used by a level script to make nightfall a story event the player caused (§12).
+  setPhase(phase: Phase): boolean {
+    const changed = this.#phaseCycle.setPhase(phase);
+    if (changed) this.#events.push({ type: 'PhaseChanged', phase });
+    return changed;
   }
 
   switchActiveCat(): CatId {
@@ -136,6 +149,12 @@ export class GameSession {
     this.#shadowVeilMs = 0;
 
     return { damage, defeated, enemyId };
+  }
+
+  /** Casts a ranged ability even when there is no enemy in front of the hero. */
+  castSpecialAbility(): AbilityUseResult | null {
+    if (this.#heroLevel < ABILITY_UNLOCK_LEVEL.special) return null;
+    return this.#useUtility(this.#content.specialAbilities[this.#activeCat], 12);
   }
 
   // Оглушающий крик: "Атака не наносит большой урон: её задача — создать безопасное окно"

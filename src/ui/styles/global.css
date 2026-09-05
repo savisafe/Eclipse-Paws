@@ -285,8 +285,22 @@ button:focus-visible {
 .menu-actions {
   display: grid;
   gap: 0.65rem;
-  width: min(22rem, 100%);
+  width: min(22rem, 100%, max(10rem, calc((100svh - 19rem) * 0.72)));
   margin: 0 auto;
+}
+
+/* The painted menu frame is authored at 3:1. Keeping that ratio prevents the ornament and
+   parchment from being flattened on short screens. */
+.menu-actions .menu-button {
+  aspect-ratio: 3 / 1;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.05rem;
+  padding: 0.45rem 16%;
+  font-size: clamp(0.72rem, 2.2vw, 1rem);
+  line-height: 1.05;
+  text-align: center;
 }
 
 .menu-button {
@@ -297,6 +311,7 @@ button:focus-visible {
   padding: 0.7rem 1.8rem;
   border: 0;
   color: var(--ink);
+  background-color: transparent;
   background-image: url('../../assets/ui/button-normal-v1.png');
   background-repeat: no-repeat;
   background-size: 100% 100%;
@@ -474,6 +489,10 @@ button:focus-visible {
   background-image: url('../../assets/ui/icons/sound-effects-v1.png');
 }
 
+.setting-row__icon--night {
+  background-image: url('../../assets/ui/icons/night-brightness-v1.png');
+}
+
 .setting-row__icon--motion {
   background-image: url('../../assets/ui/icons/reduced-motion-v1.png');
 }
@@ -581,6 +600,10 @@ button:focus-visible {
 
   .menu-button {
     min-height: 2.8rem;
+  }
+
+  .menu-actions .menu-button {
+    min-height: 0;
   }
 }
 

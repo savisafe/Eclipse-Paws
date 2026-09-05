@@ -44,8 +44,10 @@ export class LevelMechanicsSystem implements Destroyable {
       options.gameplay,
       options.level.sparks,
     );
+    // Level 1 has its own authored props (see `garden/garden-prop-system.ts`); the generic rune
+    // puzzle stays for the levels that still reuse it.
     this.#flowers =
-      options.level.mechanic === 'flowers'
+      options.level.mechanic === 'flowers' && options.level.id !== 'garden-first-dawn'
         ? new GardenFlowerPuzzle(options.scene, options.gameplay, options.actors)
         : null;
     this.#finalBoss =
@@ -67,6 +69,7 @@ export class LevelMechanicsSystem implements Destroyable {
       options.actors,
       options.level.phasePlatforms,
       options.level.mechanic,
+      options.level.background === 'garden',
     );
     this.#hazards = new PlatformerHazardSystem(
       options.scene,
@@ -87,13 +90,17 @@ export class LevelMechanicsSystem implements Destroyable {
     this.#constellations?.interact(active, this.#gameplay.getSnapshot().phase);
   }
 
-  update(active: Phaser.Physics.Arcade.Sprite, deltaMs: number): void {
+  // `canFinishOverride` lets an authored level decide for itself when its exit opens — level 1's
+  // gate follows its script, not the generic puzzle/boss gate.
+  update(active: Phaser.Physics.Arcade.Sprite, deltaMs: number, canFinishOverride?: boolean): void {
     this.#hazards.update(deltaMs);
     this.#finalBoss?.update(deltaMs);
     this.#collectibles.update(active);
     const canFinish =
       this.#startNearFinish ||
-      ((this.#flowers?.solved ?? true) &&
+      canFinishOverride ||
+      (canFinishOverride === undefined &&
+        (this.#flowers?.solved ?? true) &&
         (this.#constellations?.solved ?? true) &&
         this.#enemies.isDefeated(this.#level.bossId));
     this.#progress.update(active, canFinish);

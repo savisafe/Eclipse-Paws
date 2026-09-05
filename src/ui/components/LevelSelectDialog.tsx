@@ -1,5 +1,10 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { CAMPAIGN_LEVEL_ORDER, CAMPAIGN_LEVELS, type CampaignLevelId } from '@content/index';
+import {
+  CAMPAIGN_LEVEL_ORDER,
+  CAMPAIGN_LEVELS,
+  PLAYABLE_CAMPAIGN_LEVELS,
+  type CampaignLevelId,
+} from '@content/index';
 import gardenFirstDawn from '../../assets/ui/chapters/garden-first-dawn-v1.png?url';
 import whisperingLanterns from '../../assets/ui/chapters/whispering-lanterns-v1.png?url';
 import middayClockCity from '../../assets/ui/chapters/midday-clock-city-v1.png?url';
@@ -27,19 +32,23 @@ export function LevelSelectDialog({ onSelect, unlockedLevels }: LevelSelectDialo
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
-        <button className="menu-button" type="button">
+        <button className="menu-button" disabled type="button">
           <span>Выбор уровня</span>
+          <small>В разработке</small>
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
         <Dialog.Content className="settings-dialog level-select-dialog">
           <Dialog.Title>Выбор уровня</Dialog.Title>
-          <Dialog.Description>Пройденный уровень открывает следующий.</Dialog.Description>
+          <Dialog.Description>
+            Сейчас доступен первый уровень. Остальные — в разработке.
+          </Dialog.Description>
           <div className="level-select-list">
             {CAMPAIGN_LEVEL_ORDER.map((levelId) => {
               const level = CAMPAIGN_LEVELS[levelId];
-              const unlocked = unlockedLevels.includes(levelId);
+              const playable = PLAYABLE_CAMPAIGN_LEVELS.includes(levelId);
+              const unlocked = playable && unlockedLevels.includes(levelId);
               return (
                 <Dialog.Close asChild key={levelId}>
                   <button
@@ -57,7 +66,7 @@ export function LevelSelectDialog({ onSelect, unlockedLevels }: LevelSelectDialo
                       <em>{level.index}</em>
                     </span>
                     <strong>{level.title}</strong>
-                    <small>{unlocked ? level.subtitle : 'Закрыто'}</small>
+                    <small>{unlocked ? level.subtitle : 'В разработке'}</small>
                   </button>
                 </Dialog.Close>
               );

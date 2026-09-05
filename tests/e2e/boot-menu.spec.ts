@@ -146,23 +146,28 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
     if (message.type() === 'error') errors.push(message.text());
   });
 
-  await page.goto('/?startNearCombat=1&heroLevel=2');
-  await startGame(page);
+  // Level 2 rather than level 1: «Сад первой зари» is deliberately enemy-free until its turning
+  // point (ECLIPSE_PAWS_SCENARIO.md §12), so there is nothing to fight at its start any more.
+  await page.goto('/?level=whispering-lanterns&startNearCombat=1&heroLevel=2');
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
   await expect(page.locator('.phase-clock')).toContainText('Фаза: День');
 
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(1_300);
-  await page.keyboard.up('KeyD');
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Digit1');
-  await page.keyboard.press('Digit2');
-  await expect(page.locator('[aria-label^="Луч света"]')).toHaveAttribute(
-    'aria-label',
-    /[1-3] сек\./,
-  );
+  // Луч света only fires when something is actually in front of Лумус, and how far a fixed walk
+  // gets depends on the frame pacing of the machine running the test — so approach in short bursts
+  // until the beam lands instead of assuming one 1.3s walk was enough.
+  const beam = page.locator('[aria-label^="Луч света"]');
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await page.keyboard.press('Digit2');
+    if (/[1-3] сек\./.test((await beam.getAttribute('aria-label')) ?? '')) break;
+    await page.keyboard.down('KeyD');
+    await page.waitForTimeout(450);
+    await page.keyboard.up('KeyD');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Digit1');
+  }
+  await expect(beam).toHaveAttribute('aria-label', /[1-3] сек\./);
 
   await page.keyboard.press('Tab');
   await expect(page.locator('.hud-cat--nox')).toHaveAttribute('aria-current', 'true');

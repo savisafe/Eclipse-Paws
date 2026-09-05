@@ -30,7 +30,7 @@ describe('save game', () => {
     expect(window.localStorage.getItem('test-save')).toBeNull();
   });
 
-  it('saves best result and unlocks the next level', async () => {
+  it('saves the best result without unlocking levels still in development', async () => {
     const repository = new LocalStorageSaveRepository(window.localStorage, 'test-save');
     const progress = new ProgressService(repository);
 
@@ -39,7 +39,7 @@ describe('save game', () => {
 
     expect(save.bestTimesMs['garden-first-dawn']).toBe(95_000);
     expect(save.sparksByLevel['garden-first-dawn']).toBe(2);
-    expect(save.unlockedLevels).toContain('whispering-lanterns');
+    expect(save.unlockedLevels).not.toContain('whispering-lanterns');
     expect(save.settings.vibration).toBe(true);
   });
 

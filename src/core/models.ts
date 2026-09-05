@@ -44,7 +44,11 @@ export interface PrototypeContentConfig {
   abilities: Readonly<Record<CatId, AbilityConfig>>;
   enemies: readonly EnemyState[];
   enemyTypes: Readonly<Record<string, EnemyConfig>>;
+  /** Id of the level's starting checkpoint. */
+  initialCheckpointId?: string;
   phaseDurationMs: number;
+  // 'story' levels never flip day/night on a timer — the level's own script does it (§12).
+  phaseMode?: 'timer' | 'story';
   specialAbilities: Readonly<Record<CatId, AbilityConfig>>;
   supportAbilities: Readonly<Record<CatId, AbilityConfig>>;
 }

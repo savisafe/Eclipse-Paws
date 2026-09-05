@@ -3,19 +3,17 @@ import type { SlidePanel } from '@content/index';
 
 // COM-010A: single data-driven slideshow engine shared by the prologue and the epilogue
 // (ECLIPSE_PAWS_RECONSTRUCTION_PLAN.md Фаза 6/11) — takes a plain list of panels and knows
-// nothing about which story it is telling. Supports manual advance, optional auto-advance,
-// skip and always-on captions (plan §14 "Доступность": субтитры включены по умолчанию).
+// nothing about which story it is telling. Supports manual advance, skip and always-on captions
+// (plan §14 "Доступность": субтитры включены по умолчанию).
 
 interface SlideshowProps {
-  autoAdvanceMs?: number;
   onComplete: () => void;
   panels: readonly SlidePanel[];
   title: string;
 }
 
-export function Slideshow({ autoAdvanceMs, onComplete, panels, title }: SlideshowProps) {
+export function Slideshow({ onComplete, panels, title }: SlideshowProps) {
   const [index, setIndex] = useState(0);
-  const [autoAdvance, setAutoAdvance] = useState(false);
   const panel = panels[index];
   const isLast = index >= panels.length - 1;
 
@@ -31,12 +29,6 @@ export function Slideshow({ autoAdvanceMs, onComplete, panels, title }: Slidesho
   useEffect(() => {
     advanceRef.current = advance;
   }, [advance]);
-
-  useEffect(() => {
-    if (!autoAdvance || !autoAdvanceMs) return;
-    const timeoutId = window.setTimeout(() => advanceRef.current(), autoAdvanceMs);
-    return () => window.clearTimeout(timeoutId);
-  }, [autoAdvance, autoAdvanceMs, index]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -64,25 +56,22 @@ export function Slideshow({ autoAdvanceMs, onComplete, panels, title }: Slidesho
         ) : null}
       </div>
       <div className="slideshow__controls">
-        <span className="slideshow__progress" aria-hidden="true">
-          {index + 1} / {panels.length}
-        </span>
-        {autoAdvanceMs ? (
-          <label className="slideshow__auto-toggle">
-            <input
-              checked={autoAdvance}
-              onChange={(event) => setAutoAdvance(event.target.checked)}
-              type="checkbox"
-            />
-            Автопрокрутка
-          </label>
-        ) : null}
-        <button className="menu-button" onClick={advance} type="button">
-          {isLast ? 'Продолжить' : 'Далее'}
-        </button>
-        <button className="result-card__secondary" onClick={onComplete} type="button">
-          Пропустить
-        </button>
+        <div className="slideshow__meta">
+          <span
+            className="slideshow__progress"
+            aria-label={`Слайд ${index + 1} из ${panels.length}`}
+          >
+            {index + 1} / {panels.length}
+          </span>
+        </div>
+        <div className="slideshow__actions">
+          <button className="slideshow__primary" onClick={advance} type="button">
+            {isLast ? 'Продолжить' : 'Далее'}
+          </button>
+          <button className="result-card__secondary" onClick={onComplete} type="button">
+            Пропустить
+          </button>
+        </div>
       </div>
     </main>
   );

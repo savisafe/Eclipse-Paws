@@ -10,7 +10,6 @@ interface GameHudProps {
 export function GameHud({ gameplay }: GameHudProps) {
   const snapshot = useGameplaySnapshot(gameplay);
   const seconds = Math.max(0, Math.ceil(snapshot.phaseRemainingMs / 1000));
-  const enemiesRemaining = snapshot.enemies.filter((enemy) => enemy.health > 0).length;
   const dominantCat = dominantCatForPhase(snapshot.phase);
 
   return (
@@ -52,15 +51,6 @@ export function GameHud({ gameplay }: GameHudProps) {
         <strong>{seconds}</strong>
       </div>
 
-      <div className="eclipse-meter" aria-label={`Затмение: ${Math.round(snapshot.eclipseMeter)}%`}>
-        <span style={{ width: `${snapshot.eclipseMeter}%` }} />
-        <strong>
-          {snapshot.eclipseMeter >= snapshot.maxEclipseMeter
-            ? 'X · ОБЪЯТИЕ'
-            : `${Math.round(snapshot.eclipseMeter)}%`}
-        </strong>
-      </div>
-
       <div className="hud-status">
         <div
           className="hero-health"
@@ -75,17 +65,6 @@ export function GameHud({ gameplay }: GameHudProps) {
           <div className="hero-health__track" aria-hidden="true">
             <span style={{ width: `${(snapshot.bondHealth / snapshot.maxBondHealth) * 100}%` }} />
           </div>
-        </div>
-        <span className="enemy-counter">Монстры: {enemiesRemaining}</span>
-        <span className="spark-counter">Искры: {snapshot.sparksCollected}/3</span>
-        <div
-          className="hero-progress"
-          aria-label={`Уровень ${snapshot.heroLevel}, опыт ${snapshot.heroXp} из ${snapshot.heroXpToNext}`}
-        >
-          <strong>LV {snapshot.heroLevel}</strong>
-          <span className="hero-progress__track" aria-hidden="true">
-            <i style={{ width: `${(snapshot.heroXp / snapshot.heroXpToNext) * 100}%` }} />
-          </span>
         </div>
       </div>
 

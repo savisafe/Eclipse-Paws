@@ -4,7 +4,12 @@ import type { CatId } from '@core/index';
 import type { HapticsPort } from '@adapters/haptics/index';
 import type { Destroyable } from './destroyable';
 import type { PlatformerEnemySystem } from './platformer-enemy-system';
-import { playShadowDash, playSpecialAbility, playStunningShout } from './platformer-effects';
+import {
+  playShadowBlink,
+  playShadowDash,
+  playSpecialAbility,
+  playStunningShout,
+} from './platformer-effects';
 import { SfxSynth } from './sfx-synth';
 import { setCatPose } from './sprite-atlas';
 import { GameObjectPool } from './game-object-pool';
@@ -18,6 +23,12 @@ export class CombatAbilitySystem implements Destroyable {
   readonly #haptics: HapticsPort;
   readonly #scene: Phaser.Scene;
   readonly #reducedMotion: boolean;
+  // Optional level hooks: §12 gives both level-1 abilities a non-combat use — the shout rings the
+  // garden bells, and the dash presses switches that are out of reach.
+  readonly #onShout?: (x: number, y: number) => void;
+  readonly #dashTargets?: () => readonly { id: string; x: number; y: number }[];
+  readonly #onDashTarget?: (targetId: string) => void;
+  readonly #solids: Phaser.Physics.Arcade.StaticGroup;
   readonly #sfx = new SfxSynth();
   readonly #waves: GameObjectPool<Phaser.GameObjects.Arc>;
 
@@ -31,7 +42,15 @@ export class CombatAbilitySystem implements Destroyable {
     effectsVolume: number;
     haptics: HapticsPort;
     scene: Phaser.Scene;
+    onShout?: (x: number, y: number) => void;
+    dashTargets?: () => readonly { id: string; x: number; y: number }[];
+    onDashTarget?: (targetId: string) => void;
+    solids: Phaser.Physics.Arcade.StaticGroup;
   }) {
+    this.#solids = options.solids;
+    this.#onShout = options.onShout;
+    this.#dashTargets = options.dashTargets;
+    this.#onDashTarget = options.onDashTarget;
     this.#actionLockMs = options.actionLockMs;
     this.#actors = options.actors;
     this.#enemies = options.enemies;
@@ -67,6 +86,19 @@ export class CombatAbilitySystem implements Destroyable {
       );
       this.#sfx.play(660, 160, 'sine');
       void this.#haptics.impact('light');
+      this.#onShout?.(actor.x, actor.y);
+      return;
+    }
+
+    const switchTarget = this.#reachableDashTarget(actor, this.#facing[catId]);
+    if (switchTarget) {
+      actor.anims.stop();
+      setCatPose(actor, catId, 'attack');
+      this.#actionLockMs[catId] = 280;
+      this.#drawDashStreak(actor, switchTarget.x, switchTarget.y);
+      this.#sfx.play(240, 150, 'sawtooth');
+      void this.#haptics.impact('light');
+      this.#onDashTarget?.(switchTarget.id);
       return;
     }
 
@@ -78,7 +110,18 @@ export class CombatAbilitySystem implements Destroyable {
       this.#enemies.targets(),
       this.#reducedMotion,
     );
-    if (!dashed) return;
+    if (!dashed) {
+      // Nothing to strike: Нокс still dashes, forward and through, which is the other half of
+      // what the ability is for.
+      playShadowBlink(
+        this.#scene,
+        this.#gameplay,
+        actor,
+        this.#facing[catId],
+        this.#solids,
+        this.#reducedMotion,
+      );
+    }
     actor.anims.stop();
     setCatPose(actor, catId, 'attack');
     this.#actionLockMs[catId] = 280;
@@ -119,6 +162,9 @@ export class CombatAbilitySystem implements Destroyable {
       .setStrokeStyle(7, color, 0.85)
       .setDepth(16);
     const active = this.#actors[this.#activeCat()];
+    active.anims.stop();
+    setCatPose(active, catId, 'ability');
+    this.#actionLockMs[catId] = 520;
     ring.setPosition(active.x, active.y);
     const icon = this.#scene.add
       .text(
@@ -151,6 +197,7 @@ export class CombatAbilitySystem implements Destroyable {
       onComplete: () => icon.destroy(),
     });
     this.#sfx.play(420, 320, 'sine');
+    void this.#haptics.impact('light');
   }
 
   // Затмение (§12) is a twilight window, not a damage button: it deals nothing, slows the sleep's
@@ -180,5 +227,36 @@ export class CombatAbilitySystem implements Destroyable {
 
   #activeCat(): CatId {
     return this.#gameplay.getSnapshot().activeCat;
+  }
+
+  #reachableDashTarget(
+    actor: Phaser.Physics.Arcade.Sprite,
+    facing: number,
+  ): { id: string; x: number; y: number } | null {
+    const candidates = this.#dashTargets?.() ?? [];
+    return (
+      candidates.find((target) => {
+        const dx = target.x - actor.x;
+        return (
+          Math.abs(dx) <= 340 &&
+          Math.sign(dx || facing) === facing &&
+          Math.abs(target.y - actor.y) < 220
+        );
+      }) ?? null
+    );
+  }
+
+  #drawDashStreak(actor: Phaser.Physics.Arcade.Sprite, x: number, y: number): void {
+    const streak = this.#scene.add
+      .line(0, 0, actor.x, actor.y, x, y, 0x9b67ef, 0.9)
+      .setOrigin(0, 0)
+      .setLineWidth(9)
+      .setDepth(13);
+    this.#scene.tweens.add({
+      targets: streak,
+      alpha: 0,
+      duration: this.#reducedMotion ? 1 : 260,
+      onComplete: () => streak.destroy(),
+    });
   }
 }

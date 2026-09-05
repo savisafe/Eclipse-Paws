@@ -61,7 +61,7 @@ describe('App', () => {
     expect(screen.getByRole('main', { name: 'Эпилог: Те, кто остаются рядом' })).toBeVisible();
   });
 
-  it('a debug launch query skips the menu and jumps straight into the requested level (ARC-015)', async () => {
+  it('redirects debug launch requests for unfinished levels to the playable first level', async () => {
     vi.resetModules();
     window.history.replaceState(null, '', '?level=whispering-lanterns&heroLevel=3');
     try {
@@ -76,7 +76,7 @@ describe('App', () => {
       });
 
       expect(screen.queryByRole('navigation', { name: 'Главное меню' })).not.toBeInTheDocument();
-      expect(screen.getByText('Открываем «Лес шепчущих фонарей»…')).toBeVisible();
+      expect(screen.getByText('Открываем «Сад первой зари»…')).toBeVisible();
     } finally {
       window.history.replaceState(null, '', '');
     }

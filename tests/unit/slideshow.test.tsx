@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Slideshow } from '@ui/components/Slideshow';
 
@@ -53,19 +53,5 @@ describe('Slideshow (COM-010A)', () => {
     expect(screen.getByText('Two')).toBeVisible();
     fireEvent.keyDown(window, { code: 'Escape' });
     expect(onComplete).toHaveBeenCalledTimes(1);
-  });
-
-  it('auto-advances once the checkbox is enabled, respecting autoAdvanceMs', async () => {
-    vi.useFakeTimers();
-    const onComplete = vi.fn();
-    render(
-      <Slideshow autoAdvanceMs={1000} onComplete={onComplete} panels={PANELS} title="Test story" />,
-    );
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Автопрокрутка' }));
-    expect(screen.getByText('One')).toBeVisible();
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
-    });
-    expect(screen.getByText('Two')).toBeVisible();
   });
 });

@@ -5,6 +5,7 @@ import { readDebugLaunchParams, shouldAutoStartDebugLaunch } from '@ui/debug-lau
 import {
   CAMPAIGN_LEVEL_ORDER,
   CAMPAIGN_LEVELS,
+  PLAYABLE_CAMPAIGN_LEVELS,
   createLevelContent,
   EPILOGUE_PANELS,
   PROLOGUE_PANELS,
@@ -28,9 +29,15 @@ function createCampaignGameplay(
   levelId: CampaignLevelId,
   progress?: HeroProgress,
 ): GameplayController {
+  // Asking for a phase duration means asking for the timed cycle, so the override also switches a
+  // story-driven level (level 1) back to the timer — otherwise the flag would silently do nothing.
   const content =
     DEBUG_LAUNCH.phaseDurationMs !== null
-      ? { ...createLevelContent(levelId), phaseDurationMs: DEBUG_LAUNCH.phaseDurationMs }
+      ? {
+          ...createLevelContent(levelId),
+          phaseDurationMs: DEBUG_LAUNCH.phaseDurationMs,
+          phaseMode: 'timer' as const,
+        }
       : createLevelContent(levelId);
   const gameplay = new GameplayController(content, progress);
   const requestedCheckpointId = DEBUG_LAUNCH.checkpointId;
@@ -50,7 +57,9 @@ function applyDevHeroLevelOverride(progress: HeroProgress): HeroProgress {
 }
 
 function initialLevelFromLocation(): CampaignLevelId {
-  return DEBUG_LAUNCH.level ?? 'garden-first-dawn';
+  return DEBUG_LAUNCH.level && PLAYABLE_CAMPAIGN_LEVELS.includes(DEBUG_LAUNCH.level)
+    ? DEBUG_LAUNCH.level
+    : 'garden-first-dawn';
 }
 
 export function App() {
@@ -78,7 +87,11 @@ export function App() {
     void progressService.load().then((save) => {
       if (disposed) return;
       useSettingsStore.setState(save.settings);
-      setUnlockedLevels(save.unlockedLevels as CampaignLevelId[]);
+      setUnlockedLevels(
+        save.unlockedLevels.filter((level): level is CampaignLevelId =>
+          PLAYABLE_CAMPAIGN_LEVELS.includes(level as CampaignLevelId),
+        ),
+      );
       setHeroProgress(applyDevHeroLevelOverride(save.heroProgress));
       unsubscribe = useSettingsStore.subscribe((settings) => {
         void progressService.saveSettings({
@@ -147,15 +160,17 @@ export function App() {
       });
     appController.completeLevel();
   }, [appController, gameplay, progressService, selectedLevel]);
-  const currentIndex = CAMPAIGN_LEVEL_ORDER.indexOf(selectedLevel);
-  const nextLevel = CAMPAIGN_LEVEL_ORDER[currentIndex + 1];
+  const currentIndex = PLAYABLE_CAMPAIGN_LEVELS.indexOf(selectedLevel);
+  const nextLevel = PLAYABLE_CAMPAIGN_LEVELS[currentIndex + 1];
   const startNextLevel = useCallback(() => {
     if (!nextLevel) return;
     appController.returnToMenu();
     openLevelIntro(nextLevel);
   }, [appController, nextLevel, openLevelIntro]);
   const continueGame = useCallback(() => {
-    const available = CAMPAIGN_LEVEL_ORDER.filter((levelId) => unlockedLevels.includes(levelId));
+    const available = PLAYABLE_CAMPAIGN_LEVELS.filter((levelId) =>
+      unlockedLevels.includes(levelId),
+    );
     openLevelIntro(available.at(-1) ?? 'garden-first-dawn');
   }, [openLevelIntro, unlockedLevels]);
 
@@ -164,7 +179,6 @@ export function App() {
   if (appState === 'prologue') {
     return (
       <Slideshow
-        autoAdvanceMs={11_000}
         onComplete={handlePrologueComplete}
         panels={PROLOGUE_PANELS}
         title="Пролог: Между двумя ударами"
@@ -174,7 +188,6 @@ export function App() {
   if (appState === 'epilogue') {
     return (
       <Slideshow
-        autoAdvanceMs={13_000}
         onComplete={handleEpilogueComplete}
         panels={EPILOGUE_PANELS}
         title="Эпилог: Те, кто остаются рядом"

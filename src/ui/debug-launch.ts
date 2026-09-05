@@ -11,7 +11,8 @@ import { CAMPAIGN_LEVEL_ORDER, type CampaignLevelId } from '@content/index';
 //   `checkpoints`; invalid/foreign ids are ignored rather than silently reaching an unrelated
 //   checkpoint).
 // - `?heroLevel=<N>` — override the hero's progression level (unlocks matching abilities).
-// - `?phaseDurationMs=<N>` — override day/night phase duration for faster iteration.
+// - `?phaseDurationMs=<N>` — override day/night phase duration for faster iteration (this also
+//   puts a story-driven level such as «Сад первой зари» back on the timed cycle).
 // - `?startNearCombat` / `?startNearFinish` — spawn near the first encounter / the level exit
 //   (existing flags, now parsed in one place instead of duplicated in `GameCanvas.tsx`).
 //

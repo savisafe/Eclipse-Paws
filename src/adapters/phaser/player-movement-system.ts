@@ -5,6 +5,7 @@ import type { CatId } from '@core/index';
 import type { Destroyable } from './destroyable';
 import { updateCatAnimation } from './cat-animation';
 import { JUMP_SPEED, PLAYER_SPEED } from './movement-constants';
+import { setCatFacing } from './sprite-atlas';
 
 export class PlayerMovementSystem implements Destroyable {
   readonly #actionLockMs: Record<CatId, number>;
@@ -39,7 +40,7 @@ export class PlayerMovementSystem implements Destroyable {
     active.setVelocityX(horizontal * PLAYER_SPEED);
     if (horizontal !== 0) {
       this.#facing[activeId] = horizontal < 0 ? -1 : 1;
-      active.setFlipX(horizontal < 0);
+      setCatFacing(active, horizontal < 0 ? -1 : 1);
     }
 
     const body = active.body as Phaser.Physics.Arcade.Body;

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { CatId } from '@core/index';
 import type { Destroyable } from './destroyable';
-import { setCatPose } from './sprite-atlas';
+import { CAT_DISPLAY_SCALE, setCatPose } from './sprite-atlas';
 import { GameObjectPool } from './game-object-pool';
 
 export class TagSwitchSystem implements Destroyable {
@@ -33,12 +33,12 @@ export class TagSwitchSystem implements Destroyable {
     this.#burstMotes(nextId, position.x, position.y);
     setCatPose(next, nextId, 'ability');
     this.#scene.cameras.main.startFollow(next, true, 0.09, 0.09);
-    next.setScale(0.72);
+    next.setScale(CAT_DISPLAY_SCALE * 1.12);
     this.#scene.tweens.add({
       targets: next,
-      scale: 0.58,
-      duration: this.#reducedMotion ? 1 : 210,
-      ease: 'Back.out',
+      scale: CAT_DISPLAY_SCALE,
+      duration: this.#reducedMotion ? 1 : 360,
+      ease: 'Sine.inOut',
       onComplete,
     });
     this.#scene.tweens.add({
@@ -46,7 +46,8 @@ export class TagSwitchSystem implements Destroyable {
       alpha: 0,
       scale: nextId === 'luma' ? 2.8 : 2.1,
       angle: nextId === 'luma' ? 0 : 110,
-      duration: this.#reducedMotion ? 1 : 380,
+      duration: this.#reducedMotion ? 1 : 520,
+      ease: 'Sine.out',
       onComplete: () => effect.destroy(),
     });
   }

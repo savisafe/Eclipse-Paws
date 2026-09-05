@@ -14,6 +14,7 @@ import {
 import type { Destroyable } from './destroyable';
 import type { EffectTarget } from './platformer-effects';
 import { GARDEN_ENEMY_FRAMES } from './garden-enemy-atlas';
+import { SILENCE_ENEMY_FRAMES } from './silence-enemy-atlas';
 import { STAGE4_ENEMY_FRAMES } from './stage4-enemy-atlas';
 import { STAGE5_ENEMY_FRAMES } from './stage5-enemy-atlas';
 
@@ -107,6 +108,9 @@ export class PlatformerEnemySystem implements Destroyable {
   readonly #ai: EnemyAiProfile;
   readonly #collectedDrops = new Set<string>();
   readonly #coverZones: readonly PlatformRect[];
+  // Enemies a level script keeps off-stage until its own turning point (§12: the hounds only
+  // appear once the sleep notices the cats).
+  readonly #dormant = new Set<string>();
   readonly #enemies = new Map<string, EnemyView>();
   readonly #gameplay: GameplayController;
   readonly #hazards: readonly LevelPoint[];
@@ -122,7 +126,9 @@ export class PlatformerEnemySystem implements Destroyable {
     hazards: readonly LevelPoint[],
     coverZones: readonly PlatformRect[],
     levelIndex: number,
+    dormantEnemyIds: readonly string[] = [],
   ) {
+    dormantEnemyIds.forEach((enemyId) => this.#dormant.add(enemyId));
     this.#scene = scene;
     this.#gameplay = gameplay;
     this.#hazards = hazards;
@@ -133,7 +139,9 @@ export class PlatformerEnemySystem implements Destroyable {
       const config = enemyTypes[spawn.configId];
       if (!config) throw new Error(`Unknown platformer monster: ${spawn.configId}`);
       const campaignFrames =
-        STAGE4_ENEMY_FRAMES[spawn.configId] ?? STAGE5_ENEMY_FRAMES[spawn.configId];
+        SILENCE_ENEMY_FRAMES[spawn.configId] ??
+        STAGE4_ENEMY_FRAMES[spawn.configId] ??
+        STAGE5_ENEMY_FRAMES[spawn.configId];
       const frames: EnemyFrames | undefined = campaignFrames ?? GARDEN_ENEMY_FRAMES[spawn.configId];
       if (!frames) throw new Error(`Missing atlas frames for monster: ${spawn.configId}`);
       const sprite = scene.physics.add
@@ -141,6 +149,7 @@ export class PlatformerEnemySystem implements Destroyable {
         .setDepth(5)
         .setCollideWorldBounds(false);
       const isBoss = [
+        'silence-hound-alpha',
         'great-mushroom',
         'archivist-echo',
         'fortress-golem',
@@ -177,6 +186,11 @@ export class PlatformerEnemySystem implements Destroyable {
         .setOrigin(0, 0.5)
         .setDepth(19);
 
+      if (this.#dormant.has(spawn.id)) {
+        sprite.disableBody(true, true);
+        healthBack.setVisible(false);
+        healthFill.setVisible(false);
+      }
       this.#enemies.set(spawn.id, {
         config,
         cooldownMs: 700,
@@ -197,7 +211,26 @@ export class PlatformerEnemySystem implements Destroyable {
   }
 
   targets(): EffectTarget[] {
-    return [...this.#enemies.values()].map(({ id, sprite }) => ({ id, sprite }));
+    return [...this.#enemies.values()]
+      .filter((enemy) => !this.#dormant.has(enemy.id))
+      .map(({ id, sprite }) => ({ id, sprite }));
+  }
+
+  /** Brings dormant enemies on stage at the moment the level's script calls for them. */
+  release(enemyIds: readonly string[]): void {
+    enemyIds.forEach((enemyId) => {
+      const enemy = this.#enemies.get(enemyId);
+      if (!enemy || !this.#dormant.delete(enemyId)) return;
+      enemy.sprite.enableBody(true, enemy.spawn.x, enemy.spawn.y, true, true);
+      enemy.sprite.setAlpha(0);
+      enemy.healthBack.setVisible(true);
+      enemy.healthFill.setVisible(true);
+      this.#scene.tweens.add({ targets: enemy.sprite, alpha: 1, duration: 420 });
+    });
+  }
+
+  isDormant(enemyId: string): boolean {
+    return this.#dormant.has(enemyId);
   }
 
   update(targetCat: Phaser.Physics.Arcade.Sprite, deltaMs: number, hiding = false): void {
@@ -208,6 +241,7 @@ export class PlatformerEnemySystem implements Destroyable {
     // Затмение slows the sleep's creatures instead of damaging them (§12).
     const speedFactor = snapshot.eclipseActiveMs > 0 ? ECLIPSE_SLOW_FACTOR : 1;
     this.#enemies.forEach((enemy) => {
+      if (this.#dormant.has(enemy.id)) return;
       const state = states.get(enemy.id);
       if (!state || state.health <= 0) {
         this.#updateLootDrop(enemy);
@@ -291,6 +325,7 @@ export class PlatformerEnemySystem implements Destroyable {
   reset(): void {
     this.#collectedDrops.clear();
     this.#enemies.forEach((enemy) => {
+      if (this.#dormant.has(enemy.id)) return;
       enemy.cooldownMs = 800;
       enemy.telegraphMs = 0;
       enemy.direction = 1;
@@ -311,6 +346,7 @@ export class PlatformerEnemySystem implements Destroyable {
   }
 
   isDefeated(enemyId: string): boolean {
+    if (this.#dormant.has(enemyId)) return false;
     return (
       (this.#gameplay.getSnapshot().enemies.find((enemy) => enemy.id === enemyId)?.health ?? 0) <= 0
     );

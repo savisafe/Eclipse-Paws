@@ -213,6 +213,10 @@ Regenerated after alpha cleanup. Canonical source: `docs/ECLIPSE_PAWS_SCENARIO.m
 | `src/assets/icons/abilities/nox-shadow-dash-v1.png` | Icon | 1254×1254 RGBA | canonical |
 | `src/assets/icons/abilities/nox-shadow-needles-v1.png` | Icon | 1254×1254 RGBA | canonical |
 | `src/assets/icons/abilities/nox-shadow-veil-v1.png` | Icon | 1254×1254 RGBA | canonical |
+| `src/assets/icons/cards/lumus-light-beam-v1.png` | Icon (in-game size) | 160×160 RGBA | derived from canonical |
+| `src/assets/icons/cards/nox-shadow-needles-v1.png` | Icon (in-game size) | 160×160 RGBA | derived from canonical |
+| `src/assets/icons/cards/garden-golden-seed-v1.png` | Icon (in-game size) | 160×160 RGBA | derived from canonical |
+| `src/assets/icons/cards/memory-echo-v1.png` | Icon (in-game size) | 160×160 RGBA | derived from canonical |
 | `src/assets/icons/items/aren-letter-v1.png` | Icon | 1254×1254 RGBA | canonical |
 | `src/assets/icons/items/carnival-cat-bow-v1.png` | Icon | 1254×1254 RGBA | canonical |
 | `src/assets/icons/items/carnival-cat-top-hat-v1.png` | Icon | 1254×1254 RGBA | canonical |
@@ -242,6 +246,27 @@ Regenerated after alpha cleanup. Canonical source: `docs/ECLIPSE_PAWS_SCENARIO.m
 | `src/assets/portraits/child-elias/resolve-v1.png` | Dialogue portrait | 543×724 RGBA | canonical |
 | `src/assets/portraits/child-elias/source-v1.png` | Dialogue portrait | 2172×724 RGBA | canonical |
 | `src/assets/portraits/child-elias/worry-v1.png` | Dialogue portrait | 543×724 RGBA | canonical |
+| `src/assets/portraits/cards/dream-voice-v1.png` | Dialogue portrait (in-game size) | 362×362 RGBA | derived from `icons/abilities/eclipse-v1.png` |
+| `src/assets/portraits/cards/gardener-joy-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/gardener-neutral-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/gardener-resolve-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/gardener-worry-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/lumus-joy-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/lumus-neutral-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/lumus-resolve-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/lumus-worry-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/nox-joy-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/nox-neutral-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/nox-resolve-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/nox-worry-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/small-silence-joy-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/small-silence-neutral-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/small-silence-resolve-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/small-silence-worry-v1.png` | Dialogue portrait (in-game size) | 271×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/sun-little-one-joy-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/sun-little-one-neutral-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/sun-little-one-resolve-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
+| `src/assets/portraits/cards/sun-little-one-worry-v1.png` | Dialogue portrait (in-game size) | 180×362 RGBA | derived from canonical |
 | `src/assets/portraits/gardener/joy-v1.png` | Dialogue portrait | 543×724 RGBA | canonical |
 | `src/assets/portraits/gardener/neutral-v1.png` | Dialogue portrait | 543×724 RGBA | canonical |
 | `src/assets/portraits/gardener/resolve-v1.png` | Dialogue portrait | 543×724 RGBA | canonical |
@@ -298,7 +323,7 @@ Regenerated after alpha cleanup. Canonical source: `docs/ECLIPSE_PAWS_SCENARIO.m
 | `src/assets/portraits/young-elias/source-v1.png` | Dialogue portrait | 2172×724 RGBA | canonical |
 | `src/assets/portraits/young-elias/worry-v1.png` | Dialogue portrait | 543×724 RGBA | canonical |
 | `src/assets/sprites/eclipse-enemy-animation-atlas-v1.png` | Character/enemy art | 1536×1024 RGB | LEGACY / superseded |
-| `src/assets/sprites/eclipse-paws-character-atlas-v1.png` | Character/enemy art | 1536×1024 RGB | LEGACY / superseded |
+| `src/assets/sprites/eclipse-paws-character-atlas-v1.png` | Character/enemy art | 1536×1024 RGB | LEGACY / superseded — no longer loaded by the game |
 | `src/assets/sprites/enemies/blot-idle-v1.png` | Character/enemy art | 724×724 RGBA | canonical |
 | `src/assets/sprites/enemies/blot-leap-v1.png` | Character/enemy art | 724×724 RGBA | canonical |
 | `src/assets/sprites/enemies/blot-source-v1.png` | Character/enemy art | 2172×724 RGBA | canonical |
@@ -327,6 +352,18 @@ Regenerated after alpha cleanup. Canonical source: `docs/ECLIPSE_PAWS_SCENARIO.m
 | `src/assets/sprites/forest-enemy-animation-atlas-v1.png` | Character/enemy art | 1536×1024 RGB | LEGACY / superseded |
 | `src/assets/sprites/fortress-enemy-animation-atlas-v1.png` | Character/enemy art | 1536×1024 RGB | LEGACY / superseded |
 | `src/assets/sprites/garden-enemy-animation-atlas-v1.png` | Character/enemy art | 1448×1086 RGB | LEGACY / superseded |
+| `src/assets/sprites/heroes/cards/lumus-ability-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/lumus-attack-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/lumus-idle-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/lumus-jump-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/lumus-run-contact-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/lumus-run-passing-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/nox-ability-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/nox-attack-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/nox-idle-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/nox-jump-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/nox-run-contact-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
+| `src/assets/sprites/heroes/cards/nox-run-passing-v1.png` | Character art (in-game size) | 150×300 RGBA | derived from canonical |
 | `src/assets/sprites/heroes/lumus-ability-v1.png` | Character/enemy art | 362×724 RGBA | canonical |
 | `src/assets/sprites/heroes/lumus-animation-source-v1.png` | Character/enemy art | 2172×724 RGBA | canonical |
 | `src/assets/sprites/heroes/lumus-attack-v1.png` | Character/enemy art | 362×724 RGBA | canonical |
@@ -401,6 +438,7 @@ Regenerated after alpha cleanup. Canonical source: `docs/ECLIPSE_PAWS_SCENARIO.m
 | `src/assets/ui/chapters/unread-letters-sea-v1.png` | UI asset | 1254×1254 RGBA | canonical |
 | `src/assets/ui/chapters/whispering-lanterns-v1.png` | UI asset | 1254×1254 RGBA | canonical |
 | `src/assets/ui/dialogue-frame-v1.png` | UI asset | 2172×724 RGBA | canonical |
+| `src/assets/ui/dialogue-frame-card-v1.png` | UI asset (in-game size) | 1100×366 RGBA | derived from canonical |
 | `src/assets/ui/eclipse-paws-logo-v1.png` | UI asset | 1536×1024 RGBA | canonical |
 | `src/assets/ui/hero-portrait-frames-v1.png` | UI asset | 1536×1024 RGBA | canonical |
 | `src/assets/ui/icons/music-v1.png` | UI asset | 1254×1254 RGBA | canonical |

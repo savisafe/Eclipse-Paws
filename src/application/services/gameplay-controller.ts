@@ -6,6 +6,7 @@ import {
   type GameEvent,
   type GameplaySnapshot,
   type HeroProgress,
+  type Phase,
   type LootKind,
   type PrototypeContentConfig,
 } from '@core/index';
@@ -48,6 +49,13 @@ export class GameplayController {
     }
   }
 
+  setPhase(phase: Phase): boolean {
+    const changed = this.#session.setPhase(phase);
+    this.#flushEvents();
+    this.#publish();
+    return changed;
+  }
+
   switchActiveCat(): CatId {
     const catId = this.#session.switchActiveCat();
     this.#flushEvents();
@@ -67,6 +75,13 @@ export class GameplayController {
     this.#flushEvents();
     this.#publish();
     return result;
+  }
+
+  castSpecialAbility(): boolean {
+    const result = this.#session.castSpecialAbility();
+    this.#flushEvents();
+    this.#publish();
+    return result !== null;
   }
 
   useSupport(): boolean {

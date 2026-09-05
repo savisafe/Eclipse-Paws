@@ -4,6 +4,7 @@ import type { CatId } from '@core/index';
 import { updateCatAnimation } from './cat-animation';
 import type { Destroyable } from './destroyable';
 import { JUMP_SPEED, PLAYER_SPEED } from './movement-constants';
+import { CAT_DISPLAY_SCALE, catFacing, setCatFacing } from './sprite-atlas';
 
 const FOLLOW_SPEED = PLAYER_SPEED * 0.92;
 const FOLLOW_DEADZONE_X = 70;
@@ -62,7 +63,7 @@ export class CompanionSystem implements Destroyable {
     const body = companion.body as Phaser.Physics.Arcade.Body;
     if (Math.abs(dx) > FOLLOW_DEADZONE_X) {
       companion.setVelocityX(Math.sign(dx) * FOLLOW_SPEED);
-      companion.setFlipX(dx < 0);
+      setCatFacing(companion, dx < 0 ? -1 : 1);
     } else {
       companion.setVelocityX(0);
     }
@@ -76,13 +77,13 @@ export class CompanionSystem implements Destroyable {
   }
 
   #warpToward(companion: Phaser.Physics.Arcade.Sprite, active: Phaser.Physics.Arcade.Sprite): void {
-    const behind = active.flipX ? 1 : -1;
+    const behind = -catFacing(active);
     companion.setPosition(active.x + behind * 40, active.y).setVelocity(0, 0);
     if (this.#reducedMotion) return;
     companion.setScale(0.2);
     this.#scene.tweens.add({
       targets: companion,
-      scale: 0.58,
+      scale: CAT_DISPLAY_SCALE,
       duration: 220,
       ease: 'Back.out',
     });

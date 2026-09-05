@@ -4,12 +4,14 @@ import * as Switch from '@radix-ui/react-switch';
 import { useSettingsStore } from '@ui/store/settings-store';
 
 interface VolumeSliderProps {
-  icon: 'music' | 'effects';
+  icon: 'music' | 'effects' | 'night';
   label: string;
   onValueChange: (value: number) => void;
   value: number;
 }
 
+// Also used for the night-brightness control: §14 asks for the real night's brightness to be
+// adjustable on its own, next to the other accessibility settings.
 function VolumeSlider({ icon, label, onValueChange, value }: VolumeSliderProps) {
   return (
     <label className="setting-row setting-row--stacked">
@@ -39,16 +41,19 @@ export function SettingsDialog() {
   const musicVolume = useSettingsStore((state) => state.musicVolume);
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
   const vibration = useSettingsStore((state) => state.vibration);
+  const nightBrightness = useSettingsStore((state) => state.nightBrightness);
   const setEffectsVolume = useSettingsStore((state) => state.setEffectsVolume);
   const setMusicVolume = useSettingsStore((state) => state.setMusicVolume);
   const setReducedMotion = useSettingsStore((state) => state.setReducedMotion);
   const setVibration = useSettingsStore((state) => state.setVibration);
+  const setNightBrightness = useSettingsStore((state) => state.setNightBrightness);
 
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
-        <button className="menu-button" type="button">
+        <button className="menu-button" disabled type="button">
           <span>Настройки</span>
+          <small>В разработке</small>
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -56,7 +61,7 @@ export function SettingsDialog() {
         <Dialog.Content className="settings-dialog">
           <Dialog.Title>Настройки</Dialog.Title>
           <Dialog.Description>
-            Настройте звук, вибрацию и движение. Параметры сохраняются автоматически.
+            Настройте звук, яркость ночи, вибрацию и движение. Параметры сохраняются автоматически.
           </Dialog.Description>
 
           <div className="settings-dialog__controls">
@@ -71,6 +76,12 @@ export function SettingsDialog() {
               label="Эффекты"
               onValueChange={setEffectsVolume}
               value={effectsVolume}
+            />
+            <VolumeSlider
+              icon="night"
+              label="Яркость ночи"
+              onValueChange={setNightBrightness}
+              value={nightBrightness}
             />
             <label className="setting-row">
               <span>

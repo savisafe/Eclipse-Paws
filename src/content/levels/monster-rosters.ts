@@ -3,7 +3,7 @@
 // with `CAMPAIGN_LEVELS` enemy rosters so it doesn't silently rot, but it is not a source of truth
 // for gameplay.
 export const LEVEL_MONSTER_ROSTERS = {
-  'garden-first-dawn': ['shadefang', 'spore-beast', 'light-wisp'],
+  'garden-first-dawn': ['silence-hound', 'silence-hound-alpha'],
   'whispering-lanterns': ['thorn-stalker', 'lantern-moth', 'elder-spore'],
   'midday-clock-city': ['clockwork-mite', 'eclipse-knight', 'pendulum-wraith', 'fortress-golem'],
   'unread-letters-sea': ['mirror-harpy', 'ink-sprite', 'echo-owl'],

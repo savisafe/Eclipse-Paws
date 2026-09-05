@@ -5,6 +5,7 @@ import {
   SUPPORT_ABILITIES,
 } from '../abilities/canon-abilities';
 import { PROTOTYPE_MONSTERS } from '../enemies/prototype-monsters';
+import { SILENCE_ENEMIES } from '../enemies/silence-hounds';
 import { STAGE4_ENEMIES } from '../enemies/stage4-enemies';
 import { STAGE5_ENEMIES } from '../enemies/stage5-enemies';
 import { validateCampaignContent } from '../schema';
@@ -27,6 +28,10 @@ export type CampaignLevelId =
   | 'forgotten-smiles-carnival'
   | 'last-star-field'
   | 'eternal-sleep-heart';
+
+// Only finished levels belong here. The remaining campaign definitions stay available as
+// development content, but the application must not expose or launch them for players yet.
+export const PLAYABLE_CAMPAIGN_LEVELS: readonly CampaignLevelId[] = ['garden-first-dawn'];
 
 export interface LevelPoint {
   id: string;
@@ -57,6 +62,8 @@ export interface CampaignLevelDefinition {
   checkpoints: readonly [LevelPoint, LevelPoint, LevelPoint];
   coverZones: readonly PlatformRect[];
   difficulty: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  /** Enemies that start hidden and are released by the level's own script. */
+  dormantEnemyIds?: readonly string[];
   enemies: readonly (LevelPoint & { configId: string })[];
   hazards: readonly (LevelPoint & { activePhase: 'day' | 'night' })[];
   id: CampaignLevelId;
@@ -64,6 +71,8 @@ export interface CampaignLevelDefinition {
   mechanic: 'flowers' | 'shadow-bridges' | 'constellations' | 'clocks' | 'boss-rush';
   objective: string;
   phaseDurationMs: number;
+  /** 'story' levels change day/night only when their script says so (§12). */
+  phaseMode?: 'timer' | 'story';
   phasePlatforms: readonly PlatformRect[];
   platforms: readonly PlatformRect[];
   sparks: readonly LevelPoint[];
@@ -95,6 +104,12 @@ function hazard(
 }
 
 export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefinition>> = {
+  // Level 1 is the one level the scenario calls approved (§12, «Сад первой зари»), so its
+  // geometry is authored rather than graybox: a single continuous garden floor whose height
+  // changes from zone to zone, without elevated platforms or bottomless pits. The scenario
+  // bottomless pits — the scenario explicitly forbids "набор прямоугольных платформ над
+  // одинаковыми пропастями" here and asks for water, hedges and height as the obstacles instead.
+  // Zone boundaries, props and inhabitants live in `garden-first-dawn-scene.ts`.
   'garden-first-dawn': {
     id: 'garden-first-dawn',
     index: 1,
@@ -103,42 +118,51 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
     subtitle: 'Глава I · Обучение',
     story:
       'Сад первой зари застыл во вневременном раннем утре. Лумус и Нокс ищут первый след Элиаса.',
-    objective: 'освой движение · раскрой цветочные руны 1→2→3 [E] · первый страж',
+    objective: 'найди Садовника · разбуди солнечные часы · переживи первую ночь сада',
     background: 'garden',
     mechanic: 'flowers',
+    // Nightfall here is a story event the sundial triggers, never a timer (§12). The duration is
+    // kept only because the phase clock still renders it; `phaseMode` is what disables the cycle.
+    phaseMode: 'story',
     phaseDurationMs: 45_000,
-    worldWidth: 3600,
-    bossId: 'twilight-golem-1',
+    worldWidth: 5200,
+    bossId: 'hound-alpha',
+    // The hounds of Silence only appear at the level's turning point ("Только теперь появляются
+    // первые противники"), so every enemy here starts dormant and the story script wakes them.
+    dormantEnemyIds: ['hound-1', 'hound-2', 'hound-3', 'hound-alpha'],
+    // Level 1 has no crouch-in-cover spots: hiding here is Теневой покров (§12), and the generic
+    // purple cover ellipse only cluttered the painted garden.
     coverZones: [],
     platforms: [
-      { x: 500, y: 670, width: 1000, height: 100 },
-      { x: 1300, y: 670, width: 500, height: 100 },
-      { x: 2050, y: 670, width: 820, height: 100 },
-      { x: 2900, y: 670, width: 780, height: 100 },
-      { x: 3480, y: 670, width: 360, height: 100 },
-      { x: 620, y: 535, width: 300, height: 30 },
-      { x: 1100, y: 455, width: 270, height: 30 },
-      { x: 1450, y: 535, width: 230, height: 28 },
-      { x: 2240, y: 520, width: 330, height: 30 },
-      { x: 3040, y: 500, width: 360, height: 30 },
+      // Continuous garden floor, zone by zone (§12 «Ландшафт и построение маршрута»).
+      { x: 380, y: 670, width: 780, height: 100 },
+      { x: 1160, y: 645, width: 800, height: 110 },
+      { x: 1960, y: 686, width: 800, height: 110 },
+      { x: 2710, y: 700, width: 700, height: 120 },
+      { x: 3410, y: 670, width: 700, height: 100 },
+      { x: 4110, y: 650, width: 700, height: 110 },
+      { x: 4830, y: 670, width: 760, height: 100 },
     ],
     phasePlatforms: [],
+    // The middle checkpoint sits immediately before the turning point, as §14 «Сложность и
+    // честность» requires ("контрольная точка ставится перед сложным испытанием"); the last one
+    // is the gate the level ends at.
     checkpoints: checkpointTriplet(
-      ['garden-gate', 'moon-well', 'dawn-shard'],
-      [180, 2050, 3500],
+      ['awakening-meadow', 'night-path', 'memory-gate'],
+      [180, 4480, 5060],
       500,
     ),
     sparks: [
-      point('spark-sunrise', 720, 400),
-      point('spark-well', 2300, 390),
-      point('spark-ruins', 3100, 370),
+      point('spark-dew', 700, 550),
+      point('spark-greenhouse', 2500, 570),
+      point('spark-sundial', 4250, 525),
     ],
-    hazards: [hazard('garden-thorns', 2670, 'night')],
+    hazards: [],
     enemies: [
-      { configId: 'shadefang', id: 'shadefang-1', x: 720, y: 470 },
-      { configId: 'light-wisp', id: 'light-wisp-1', x: 1320, y: 315 },
-      { configId: 'spore-beast', id: 'spore-beast-1', x: 2450, y: 470 },
-      { configId: 'twilight-golem', id: 'twilight-golem-1', x: 3340, y: 445 },
+      { configId: 'silence-hound', id: 'hound-1', x: 4560, y: 560 },
+      { configId: 'silence-hound', id: 'hound-2', x: 4780, y: 560 },
+      { configId: 'silence-hound', id: 'hound-3', x: 4960, y: 560 },
+      { configId: 'silence-hound-alpha', id: 'hound-alpha', x: 5060, y: 550 },
     ],
   },
   'whispering-lanterns': {
@@ -521,18 +545,25 @@ validateCampaignContent({
     specialAbilities: SPECIAL_ABILITIES,
     supportAbilities: SUPPORT_ABILITIES,
   },
-  enemyTypes: { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES },
+  enemyTypes: { ...PROTOTYPE_MONSTERS, ...SILENCE_ENEMIES, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES },
   levels: CAMPAIGN_LEVELS,
 });
 
 export function createLevelContent(levelId: CampaignLevelId): PrototypeContentConfig {
   const level = CAMPAIGN_LEVELS[levelId];
-  const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES };
+  const enemyTypes = {
+    ...PROTOTYPE_MONSTERS,
+    ...SILENCE_ENEMIES,
+    ...STAGE4_ENEMIES,
+    ...STAGE5_ENEMIES,
+  };
   return {
     abilities: PRIMARY_ABILITIES,
     supportAbilities: SUPPORT_ABILITIES,
     specialAbilities: SPECIAL_ABILITIES,
+    initialCheckpointId: level.checkpoints[0].id,
     phaseDurationMs: level.phaseDurationMs,
+    phaseMode: level.phaseMode ?? 'timer',
     enemyTypes,
     enemies: level.enemies.map((spawn) => ({
       id: spawn.id,

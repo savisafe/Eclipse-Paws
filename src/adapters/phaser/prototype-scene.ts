@@ -4,6 +4,7 @@ import type { GameInputState } from '@adapters/input/index';
 import { WebHapticsAdapter } from '@adapters/haptics/index';
 import {
   PROTOTYPE_MONSTERS,
+  SILENCE_ENEMIES,
   STAGE4_ENEMIES,
   STAGE5_ENEMIES,
   type CampaignLevelDefinition,
@@ -17,16 +18,42 @@ import {
 } from './arena-decoration';
 import { createArenaTextures } from './arena-textures';
 import { CombatAbilitySystem } from './combat-ability-system';
+import { GardenCollectibleSystem } from './garden-collectible-system';
 import { CompanionSystem } from './companion-system';
 import { LevelMechanicsSystem } from './level-mechanics-system';
 import { PlatformerEnemySystem } from './platformer-enemy-system';
 import { PlayerMovementSystem } from './player-movement-system';
-import { ATLAS_TEXTURE_KEY, preloadSpriteAtlas, setCatPose } from './sprite-atlas';
+import {
+  ATLAS_TEXTURE_KEY,
+  CAT_DISPLAY_SCALE,
+  catFacing,
+  preloadSpriteAtlas,
+  setCatFacing,
+  setCatPose,
+} from './sprite-atlas';
 import { TagSwitchSystem } from './tag-switch-system';
-import { preloadGardenEnemyAtlas, prepareGardenEnemyAtlas } from './garden-enemy-atlas';
-import { preloadStage4EnemyAtlas, prepareStage4EnemyAtlas } from './stage4-enemy-atlas';
-import { preloadStage5EnemyAtlas, prepareStage5EnemyAtlas } from './stage5-enemy-atlas';
-import { TutorialSystem } from './tutorial-system';
+import {
+  GARDEN_ENEMY_FRAMES,
+  preloadGardenEnemyAtlas,
+  prepareGardenEnemyAtlas,
+} from './garden-enemy-atlas';
+import {
+  SILENCE_ENEMY_FRAMES,
+  preloadSilenceEnemyAtlas,
+  prepareSilenceEnemyAtlas,
+} from './silence-enemy-atlas';
+import {
+  STAGE4_ENEMY_FRAMES,
+  preloadStage4EnemyAtlas,
+  prepareStage4EnemyAtlas,
+} from './stage4-enemy-atlas';
+import {
+  STAGE5_ENEMY_FRAMES,
+  preloadStage5EnemyAtlas,
+  prepareStage5EnemyAtlas,
+} from './stage5-enemy-atlas';
+import { GARDEN_TUTORIAL_STEPS, TutorialSystem } from './tutorial-system';
+import { GardenLevelSystem } from './garden/garden-level-system';
 
 const FIXED_STEP_MS = 1000 / 60;
 
@@ -40,6 +67,7 @@ export interface PrototypeSceneOptions {
   reducedMotion: boolean;
   effectsVolume: number;
   vibration: boolean;
+  nightBrightness: number;
   startNearFinish: boolean;
   startNearCombat: boolean;
 }
@@ -56,6 +84,7 @@ export class PrototypeScene extends Phaser.Scene {
   readonly #reducedMotion: boolean;
   readonly #effectsVolume: number;
   readonly #vibration: boolean;
+  readonly #nightBrightness: number;
   readonly #startNearFinish: boolean;
   readonly #startNearCombat: boolean;
   #accumulatorMs = 0;
@@ -74,6 +103,7 @@ export class PrototypeScene extends Phaser.Scene {
   #switching = false;
   #tagSwitchSystem!: TagSwitchSystem;
   #tutorialSystem: TutorialSystem | null = null;
+  #gardenSystem: GardenLevelSystem | null = null;
   #unsubscribeEvents?: () => void;
 
   constructor(options: PrototypeSceneOptions) {
@@ -87,23 +117,38 @@ export class PrototypeScene extends Phaser.Scene {
     this.#reducedMotion = options.reducedMotion;
     this.#effectsVolume = options.effectsVolume;
     this.#vibration = options.vibration;
+    this.#nightBrightness = options.nightBrightness;
     this.#startNearFinish = options.startNearFinish;
     this.#startNearCombat = options.startNearCombat;
   }
 
+  // Which sprite atlases a level needs follows from the enemies it actually spawns, not from its
+  // index: levels 5 and 6 reuse earlier rosters, and level 1 now fields the hounds of Silence.
+  #needsAtlas(frames: Readonly<Record<string, unknown>>): boolean {
+    return this.#level.enemies.some((enemy) => enemy.configId in frames);
+  }
+
+  get #isGarden(): boolean {
+    return this.#level.id === 'garden-first-dawn';
+  }
+
   preload(): void {
     preloadSpriteAtlas(this);
-    if (this.#level.index === 1) preloadGardenEnemyAtlas(this);
     preloadEnvironment(this, this.#level);
-    if (this.#level.index === 2 || this.#level.index === 3) preloadStage4EnemyAtlas(this);
-    if (this.#level.index >= 4) preloadStage5EnemyAtlas(this);
+    GardenCollectibleSystem.preload(this);
+    if (this.#isGarden) GardenLevelSystem.preload(this);
+    if (this.#needsAtlas(SILENCE_ENEMY_FRAMES)) preloadSilenceEnemyAtlas(this);
+    if (this.#needsAtlas(GARDEN_ENEMY_FRAMES)) preloadGardenEnemyAtlas(this);
+    if (this.#needsAtlas(STAGE4_ENEMY_FRAMES)) preloadStage4EnemyAtlas(this);
+    if (this.#needsAtlas(STAGE5_ENEMY_FRAMES)) preloadStage5EnemyAtlas(this);
   }
 
   create(): void {
     createArenaTextures(this);
-    if (this.#level.index === 1) prepareGardenEnemyAtlas(this);
-    if (this.#level.index === 2 || this.#level.index === 3) prepareStage4EnemyAtlas(this);
-    if (this.#level.index >= 4) prepareStage5EnemyAtlas(this);
+    if (this.#needsAtlas(SILENCE_ENEMY_FRAMES)) prepareSilenceEnemyAtlas(this);
+    if (this.#needsAtlas(GARDEN_ENEMY_FRAMES)) prepareGardenEnemyAtlas(this);
+    if (this.#needsAtlas(STAGE4_ENEMY_FRAMES)) prepareStage4EnemyAtlas(this);
+    if (this.#needsAtlas(STAGE5_ENEMY_FRAMES)) prepareStage5EnemyAtlas(this);
     const world = drawArena(this, this.#level, this.#reducedMotion);
     this.#phaseOverlay = world.phaseOverlay;
     this.#platforms = world.platforms;
@@ -120,7 +165,12 @@ export class PrototypeScene extends Phaser.Scene {
     this.physics.add.collider(Object.values(this.#actors), this.#platforms);
     this.#selection = this.add.ellipse(0, 0, 94, 24).setStrokeStyle(5, 0xffda72, 0.92).setDepth(2);
     drawCheckpoints(this, this.#level);
-    const enemyTypes = { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES };
+    const enemyTypes = {
+      ...PROTOTYPE_MONSTERS,
+      ...SILENCE_ENEMIES,
+      ...STAGE4_ENEMIES,
+      ...STAGE5_ENEMIES,
+    };
     this.#enemySystem = new PlatformerEnemySystem(
       this,
       this.#gameplay,
@@ -130,6 +180,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.#level.hazards,
       this.#level.coverZones,
       this.#level.index,
+      this.#level.dormantEnemyIds,
     );
     this.#hidingStatus = this.add
       .text(640, 165, 'УКРЫТИЕ · враги потеряли след', {
@@ -147,8 +198,22 @@ export class PrototypeScene extends Phaser.Scene {
       .setDepth(35)
       .setVisible(false);
     if (this.#level.index === 1 && !this.#startNearCombat && !this.#startNearFinish) {
-      this.#tutorialSystem = new TutorialSystem(this, this.#reducedMotion);
+      this.#tutorialSystem = new TutorialSystem(this, this.#reducedMotion, GARDEN_TUTORIAL_STEPS);
     }
+    if (this.#isGarden) {
+      this.#gardenSystem = new GardenLevelSystem({
+        actors: this.#actors,
+        enemies: this.#enemySystem,
+        gameplay: this.#gameplay,
+        level: this.#level,
+        nightBrightness: this.#nightBrightness,
+        reducedMotion: this.#reducedMotion,
+        scene: this,
+        onHandOver: (catId) => this.#handOverTo(catId),
+        onTutorialStep: (stepIndex) => this.#tutorialSystem?.complete(stepIndex),
+      });
+    }
+    const garden = this.#gardenSystem;
     this.#combatSystem = new CombatAbilitySystem({
       actionLockMs: this.#actionLockMs,
       actors: this.#actors,
@@ -159,6 +224,10 @@ export class PrototypeScene extends Phaser.Scene {
       effectsVolume: this.#effectsVolume,
       haptics: new WebHapticsAdapter(this.#vibration),
       scene: this,
+      solids: this.#platforms,
+      onShout: garden ? (x, y) => garden.onShout(x, y) : undefined,
+      dashTargets: garden ? () => garden.dashTargets() : undefined,
+      onDashTarget: garden ? (targetId) => garden.triggerDashTarget(targetId) : undefined,
     });
     this.#playerMovement = new PlayerMovementSystem({
       actionLockMs: this.#actionLockMs,
@@ -184,6 +253,7 @@ export class PrototypeScene extends Phaser.Scene {
       scene: this,
       startNearFinish: this.#startNearFinish,
     });
+    this.#exposeDebugState();
     this.#applyPhase('day');
     this.#unsubscribeEvents = this.#gameplay.subscribeToEvents((event) =>
       this.#showProgressEvent(event),
@@ -194,6 +264,18 @@ export class PrototypeScene extends Phaser.Scene {
     this.input.on('pointerdown', this.#handlePointerDown, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.#shutdown, this);
     this.#onReady();
+  }
+
+  // Dev-only, read-only window hook used by the level-1 end-to-end test (see `debugState`).
+  #exposeDebugState(): void {
+    if (!import.meta.env.DEV || !this.#gardenSystem) return;
+    const garden = this.#gardenSystem;
+    (window as unknown as { __eclipsePawsGarden?: () => unknown }).__eclipsePawsGarden = () =>
+      garden.debugState();
+  }
+
+  setNightBrightness(nightBrightness: number): void {
+    this.#gardenSystem?.setNightBrightness(nightBrightness);
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -231,8 +313,10 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.#inputState.consume('support-ability')) this.#combatSystem.support();
     if (this.#inputState.consume('ultimate')) this.#combatSystem.eclipse();
     if (this.#inputState.consume('interact')) {
-      const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
-      this.#levelMechanics.interact(active);
+      const snapshot = this.#gameplay.getSnapshot();
+      const active = this.#actors[snapshot.activeCat];
+      if (this.#gardenSystem) this.#gardenSystem.interact(active, snapshot.activeCat);
+      else this.#levelMechanics.interact(active);
     }
     if (this.#inputState.consume('restart-checkpoint')) this.#gameplay.restartCheckpoint();
     this.#playerMovement.update(deltaMs);
@@ -248,7 +332,8 @@ export class PrototypeScene extends Phaser.Scene {
       .setText(veiled ? 'ТЕНЕВОЙ ПОКРОВ · сон не видит вас' : 'УКРЫТИЕ · враги потеряли след')
       .setVisible(hiding);
     this.#enemySystem.update(active, deltaMs, hiding);
-    this.#levelMechanics.update(active, deltaMs);
+    this.#gardenSystem?.update(deltaMs);
+    this.#levelMechanics.update(active, deltaMs, this.#gardenSystem?.canFinish);
     this.#levelMechanics.setEclipse(snapshot.eclipseActiveMs > 0);
 
     if (snapshot.phase !== this.#lastPhase) this.#applyPhase(snapshot.phase);
@@ -256,11 +341,21 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   #createCat(catId: CatId): Phaser.Physics.Arcade.Sprite {
-    const start = this.#level.checkpoints[0];
+    // Spawn at whichever checkpoint the session is on, so `?checkpoint=<id>` really does start the
+    // level there (readDebugLaunchParams documents that flag as "jump straight to a checkpoint").
+    const checkpointId = this.#gameplay.getSnapshot().checkpointId;
+    const start =
+      this.#level.checkpoints.find((point) => point.id === checkpointId) ??
+      this.#level.checkpoints[0];
     const x = start.x + (catId === 'luma' ? 35 : -45);
     const sprite = this.physics.add.sprite(x, start.y, ATLAS_TEXTURE_KEY).setDepth(6);
     setCatPose(sprite, catId, 'idle');
-    sprite.setScale(0.58).setSize(125, 120).setOffset(65, 105).setCollideWorldBounds(true);
+    setCatFacing(sprite, 1);
+    sprite
+      .setScale(CAT_DISPLAY_SCALE)
+      .setSize(125, 120)
+      .setOffset(65, 105)
+      .setCollideWorldBounds(true);
     return sprite;
   }
 
@@ -274,12 +369,31 @@ export class PrototypeScene extends Phaser.Scene {
     );
   }
 
+  #handOverTo(catId: CatId): void {
+    if (this.#switching || this.#gameplay.getSnapshot().activeCat === catId) return;
+    this.#switchCat();
+  }
+
   #switchCat(): void {
+    const previous = this.#actors[this.#gameplay.getSnapshot().activeCat];
     const activeCat = this.#gameplay.switchActiveCat();
+    const next = this.#actors[activeCat];
+    const nextBody = next.body as Phaser.Physics.Arcade.Body;
+    const unsafeSwitch =
+      !nextBody.blocked.down ||
+      Math.abs(next.x - previous.x) > 260 ||
+      Math.abs(next.y - previous.y) > 140;
+    if (unsafeSwitch) {
+      const side = catFacing(previous) > 0 ? -1 : 1;
+      next.setPosition(previous.x + side * 42, previous.y).setVelocity(0, 0);
+    }
+    nextBody.setAllowGravity(false);
+    next.setVelocity(0, 0);
     this.#switching = true;
     this.#tagSwitchSystem.animate(activeCat, () => {
+      nextBody.setAllowGravity(true);
       this.#switching = false;
-      this.#facing[activeCat] = this.#actors[activeCat].flipX ? -1 : 1;
+      this.#facing[activeCat] = catFacing(this.#actors[activeCat]);
       this.#applyPhase(this.#gameplay.getSnapshot().phase);
     });
   }
@@ -292,6 +406,7 @@ export class PrototypeScene extends Phaser.Scene {
       phase === 'day' ? 0.05 : 0.38,
     );
     this.#levelMechanics.applyPhase(phase);
+    this.#gardenSystem?.applyPhase(phase);
   }
 
   #resetWorld(): void {
@@ -310,7 +425,8 @@ export class PrototypeScene extends Phaser.Scene {
 
   #updateSelection(): void {
     const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
-    this.#selection.setPosition(active.x, active.y + 48);
+    const body = active.body as Phaser.Physics.Arcade.Body;
+    this.#selection.setPosition(body.center.x, body.bottom + 4);
   }
 
   #stopAllActors(): void {
@@ -324,6 +440,7 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   #shutdown(): void {
+    delete (window as unknown as { __eclipsePawsGarden?: () => unknown }).__eclipsePawsGarden;
     this.input.off('pointerdown', this.#handlePointerDown, this);
     this.#inputState.reset();
     // ARC-010: every owned system implements Destroyable — call all of them uniformly, not just
@@ -335,6 +452,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.#playerMovement.destroy();
     this.#companionSystem.destroy();
     this.#tutorialSystem?.destroy();
+    this.#gardenSystem?.destroy();
     this.#unsubscribeEvents?.();
   }
 

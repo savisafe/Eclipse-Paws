@@ -85,14 +85,6 @@ function addPlatformAccent(
   index: number,
 ): void {
   const top = platform.y - platform.height / 2;
-  if (level.background === 'garden') {
-    for (let offset = -platform.width / 2 + 34; offset < platform.width / 2; offset += 72) {
-      scene.add
-        .circle(platform.x + offset, top - 5, 4, index % 2 === 0 ? 0xffdf7b : 0x79d9ed, 0.9)
-        .setDepth(3);
-    }
-    return;
-  }
   if (level.background === 'forest') {
     const roots = scene.add.graphics().setDepth(2);
     roots.lineStyle(5, 0x334d3b, 0.9);
@@ -146,6 +138,71 @@ function addPlatformAccent(
   }
 }
 
+// «Сад первой зари» is authored content, so its ground is drawn as garden terrain instead of the
+// prototype's tile + hard offset shadow: soil with a grass cap, tufts spilling over the edge and a
+// soft shadow directly underneath. The old look read as black bars floating over the painting.
+function drawGardenPlatform(
+  scene: Phaser.Scene,
+  platform: CampaignLevelDefinition['platforms'][number],
+  index: number,
+): void {
+  const width = platform.width;
+  const height = platform.height;
+  const left = platform.x - width / 2;
+  const top = platform.y - height / 2;
+  const radius = Math.min(16, height / 2);
+  const grassHeight = Math.min(19, Math.max(9, height * 0.34));
+  const ledge = height <= 40;
+
+  // Palette taken from the painted background: warm sandstone terraces with a mossy edge, so the
+  // geometry reads as part of the garden instead of a bright green bar laid over it.
+  const ground = scene.add.graphics().setDepth(1);
+  ground.fillStyle(0x2b2a1b, 0.2);
+  ground.fillEllipse(platform.x, top + height - 4, width * 0.92, Math.min(20, height * 0.36));
+  ground.fillStyle(ledge ? 0xb49a76 : 0xa78e6b, 1);
+  ground.fillRoundedRect(left, top + grassHeight * 0.5, width, height - grassHeight * 0.5, {
+    tl: radius,
+    tr: radius,
+    bl: radius * 0.7,
+    br: radius * 0.7,
+  });
+  ground.fillStyle(0x87714f, 0.55);
+  ground.fillRoundedRect(left, top + height * 0.6, width, height * 0.4, {
+    tl: 0,
+    tr: 0,
+    bl: radius * 0.7,
+    br: radius * 0.7,
+  });
+  ground.fillStyle(0x6f9350, 0.92);
+  ground.fillRoundedRect(left - 3, top, width + 6, grassHeight, radius);
+  ground.fillStyle(0x8bb267, 0.85);
+  ground.fillRoundedRect(left - 3, top, width + 6, grassHeight * 0.55, radius);
+
+  // Blades hanging over the edge break the straight silhouette of the rectangle.
+  const tufts = scene.add.graphics().setDepth(2);
+  tufts.fillStyle(0x6f9350, 0.9);
+  for (let offset = 8; offset < width - 8; offset += 30) {
+    const blade = ((index + offset) % 3) * 2;
+    tufts.fillTriangle(
+      left + offset,
+      top + grassHeight - 1,
+      left + offset + 6,
+      top + grassHeight + 5 + blade,
+      left + offset + 12,
+      top + grassHeight - 1,
+    );
+  }
+  // A few flowers, sparse enough to stay decoration rather than pattern.
+  const flowers = scene.add.graphics().setDepth(3);
+  for (let offset = 26 + (index % 3) * 30; offset < width - 22; offset += 118) {
+    const warm = (index + offset) % 2 === 0;
+    flowers.fillStyle(warm ? 0xfff0be : 0xe6d8ff, 0.9);
+    flowers.fillCircle(left + offset, top + 3, 3.4);
+    flowers.fillStyle(warm ? 0xffc978 : 0xb0a0ee, 0.9);
+    flowers.fillCircle(left + offset, top + 3, 1.5);
+  }
+}
+
 export function drawArena(
   scene: Phaser.Scene,
   level: CampaignLevelDefinition,
@@ -155,16 +212,23 @@ export function drawArena(
   const platforms = scene.physics.add.staticGroup();
 
   level.platforms.forEach((platform, index) => {
+    if (level.background === 'garden') {
+      const body = scene.add
+        .tileSprite(platform.x, platform.y, platform.width, platform.height, 'garden-platform-tile')
+        .setVisible(false);
+      scene.physics.add.existing(body, true);
+      platforms.add(body);
+      drawGardenPlatform(scene, platform, index);
+      return;
+    }
     const edgeColor =
-      level.background === 'garden'
-        ? 0xf4d676
-        : level.background === 'forest'
-          ? 0x70e4c6
-          : level.background === 'library'
-            ? 0x9bdcff
-            : level.background === 'fortress'
-              ? 0xffb85c
-              : 0xc17cff;
+      level.background === 'forest'
+        ? 0x70e4c6
+        : level.background === 'library'
+          ? 0x9bdcff
+          : level.background === 'fortress'
+            ? 0xffb85c
+            : 0xc17cff;
     scene.add
       .rectangle(
         platform.x + 8,
@@ -226,27 +290,6 @@ export function drawArena(
       .setDepth(5);
   });
 
-  scene.add
-    .text(95, 70, `${level.title.toUpperCase()} · УРОВЕНЬ ${level.index}`, {
-      color: '#fff4ce',
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '21px',
-      fontStyle: 'bold',
-      letterSpacing: 3,
-      stroke: '#1a2d39',
-      strokeThickness: 5,
-    })
-    .setScrollFactor(0.65);
-  scene.add
-    .text(95, 105, `ЦЕЛЬ: ${level.objective}`, {
-      color: '#fff8dd',
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '15px',
-      stroke: '#142235',
-      strokeThickness: 4,
-    })
-    .setScrollFactor(0.65);
-
   const phaseOverlay = scene.add
     .rectangle(0, 0, level.worldWidth, PLATFORMER_WORLD_HEIGHT, 0x251c52, 0)
     .setOrigin(0)
@@ -256,6 +299,35 @@ export function drawArena(
 
 export function drawCheckpoints(scene: Phaser.Scene, level: CampaignLevelDefinition): void {
   level.checkpoints.forEach((point, index) => {
+    // In the garden a checkpoint is one of its own light flowers, opened and glowing, instead of
+    // the prototype's teal ring with a caption over it.
+    if (level.background === 'garden') {
+      const glow = scene.add
+        .circle(point.x, point.y + 6, 34, 0xffe9a8, 0.22)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(3);
+      const flower = scene.add
+        .image(point.x, point.y, 'garden-flower-open')
+        .setDisplaySize(76, 76)
+        .setDepth(4);
+      scene.tweens.add({
+        targets: glow,
+        scale: 1.2,
+        alpha: 0.1,
+        duration: 1600,
+        yoyo: true,
+        repeat: -1,
+      });
+      scene.tweens.add({
+        targets: flower,
+        y: point.y - 5,
+        duration: 2200,
+        ease: 'Sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      });
+      return;
+    }
     scene.add.image(point.x, point.y, 'checkpoint').setAlpha(0.8).setDepth(3);
     scene.add
       .text(
