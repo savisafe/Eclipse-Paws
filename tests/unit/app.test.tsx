@@ -46,4 +46,25 @@ describe('App', () => {
 
     expect(screen.getByText('Открываем «Сад первой зари»…')).toBeVisible();
   });
+
+  it('a debug launch query skips the menu and jumps straight into the requested level (ARC-015)', async () => {
+    vi.resetModules();
+    window.history.replaceState(null, '', '?level=whispering-forest&heroLevel=3');
+    try {
+      const { App: DebugLaunchApp } = await import('@ui/App');
+      render(<DebugLaunchApp />);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(450);
+      });
+      await act(async () => {
+        await vi.runOnlyPendingTimersAsync();
+      });
+
+      expect(screen.queryByRole('navigation', { name: 'Главное меню' })).not.toBeInTheDocument();
+      expect(screen.getByText('Открываем «Лес шепчущих теней»…')).toBeVisible();
+    } finally {
+      window.history.replaceState(null, '', '');
+    }
+  });
 });

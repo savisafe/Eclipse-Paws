@@ -1,7 +1,15 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { LevelPoint, PlatformRect } from '@content/index';
-import { enemyAiProfileForLevel, type EnemyAiProfile, type EnemyConfig } from '@core/index';
+import {
+  canEnemyDetectTarget,
+  enemyAiProfileForLevel,
+  isHazardAhead,
+  isStrikeHit,
+  isTargetConcealed,
+  type EnemyAiProfile,
+  type EnemyConfig,
+} from '@core/index';
 import type { EffectTarget } from './platformer-effects';
 import { GARDEN_ENEMY_FRAMES } from './garden-enemy-atlas';
 import { STAGE4_ENEMY_FRAMES } from './stage4-enemy-atlas';
@@ -191,7 +199,7 @@ export class PlatformerEnemySystem {
   }
 
   update(targetCat: Phaser.Physics.Arcade.Sprite, deltaMs: number, hiding = false): void {
-    const concealed = hiding && this.#insideCover(targetCat.x, targetCat.y);
+    const concealed = isTargetConcealed(targetCat.x, targetCat.y, this.#coverZones, hiding);
     const states = new Map(this.#gameplay.getSnapshot().enemies.map((enemy) => [enemy.id, enemy]));
     this.#enemies.forEach((enemy) => {
       const state = states.get(enemy.id);
@@ -217,7 +225,7 @@ export class PlatformerEnemySystem {
         targetCat.x,
         targetCat.y,
       );
-      const canDetectTarget = !concealed || COVER_SENSORS.has(enemy.config.id);
+      const canDetectTarget = canEnemyDetectTarget(concealed, enemy.config.id, COVER_SENSORS);
 
       if (!canDetectTarget && enemy.telegraphMs > 0) {
         enemy.telegraphMs = 0;
@@ -323,7 +331,7 @@ export class PlatformerEnemySystem {
     const approachDirection = aggressive ? Math.sign(dx || enemy.direction) : enemy.direction;
     if (
       enemy.jumpCooldownMs === 0 &&
-      this.#hazardAhead(enemy.sprite, approachDirection, body.bottom)
+      isHazardAhead(enemy.sprite.x, approachDirection, body.bottom, this.#hazards)
     ) {
       this.#jump(enemy, approachDirection, 0.68);
       return;
@@ -390,27 +398,6 @@ export class PlatformerEnemySystem {
     });
   }
 
-  #hazardAhead(sprite: Phaser.Physics.Arcade.Sprite, direction: number, footY: number): boolean {
-    return this.#hazards.some((hazard) => {
-      const dx = hazard.x - sprite.x;
-      return (
-        Math.sign(dx || direction) === Math.sign(direction) &&
-        Math.abs(dx) < 125 &&
-        Math.abs(hazard.y - footY) < 90
-      );
-    });
-  }
-
-  #insideCover(x: number, y: number): boolean {
-    return this.#coverZones.some(
-      (cover) =>
-        x >= cover.x - cover.width / 2 &&
-        x <= cover.x + cover.width / 2 &&
-        y >= cover.y - cover.height / 2 &&
-        y <= cover.y + cover.height / 2,
-    );
-  }
-
   #recoverFallenEnemy(enemy: EnemyView): void {
     enemy.sprite.setPosition(enemy.spawn.x, enemy.spawn.y).setVelocity(0, 0);
     enemy.direction *= -1;
@@ -446,7 +433,9 @@ export class PlatformerEnemySystem {
     enemy.sprite.clearTint();
     enemy.sprite.setFrame(enemy.frames.idle);
     enemy.cooldownMs = this.#ai.strikeCooldownMs;
-    if (distance < this.#ai.attackRange + 24) this.#gameplay.takeDamage(enemy.config.contactDamage);
+    if (isStrikeHit(distance, this.#ai.attackRange)) {
+      this.#gameplay.takeDamage(enemy.config.contactDamage);
+    }
   }
 
   #playMove(enemy: EnemyView): void {

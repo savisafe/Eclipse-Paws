@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { GameplayController } from '@application/index';
 import { KeyboardInputAdapter, type GameInputState } from '@adapters/input/index';
 import type { CampaignLevelDefinition } from '@content/index';
+import { readDebugLaunchParams } from '@ui/debug-launch';
 
 interface GameCanvasProps {
   gameplay: GameplayController;
@@ -47,10 +48,7 @@ export function GameCanvas({
     void import('@adapters/phaser/create-prototype-game')
       .then(({ createPrototypeGame }) => {
         if (cancelled) return;
-        const startNearFinish =
-          import.meta.env.DEV && new URLSearchParams(window.location.search).has('startNearFinish');
-        const startNearCombat =
-          import.meta.env.DEV && new URLSearchParams(window.location.search).has('startNearCombat');
+        const { startNearCombat, startNearFinish } = readDebugLaunchParams();
         game = createPrototypeGame({
           gameplay,
           inputState,

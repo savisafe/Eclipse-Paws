@@ -1,4 +1,5 @@
-import { createDefaultHeroProgress, type HeroProgress } from '../gameplay/models';
+import { createDefaultHeroProgress, type HeroProgress } from '../models';
+import { legacySaveGameShapeSchema, saveGameSchemaFor } from './save-game.schema';
 
 export const SAVE_SCHEMA_VERSION = 2;
 
@@ -33,31 +34,33 @@ export function createDefaultSave(): SaveGame {
 
 export function parseSaveGame(value: unknown): SaveGame | null {
   if (!value || typeof value !== 'object') return null;
-  const candidate = value as Partial<SaveGame>;
-  if (candidate.schemaVersion !== SAVE_SCHEMA_VERSION) return migrateSave(candidate);
-  if (!Array.isArray(candidate.unlockedLevels) || !Array.isArray(candidate.completedLevels)) {
-    return null;
-  }
+  const schemaVersion = (value as Partial<SaveGame>).schemaVersion;
+  if (schemaVersion !== SAVE_SCHEMA_VERSION) return migrateSave(value);
+
+  const parsed = saveGameSchemaFor(SAVE_SCHEMA_VERSION).safeParse(value);
+  if (!parsed.success) return null;
+
   const defaults = createDefaultSave();
   return {
     ...defaults,
-    ...candidate,
-    bestTimesMs: candidate.bestTimesMs ?? {},
-    heroProgress: candidate.heroProgress ?? defaults.heroProgress,
-    settings: { ...defaults.settings, ...candidate.settings },
-    sparksByLevel: candidate.sparksByLevel ?? {},
+    ...parsed.data,
+    bestTimesMs: parsed.data.bestTimesMs ?? {},
+    heroProgress: parsed.data.heroProgress ?? defaults.heroProgress,
+    settings: { ...defaults.settings, ...parsed.data.settings },
+    sparksByLevel: parsed.data.sparksByLevel ?? {},
   };
 }
 
-function migrateSave(candidate: Partial<SaveGame>): SaveGame | null {
-  if (candidate.schemaVersion !== 0 && candidate.schemaVersion !== 1) return null;
+function migrateSave(value: unknown): SaveGame | null {
+  const parsed = legacySaveGameShapeSchema.safeParse(value);
+  if (!parsed.success) return null;
+  if (parsed.data.schemaVersion !== 0 && parsed.data.schemaVersion !== 1) return null;
+
   const migrated = createDefaultSave();
   return {
     ...migrated,
-    completedLevels: Array.isArray(candidate.completedLevels) ? candidate.completedLevels : [],
-    heroProgress: candidate.heroProgress ?? migrated.heroProgress,
-    unlockedLevels: Array.isArray(candidate.unlockedLevels)
-      ? candidate.unlockedLevels
-      : migrated.unlockedLevels,
+    completedLevels: parsed.data.completedLevels ?? [],
+    heroProgress: parsed.data.heroProgress ?? migrated.heroProgress,
+    unlockedLevels: parsed.data.unlockedLevels ?? migrated.unlockedLevels,
   };
 }

@@ -42,4 +42,14 @@ describe('save game', () => {
     expect(save.unlockedLevels).toContain('whispering-forest');
     expect(save.settings.vibration).toBe(true);
   });
+
+  it('rejects a current-schema save with the wrong field types instead of trusting it (ARC-002)', () => {
+    const rejected = parseSaveGame({
+      schemaVersion: 2,
+      completedLevels: ['garden-first-dawn'],
+      unlockedLevels: ['garden-first-dawn'],
+      bestTimesMs: { 'garden-first-dawn': 'not-a-number' },
+    });
+    expect(rejected).toBeNull();
+  });
 });

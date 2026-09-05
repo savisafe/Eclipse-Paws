@@ -102,7 +102,7 @@ export class PrototypeScene extends Phaser.Scene {
     if (this.#level.index === 1) prepareGardenEnemyAtlas(this);
     if (this.#level.index === 2 || this.#level.index === 3) prepareStage4EnemyAtlas(this);
     if (this.#level.index >= 4) prepareStage5EnemyAtlas(this);
-    const world = drawArena(this, this.#level);
+    const world = drawArena(this, this.#level, this.#reducedMotion);
     this.#phaseOverlay = world.phaseOverlay;
     this.#platforms = world.platforms;
 

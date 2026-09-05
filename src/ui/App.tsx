@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AppController, GameplayController, ProgressService } from '@application/index';
-import { GameInputState } from '@adapters/input/index';
-import { LocalStorageSaveRepository } from '@adapters/storage/index';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { GameplayController } from '@application/index';
+import { createAppServices } from '@ui/composition-root';
+import { readDebugLaunchParams, shouldAutoStartDebugLaunch } from '@ui/debug-launch';
 import {
   CAMPAIGN_LEVEL_ORDER,
   CAMPAIGN_LEVELS,
@@ -19,45 +19,39 @@ import { useSessionStore } from '@ui/store/session-store';
 import { useSettingsStore } from '@ui/store/settings-store';
 import { createDefaultHeroProgress, type HeroProgress } from '@core/index';
 
+const DEBUG_LAUNCH = readDebugLaunchParams();
+
 function createCampaignGameplay(
   levelId: CampaignLevelId,
   progress?: HeroProgress,
 ): GameplayController {
-  const requestedDuration = Number(
-    new URLSearchParams(window.location.search).get('phaseDurationMs'),
-  );
   const content =
-    import.meta.env.DEV && Number.isFinite(requestedDuration) && requestedDuration >= 100
-      ? { ...createLevelContent(levelId), phaseDurationMs: requestedDuration }
+    DEBUG_LAUNCH.phaseDurationMs !== null
+      ? { ...createLevelContent(levelId), phaseDurationMs: DEBUG_LAUNCH.phaseDurationMs }
       : createLevelContent(levelId);
-  return new GameplayController(content, progress);
-}
-
-function devHeroLevelOverride(): number | null {
-  const requested = Number(new URLSearchParams(window.location.search).get('heroLevel'));
-  return import.meta.env.DEV && Number.isInteger(requested) && requested >= 1 ? requested : null;
+  const gameplay = new GameplayController(content, progress);
+  const requestedCheckpointId = DEBUG_LAUNCH.checkpointId;
+  if (
+    requestedCheckpointId &&
+    CAMPAIGN_LEVELS[levelId].checkpoints.some((point) => point.id === requestedCheckpointId)
+  ) {
+    gameplay.reachCheckpoint(requestedCheckpointId);
+  }
+  return gameplay;
 }
 
 function applyDevHeroLevelOverride(progress: HeroProgress): HeroProgress {
-  const level = devHeroLevelOverride();
-  return level === null ? progress : { ...progress, level };
+  return DEBUG_LAUNCH.heroLevel === null
+    ? progress
+    : { ...progress, level: DEBUG_LAUNCH.heroLevel };
 }
 
 function initialLevelFromLocation(): CampaignLevelId {
-  const requested = new URLSearchParams(window.location.search).get('level');
-  return import.meta.env.DEV &&
-    requested &&
-    CAMPAIGN_LEVEL_ORDER.includes(requested as CampaignLevelId)
-    ? (requested as CampaignLevelId)
-    : 'garden-first-dawn';
+  return DEBUG_LAUNCH.level ?? 'garden-first-dawn';
 }
 
 export function App() {
-  const [appController] = useState(() => new AppController());
-  const [inputState] = useState(() => new GameInputState());
-  const [progressService] = useState(
-    () => new ProgressService(new LocalStorageSaveRepository(window.localStorage)),
-  );
+  const [{ appController, inputState, progressService }] = useState(createAppServices);
   const [selectedLevel, setSelectedLevel] = useState<CampaignLevelId>(initialLevelFromLocation);
   const [unlockedLevels, setUnlockedLevels] = useState<CampaignLevelId[]>(['garden-first-dawn']);
   const [heroProgress, setHeroProgress] = useState<HeroProgress>(() =>
@@ -103,6 +97,14 @@ export function App() {
     setGameplay(createCampaignGameplay(selectedLevel, heroProgress));
     appController.startNewGame();
   }, [appController, heroProgress, inputState, selectedLevel]);
+  const debugAutostarted = useRef(false);
+  useEffect(() => {
+    if (debugAutostarted.current) return;
+    if (appState !== 'main-menu' || !shouldAutoStartDebugLaunch(DEBUG_LAUNCH)) return;
+    debugAutostarted.current = true;
+    const timeoutId = window.setTimeout(() => startNewGame(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [appState, startNewGame]);
   const openLevelIntro = useCallback((levelId: CampaignLevelId) => {
     setSelectedLevel(levelId);
     setShowIntro(true);

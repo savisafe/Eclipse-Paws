@@ -7,6 +7,7 @@ import {
 import { PROTOTYPE_MONSTERS } from '../enemies/prototype-monsters';
 import { STAGE4_ENEMIES } from '../enemies/stage4-enemies';
 import { STAGE5_ENEMIES } from '../enemies/stage5-enemies';
+import { validateCampaignContent } from '../schema';
 
 export type CampaignLevelId =
   'garden-first-dawn' | 'whispering-forest' | 'sky-library' | 'clock-fortress' | 'eclipse-heart';
@@ -376,6 +377,18 @@ export const CAMPAIGN_LEVEL_ORDER: readonly CampaignLevelId[] = [
   'clock-fortress',
   'eclipse-heart',
 ];
+
+// ARC-002: fail fast with a readable message on malformed content, instead of silently defaulting
+// (see `createLevelContent` below, which used to fall back to `health: 1` for unknown configIds).
+validateCampaignContent({
+  abilities: {
+    abilities: PROTOTYPE_ABILITIES,
+    specialAbilities: PROTOTYPE_SPECIAL_ABILITIES,
+    supportAbilities: PROTOTYPE_SUPPORT_ABILITIES,
+  },
+  enemyTypes: { ...PROTOTYPE_MONSTERS, ...STAGE4_ENEMIES, ...STAGE5_ENEMIES },
+  levels: CAMPAIGN_LEVELS,
+});
 
 export function createLevelContent(levelId: CampaignLevelId): PrototypeContentConfig {
   const level = CAMPAIGN_LEVELS[levelId];

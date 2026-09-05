@@ -1,33 +1,75 @@
 import Phaser from 'phaser';
 import type { CampaignLevelDefinition } from '@content/index';
-import gardenBackgroundUrl from '../../assets/environments/garden-first-dawn-background-v1.jpg?url';
 import gardenPlatformUrl from '../../assets/environments/garden-stone-platform-tile-v1.png?url';
-import forestBackgroundUrl from '../../assets/environments/whispering-forest-background-v1.jpg?url';
-import libraryBackgroundUrl from '../../assets/environments/celestial-library-background-v1.jpg?url';
-import fortressBackgroundUrl from '../../assets/environments/clock-fortress-background-v1.jpg?url';
-import eclipseBackgroundUrl from '../../assets/environments/eclipse-heart-background-v1.jpg?url';
+import { environmentForLevel } from './dream-environment-manifest';
 
 export const PLATFORMER_WORLD_HEIGHT = 720;
 
-const BACKGROUNDS: Record<CampaignLevelDefinition['background'], string> = {
-  garden: gardenBackgroundUrl,
-  forest: forestBackgroundUrl,
-  library: libraryBackgroundUrl,
-  fortress: fortressBackgroundUrl,
-  eclipse: eclipseBackgroundUrl,
-};
-
 export function preloadEnvironment(scene: Phaser.Scene, level: CampaignLevelDefinition): void {
-  scene.load.image('level-background', BACKGROUNDS[level.background]);
+  scene.load.image('level-background', environmentForLevel(level.index).imageUrl);
   scene.load.image('garden-platform-tile', gardenPlatformUrl);
 }
 
-function addParallax(scene: Phaser.Scene): void {
-  scene.add
+function addParallax(
+  scene: Phaser.Scene,
+  level: CampaignLevelDefinition,
+  reducedMotion: boolean,
+): void {
+  const art = environmentForLevel(level.index);
+  const background = scene.add
     .image(640, 360, 'level-background')
-    .setDisplaySize(1280, 720)
+    .setDisplaySize(1296, 729)
     .setScrollFactor(0)
     .setDepth(-30);
+  const glow = scene.add
+    .ellipse(640, 315, 900, 430, art.accent, 0.045)
+    .setScrollFactor(0.035)
+    .setBlendMode(Phaser.BlendModes.ADD)
+    .setDepth(-25);
+  const motes = Array.from({ length: 18 }, (_, index) =>
+    scene.add
+      .circle(
+        70 + ((index * 137) % 1160),
+        80 + ((index * 83) % 520),
+        1.5 + (index % 3),
+        art.accent,
+        0.28,
+      )
+      .setScrollFactor(0.06 + (index % 4) * 0.025)
+      .setDepth(-22),
+  );
+  if (!reducedMotion) {
+    scene.tweens.add({
+      targets: background,
+      scaleX: background.scaleX * 1.012,
+      scaleY: background.scaleY * 1.012,
+      duration: art.motion === 'pulse' ? 6200 : 9800,
+      ease: 'Sine.InOut',
+      yoyo: true,
+      repeat: -1,
+    });
+    scene.tweens.add({
+      targets: glow,
+      alpha: 0.1,
+      duration: 3600,
+      ease: 'Sine.InOut',
+      yoyo: true,
+      repeat: -1,
+    });
+    motes.forEach((mote, index) => {
+      scene.tweens.add({
+        targets: mote,
+        x: mote.x + 24 + (index % 4) * 9,
+        y: mote.y - 18 - (index % 5) * 7,
+        alpha: 0.08,
+        duration: 3600 + (index % 6) * 620,
+        delay: index * 90,
+        ease: 'Sine.InOut',
+        yoyo: true,
+        repeat: -1,
+      });
+    });
+  }
   scene.add.rectangle(640, 360, 1280, 720, 0x173447, 0.08).setScrollFactor(0).setDepth(-20);
 }
 
@@ -107,8 +149,9 @@ function addPlatformAccent(
 export function drawArena(
   scene: Phaser.Scene,
   level: CampaignLevelDefinition,
+  reducedMotion = false,
 ): PlatformerWorldView {
-  addParallax(scene);
+  addParallax(scene, level, reducedMotion);
   const platforms = scene.physics.add.staticGroup();
 
   level.platforms.forEach((platform, index) => {
