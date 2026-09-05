@@ -163,7 +163,11 @@ export class PrototypeScene extends Phaser.Scene {
     else if (this.#startNearCombat) this.#actors.luma.setPosition(540, 500);
     this.#tagSwitchSystem = new TagSwitchSystem(this, this.#actors, this.#reducedMotion);
     this.physics.add.collider(Object.values(this.#actors), this.#platforms);
-    this.#selection = this.add.ellipse(0, 0, 94, 24).setStrokeStyle(5, 0xffda72, 0.92).setDepth(2);
+    this.#selection = this.add
+      .ellipse(0, 0, 112, 28)
+      .setFillStyle(0x10152e, 0.2)
+      .setStrokeStyle(5, 0xffda72, 0.96)
+      .setDepth(5);
     drawCheckpoints(this, this.#level);
     const enemyTypes = {
       ...PROTOTYPE_MONSTERS,
@@ -354,7 +358,7 @@ export class PrototypeScene extends Phaser.Scene {
     sprite
       .setScale(CAT_DISPLAY_SCALE)
       .setSize(125, 120)
-      .setOffset(65, 105)
+      .setOffset(98, 170)
       .setCollideWorldBounds(true);
     return sprite;
   }

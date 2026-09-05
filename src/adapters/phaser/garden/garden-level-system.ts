@@ -222,7 +222,7 @@ export class GardenLevelSystem implements Destroyable {
   }
 
   #advanceScript(active: Phaser.Physics.Arcade.Sprite): void {
-    if (!this.#done.has('frozen-morning') && active.x > 620) this.#play('frozen-morning');
+    if (!this.#done.has('frozen-morning') && active.x > 744) this.#play('frozen-morning');
 
     if (!this.#done.has('gardener-met') && this.#npcs.hasSpoken('gardener', 'day')) {
       this.#play('gardener-met');
@@ -241,7 +241,7 @@ export class GardenLevelSystem implements Destroyable {
     if (
       this.#done.has('nightfall') &&
       !this.#done.has('warning') &&
-      (this.#npcs.hasSpoken('little-one-night-path', 'night') || active.x > 4640)
+      (this.#npcs.hasSpoken('little-one-night-path', 'night') || active.x > 5568)
     ) {
       this.#play('warning');
     }

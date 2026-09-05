@@ -16,7 +16,7 @@ import lightBeamIcon from '../../assets/icons/cards/lumus-light-beam-v1.png?url'
 import shadowNeedlesIcon from '../../assets/icons/cards/nox-shadow-needles-v1.png?url';
 
 export const ATLAS_TEXTURE_KEY = 'painted-character-atlas';
-export const CAT_DISPLAY_SCALE = 0.9;
+export const CAT_DISPLAY_SCALE = 0.7;
 
 type CatPose = 'ability' | 'attack' | 'idle' | 'jump';
 
@@ -39,9 +39,10 @@ const POSE_SOURCES: readonly { key: string; url: string }[] = [
   { key: 'hero-nox-ability', url: noxAbility },
 ];
 
-const CELL = 256;
+const CELL = 320;
 const COLUMNS = 6;
-const MAX_POSE_SIZE = 232;
+const NORMALIZED_CAT_HEIGHT = 170;
+const MAX_CAT_WIDTH = 292;
 
 const CAT_FRAMES: Readonly<Record<CatId, Readonly<Record<CatPose, number>>>> = {
   luma: { idle: 0, jump: 3, attack: 4, ability: 5 },
@@ -153,14 +154,10 @@ export function prepareSpriteAtlas(scene: Phaser.Scene): void {
   });
 
   poses.forEach(({ bounds, source }, frame) => {
-    // All canonical pose cards share the same 150×300 canvas. Scale from that canvas rather
-    // than independently fitting every alpha bound: a long running pose must not be enlarged
-    // while a tall idle pose is shrunk, otherwise the same cat changes size every other frame.
-    // Match every Nox pose to the visible height of the corresponding Lumus pose. Deriving the
-    // correction from alpha bounds keeps both heroes equal even when individual art is replaced.
-    const matchingLumusBounds = frame >= COLUMNS ? poses[frame - COLUMNS]?.bounds : undefined;
-    const catScaleCorrection = matchingLumusBounds ? matchingLumusBounds.height / bounds.height : 1;
-    const scale = (MAX_POSE_SIZE / source.height) * catScaleCorrection;
+    // Height represents the cat's scale more reliably than its longest dimension: running and
+    // attack poses are naturally wide because of the tail and stretched legs. Keep the same
+    // visible height in every pose, with a safety cap for unusually wide artwork.
+    const scale = Math.min(NORMALIZED_CAT_HEIGHT / bounds.height, MAX_CAT_WIDTH / bounds.width);
     const width = bounds.width * scale;
     const height = bounds.height * scale;
     const column = frame % COLUMNS;

@@ -33,7 +33,7 @@ export class TagSwitchSystem implements Destroyable {
     this.#burstMotes(nextId, position.x, position.y);
     setCatPose(next, nextId, 'ability');
     this.#scene.cameras.main.startFollow(next, true, 0.09, 0.09);
-    next.setScale(CAT_DISPLAY_SCALE * 1.12);
+    next.setScale(CAT_DISPLAY_SCALE);
     this.#scene.tweens.add({
       targets: next,
       scale: CAT_DISPLAY_SCALE,

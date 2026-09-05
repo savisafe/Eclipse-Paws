@@ -205,7 +205,11 @@ export class CombatAbilitySystem implements Destroyable {
   // the scenario outright ("не является кнопкой массового уничтожения").
   eclipse(): void {
     if (!this.#gameplay.useEclipse()) return;
-    const active = this.#actors[this.#activeCat()];
+    const catId = this.#activeCat();
+    const active = this.#actors[catId];
+    active.anims.stop();
+    setCatPose(active, catId, 'ability');
+    this.#actionLockMs[catId] = 650;
     const wave = this.#waves.acquire();
     if (!wave) return;
     wave.setPosition(active.x, active.y).setScale(1).setAlpha(0.45);

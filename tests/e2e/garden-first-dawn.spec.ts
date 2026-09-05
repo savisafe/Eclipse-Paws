@@ -93,7 +93,7 @@ test('opens with a safe, enemy-free garden and its own scripted dialogue', async
 
   await page.keyboard.press('KeyE');
   await page.keyboard.press('KeyE');
-  await walkTo(page, 720);
+  await walkTo(page, 864);
   await expect
     .poll(async () => (await gardenState(page)).beats, { timeout: 15_000 })
     .toContain('frozen-morning');
@@ -110,13 +110,13 @@ test('turns the sundial with both cats, which brings the night and the hounds', 
   await page.keyboard.press('KeyE');
 
   // The debug checkpoint drops the cats onto the night path, just past the sundial square.
-  expect((await gardenState(page)).activeX).toBeGreaterThan(4_400);
+  expect((await gardenState(page)).activeX).toBeGreaterThan(5_280);
 
   // Both halves of the sundial are in reach from the middle of the square: Лумус wakes the light,
   // Нокс frees the shadow, and only together do they move the dream's time (§12).
   for (let round = 0; round < 3; round += 1) {
     if ((await gardenState(page)).sundialReady) break;
-    await walkTo(page, 4_120, 40);
+    await walkTo(page, 4_944, 40);
     await interactUntil(page, (state) => state.sundialHalves > round);
     await page.keyboard.press('Tab');
     await page.waitForTimeout(400);
@@ -128,7 +128,7 @@ test('turns the sundial with both cats, which brings the night and the hounds', 
   await expect(page.locator('.phase-clock')).toContainText('Фаза: Ночь', { timeout: 10_000 });
 
   // The turning point: the sleep notices the cats and only then sends the hounds of Silence.
-  await walkTo(page, 4_700, 30);
+  await walkTo(page, 5_640, 30);
   await expect
     .poll(async () => (await gardenState(page)).houndsAwake, { timeout: 20_000 })
     .toBe(true);

@@ -125,7 +125,7 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
     // kept only because the phase clock still renders it; `phaseMode` is what disables the cycle.
     phaseMode: 'story',
     phaseDurationMs: 45_000,
-    worldWidth: 5200,
+    worldWidth: 6240,
     bossId: 'hound-alpha',
     // The hounds of Silence only appear at the level's turning point ("Только теперь появляются
     // первые противники"), so every enemy here starts dormant and the story script wakes them.
@@ -133,36 +133,29 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
     // Level 1 has no crouch-in-cover spots: hiding here is Теневой покров (§12), and the generic
     // purple cover ellipse only cluttered the painted garden.
     coverZones: [],
-    platforms: [
-      // Continuous garden floor, zone by zone (§12 «Ландшафт и построение маршрута»).
-      { x: 380, y: 670, width: 780, height: 100 },
-      { x: 1160, y: 645, width: 800, height: 110 },
-      { x: 1960, y: 686, width: 800, height: 110 },
-      { x: 2710, y: 700, width: 700, height: 120 },
-      { x: 3410, y: 670, width: 700, height: 100 },
-      { x: 4110, y: 650, width: 700, height: 110 },
-      { x: 4830, y: 670, width: 760, height: 100 },
-    ],
+    // A single uninterrupted walking plane. Changes of place are communicated by landmarks and
+    // scenery, not by arbitrary steps in the collision floor.
+    platforms: [{ x: 3120, y: 670, width: 6240, height: 100 }],
     phasePlatforms: [],
     // The middle checkpoint sits immediately before the turning point, as §14 «Сложность и
     // честность» requires ("контрольная точка ставится перед сложным испытанием"); the last one
     // is the gate the level ends at.
     checkpoints: checkpointTriplet(
       ['awakening-meadow', 'night-path', 'memory-gate'],
-      [180, 4480, 5060],
+      [216, 5376, 6072],
       500,
     ),
     sparks: [
-      point('spark-dew', 700, 550),
-      point('spark-greenhouse', 2500, 570),
-      point('spark-sundial', 4250, 525),
+      point('spark-dew', 840, 550),
+      point('spark-greenhouse', 3000, 570),
+      point('spark-sundial', 5100, 525),
     ],
     hazards: [],
     enemies: [
-      { configId: 'silence-hound', id: 'hound-1', x: 4560, y: 560 },
-      { configId: 'silence-hound', id: 'hound-2', x: 4780, y: 560 },
-      { configId: 'silence-hound', id: 'hound-3', x: 4960, y: 560 },
-      { configId: 'silence-hound-alpha', id: 'hound-alpha', x: 5060, y: 550 },
+      { configId: 'silence-hound', id: 'hound-1', x: 5472, y: 560 },
+      { configId: 'silence-hound', id: 'hound-2', x: 5736, y: 560 },
+      { configId: 'silence-hound', id: 'hound-3', x: 5952, y: 560 },
+      { configId: 'silence-hound-alpha', id: 'hound-alpha', x: 6072, y: 550 },
     ],
   },
   'whispering-lanterns': {

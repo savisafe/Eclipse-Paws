@@ -48,13 +48,24 @@ export class GardenNpcSystem implements Destroyable {
     this.#scene = scene;
     GARDEN_NPCS.forEach((config) => {
       const view = scene.add.image(config.x, config.y, textureFor(config, 'day')).setDepth(5);
-      const width = config.art === 'gardener' ? 150 : 108;
+      const width = config.art === 'gardener' ? 136 : 88;
       view.setDisplaySize(width, width * (view.height / view.width));
       if (!reducedMotion) {
         scene.tweens.add({
           targets: view,
           y: view.y - 6,
           duration: 1800 + config.x * 0.1,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.InOut',
+        });
+        // Small idle gestures keep inhabitants from reading as pasted-on signposts. Their motion
+        // is deliberately slower than the heroes' animation so it never steals focus.
+        scene.tweens.add({
+          targets: view,
+          angle: config.art === 'gardener' ? 1.5 : config.x % 2 === 0 ? 3 : -3,
+          duration: config.art === 'gardener' ? 2600 : 1700,
+          delay: (config.x % 5) * 120,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.InOut',
@@ -73,7 +84,7 @@ export class GardenNpcSystem implements Destroyable {
   applyPhase(phase: Phase): void {
     this.#npcs.forEach((npc) => {
       npc.view.setTexture(textureFor(npc.config, phase));
-      const width = npc.config.art === 'gardener' ? 150 : 108;
+      const width = npc.config.art === 'gardener' ? 136 : 88;
       npc.view.setDisplaySize(width, width * (npc.view.height / npc.view.width));
       // At night the little ones' bodies go out and only their shadows are readable.
       npc.view.setAlpha(phase === 'night' && npc.config.art !== 'gardener' ? 0.82 : 1);

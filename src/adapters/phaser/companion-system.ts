@@ -80,10 +80,10 @@ export class CompanionSystem implements Destroyable {
     const behind = -catFacing(active);
     companion.setPosition(active.x + behind * 40, active.y).setVelocity(0, 0);
     if (this.#reducedMotion) return;
-    companion.setScale(0.2);
+    companion.setScale(CAT_DISPLAY_SCALE).setAlpha(0.2);
     this.#scene.tweens.add({
       targets: companion,
-      scale: CAT_DISPLAY_SCALE,
+      alpha: 1,
       duration: 220,
       ease: 'Back.out',
     });

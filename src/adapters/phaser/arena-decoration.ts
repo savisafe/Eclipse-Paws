@@ -178,10 +178,17 @@ function drawGardenPlatform(
   ground.fillStyle(0x8bb267, 0.85);
   ground.fillRoundedRect(left - 3, top, width + 6, grassHeight * 0.55, radius);
 
+  // Broad, low-contrast soil patches break the platform's flat vector fill without competing
+  // with characters or interactive props.
+  ground.fillStyle(0x6f5b43, 0.2);
+  for (let offset = 180 + index * 37; offset < width - 100; offset += 520) {
+    ground.fillEllipse(left + offset, top + grassHeight + 28, 190, 34);
+  }
+
   // Blades hanging over the edge break the straight silhouette of the rectangle.
   const tufts = scene.add.graphics().setDepth(2);
   tufts.fillStyle(0x6f9350, 0.9);
-  for (let offset = 8; offset < width - 8; offset += 30) {
+  for (let offset = 12; offset < width - 12; offset += 46) {
     const blade = ((index + offset) % 3) * 2;
     tufts.fillTriangle(
       left + offset,
@@ -194,12 +201,21 @@ function drawGardenPlatform(
   }
   // A few flowers, sparse enough to stay decoration rather than pattern.
   const flowers = scene.add.graphics().setDepth(3);
-  for (let offset = 26 + (index % 3) * 30; offset < width - 22; offset += 118) {
+  for (let offset = 44 + (index % 3) * 34; offset < width - 30; offset += 236) {
     const warm = (index + offset) % 2 === 0;
     flowers.fillStyle(warm ? 0xfff0be : 0xe6d8ff, 0.9);
     flowers.fillCircle(left + offset, top + 3, 3.4);
     flowers.fillStyle(warm ? 0xffc978 : 0xb0a0ee, 0.9);
     flowers.fillCircle(left + offset, top + 3, 1.5);
+  }
+
+  // Sparse stones give the walking plane contact and scale; keeping them below paw height makes
+  // them texture, not apparent obstacles.
+  const stones = scene.add.graphics().setDepth(2);
+  for (let offset = 250 + (index % 4) * 41; offset < width - 80; offset += 410) {
+    const stoneWidth = 12 + ((offset + index) % 3) * 4;
+    stones.fillStyle((offset / 410) % 2 === 0 ? 0x8f8068 : 0xb3a184, 0.52);
+    stones.fillEllipse(left + offset, top + 7, stoneWidth, 5 + (index % 2) * 2);
   }
 }
 
