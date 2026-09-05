@@ -33,7 +33,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /Продолжить/ })).toBeDisabled();
   });
 
-  it('shows the story card before loading the prototype arena', async () => {
+  it('shows the prologue slideshow before loading the prototype arena, then skips seamlessly (COM-010A/COM-019)', async () => {
     render(<App />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(450);
@@ -41,10 +41,24 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Новая игра' }));
 
-    expect(screen.getByRole('heading', { name: 'Сад первой зари' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Начать уровень' }));
+    expect(screen.getByRole('main', { name: 'Пролог: Между двумя ударами' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Пропустить' }));
 
+    expect(screen.queryByRole('main', { name: /Пролог/ })).not.toBeInTheDocument();
     expect(screen.getByText('Открываем «Сад первой зари»…')).toBeVisible();
+  });
+
+  it('shows the epilogue slideshow when the app reaches that state', async () => {
+    render(<App />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(450);
+    });
+
+    act(() => {
+      useSessionStore.setState({ appState: 'epilogue' });
+    });
+
+    expect(screen.getByRole('main', { name: 'Эпилог: Те, кто остаются рядом' })).toBeVisible();
   });
 
   it('a debug launch query skips the menu and jumps straight into the requested level (ARC-015)', async () => {

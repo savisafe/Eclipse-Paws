@@ -6,12 +6,15 @@ import {
   CAMPAIGN_LEVEL_ORDER,
   CAMPAIGN_LEVELS,
   createLevelContent,
+  EPILOGUE_PANELS,
+  PROLOGUE_PANELS,
   type CampaignLevelId,
 } from '@content/index';
 import { BootScreen } from '@ui/components/BootScreen';
 import { GameScreen } from '@ui/components/GameScreen';
 import { MainMenu } from '@ui/components/MainMenu';
 import { LevelResult } from '@ui/components/LevelResult';
+import { Slideshow } from '@ui/components/Slideshow';
 import { StoryIntro } from '@ui/components/StoryIntro';
 import { Credits } from '@ui/components/Credits';
 import { useAppController } from '@ui/hooks/use-app-controller';
@@ -97,6 +100,19 @@ export function App() {
     setGameplay(createCampaignGameplay(selectedLevel, heroProgress));
     appController.startNewGame();
   }, [appController, heroProgress, inputState, selectedLevel]);
+  const startBrandNewGame = useCallback(() => {
+    setSelectedLevel(CAMPAIGN_LEVEL_ORDER[0]!);
+    appController.showPrologue();
+  }, [appController]);
+  const handlePrologueComplete = useCallback(() => {
+    // COM-019: seamless transition — the last prologue panel leads straight into gameplay,
+    // not through another intro card ("skip ведёт в уровень 1 без двойной загрузки").
+    inputState.reset();
+    setGameplay(createCampaignGameplay(CAMPAIGN_LEVEL_ORDER[0]!, heroProgress));
+    appController.prologueFinished();
+  }, [appController, heroProgress, inputState]);
+  const startEpilogue = useCallback(() => appController.showEpilogue(), [appController]);
+  const handleEpilogueComplete = useCallback(() => appController.showCredits(), [appController]);
   const debugAutostarted = useRef(false);
   useEffect(() => {
     if (debugAutostarted.current) return;
@@ -109,10 +125,6 @@ export function App() {
     setSelectedLevel(levelId);
     setShowIntro(true);
   }, []);
-  const openIntro = useCallback(
-    () => openLevelIntro(selectedLevel),
-    [openLevelIntro, selectedLevel],
-  );
   const closeIntro = useCallback(() => setShowIntro(false), []);
   const startFromIntro = useCallback(() => {
     setShowIntro(false);
@@ -142,7 +154,6 @@ export function App() {
     appController.returnToMenu();
     openLevelIntro(nextLevel);
   }, [appController, nextLevel, openLevelIntro]);
-  const showCredits = useCallback(() => appController.showCredits(), [appController]);
   const continueGame = useCallback(() => {
     const available = CAMPAIGN_LEVEL_ORDER.filter((levelId) => unlockedLevels.includes(levelId));
     openLevelIntro(available.at(-1) ?? 'garden-first-dawn');
@@ -150,6 +161,26 @@ export function App() {
 
   if (appState === 'boot') return <BootScreen />;
   if (appState === 'credits') return <Credits onMenu={returnToMenu} />;
+  if (appState === 'prologue') {
+    return (
+      <Slideshow
+        autoAdvanceMs={11_000}
+        onComplete={handlePrologueComplete}
+        panels={PROLOGUE_PANELS}
+        title="Пролог: Между двумя ударами"
+      />
+    );
+  }
+  if (appState === 'epilogue') {
+    return (
+      <Slideshow
+        autoAdvanceMs={13_000}
+        onComplete={handleEpilogueComplete}
+        panels={EPILOGUE_PANELS}
+        title="Эпилог: Те, кто остаются рядом"
+      />
+    );
+  }
   if (appState === 'main-menu') {
     return showIntro ? (
       <StoryIntro
@@ -162,7 +193,7 @@ export function App() {
     ) : (
       <MainMenu
         onContinue={continueGame}
-        onNewGame={openIntro}
+        onNewGame={startBrandNewGame}
         onSelectLevel={openLevelIntro}
         unlockedLevels={unlockedLevels}
       />
@@ -186,7 +217,7 @@ export function App() {
           nextLevel
             ? startNextLevel
             : selectedLevel === 'eternal-sleep-heart'
-              ? showCredits
+              ? startEpilogue
               : undefined
         }
         onReplay={startNewGame}

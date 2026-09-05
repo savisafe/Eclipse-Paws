@@ -1,8 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function startGame(page: Page): Promise<void> {
+  // "Новая игра" now shows the prologue slideshow first (COM-010A) before seamlessly entering
+  // garden-first-dawn (COM-019) — no more intermediate "Начать уровень" click for a brand new
+  // game specifically (that card is still used for level-to-level transitions, see
+  // `finishAndAdvance` below).
   await page.getByRole('button', { name: 'Новая игра' }).click();
-  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await page.getByRole('button', { name: 'Пропустить' }).click();
 }
 
 test('boots into a keyboard-accessible menu without layout overflow', async ({ page }) => {
@@ -127,8 +131,10 @@ test('completes all seven campaign levels and reaches the credits', async ({ pag
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.enemy-counter')).toContainText('Монстры: 9', { timeout: 15_000 });
 
-  // 7. Сердце вечного сна -> Финал/титры
+  // 7. Сердце вечного сна -> эпилог -> титры
   await finishAndAdvance('Финал');
+  await expect(page.getByRole('main', { name: 'Эпилог: Те, кто остаются рядом' })).toBeVisible();
+  await page.getByRole('button', { name: 'Пропустить' }).click();
   await expect(page.getByRole('heading', { name: 'Eclipse Paws' })).toBeVisible();
   expect(errors).toEqual([]);
 });

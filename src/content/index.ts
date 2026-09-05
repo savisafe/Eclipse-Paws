@@ -24,3 +24,6 @@ export {
 export { STAGE4_ENEMIES } from './enemies/stage4-enemies';
 export { STAGE5_ENEMIES } from './enemies/stage5-enemies';
 export { CAMPAIGN_DIALOGUES, type DialogueBeat } from './dialogues/campaign-dialogues';
+export type { SlidePanel } from './story/slide-panel';
+export { PROLOGUE_PANELS } from './story/prologue-panels';
+export { EPILOGUE_PANELS } from './story/epilogue-panels';
