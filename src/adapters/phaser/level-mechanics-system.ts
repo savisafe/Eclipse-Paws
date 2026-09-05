@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { CampaignLevelDefinition } from '@content/index';
 import type { CatId, Phase } from '@core/index';
+import type { Destroyable } from './destroyable';
 import { GardenCollectibleSystem } from './garden-collectible-system';
 import { FinalBossSystem } from './final-boss-system';
 import { GardenFlowerPuzzle } from './garden-flower-puzzle';
@@ -11,7 +12,7 @@ import type { PlatformerEnemySystem } from './platformer-enemy-system';
 import { PlatformerHazardSystem } from './platformer-hazard-system';
 import { PlatformerProgressSystem } from './platformer-progress-system';
 
-export class LevelMechanicsSystem {
+export class LevelMechanicsSystem implements Destroyable {
   readonly #collectibles: GardenCollectibleSystem;
   readonly #constellations: LibraryConstellationSystem | null;
   readonly #enemies: PlatformerEnemySystem;
@@ -43,8 +44,10 @@ export class LevelMechanicsSystem {
       options.gameplay,
       options.level.sparks,
     );
+    // Level 1 has its own authored props (see `garden/garden-prop-system.ts`); the generic rune
+    // puzzle stays for the levels that still reuse it.
     this.#flowers =
-      options.level.mechanic === 'flowers'
+      options.level.mechanic === 'flowers' && options.level.id !== 'garden-first-dawn'
         ? new GardenFlowerPuzzle(options.scene, options.gameplay, options.actors)
         : null;
     this.#finalBoss =
@@ -66,6 +69,7 @@ export class LevelMechanicsSystem {
       options.actors,
       options.level.phasePlatforms,
       options.level.mechanic,
+      options.level.background === 'garden',
     );
     this.#hazards = new PlatformerHazardSystem(
       options.scene,
@@ -86,13 +90,17 @@ export class LevelMechanicsSystem {
     this.#constellations?.interact(active, this.#gameplay.getSnapshot().phase);
   }
 
-  update(active: Phaser.Physics.Arcade.Sprite, deltaMs: number): void {
+  // `canFinishOverride` lets an authored level decide for itself when its exit opens — level 1's
+  // gate follows its script, not the generic puzzle/boss gate.
+  update(active: Phaser.Physics.Arcade.Sprite, deltaMs: number, canFinishOverride?: boolean): void {
     this.#hazards.update(deltaMs);
     this.#finalBoss?.update(deltaMs);
     this.#collectibles.update(active);
     const canFinish =
       this.#startNearFinish ||
-      ((this.#flowers?.solved ?? true) &&
+      canFinishOverride ||
+      (canFinishOverride === undefined &&
+        (this.#flowers?.solved ?? true) &&
         (this.#constellations?.solved ?? true) &&
         this.#enemies.isDefeated(this.#level.bossId));
     this.#progress.update(active, canFinish);
@@ -101,5 +109,19 @@ export class LevelMechanicsSystem {
   applyPhase(phase: Phase): void {
     this.#phaseBridges.update(phase);
     this.#constellations?.applyPhase(phase);
+  }
+
+  setEclipse(active: boolean): void {
+    this.#phaseBridges.setEclipse(active);
+  }
+
+  // All 7 sub-systems here only own Phaser display objects and tweens/delayedCalls created via
+  // `scene.add`/`scene.tweens`/`scene.time` — Phaser's DisplayList/TweenManager/Clock already
+  // destroy those on scene shutdown (verified against the installed Phaser 3.90 source). None of
+  // them hold an AudioContext, a raw timer, or an app-level event subscription. Present as a
+  // no-op to satisfy the uniform Destroyable contract (ARC-010) and give a home for real cleanup
+  // if a future sub-system ever needs one.
+  destroy(): void {
+    // Intentionally empty — see comment above.
   }
 }

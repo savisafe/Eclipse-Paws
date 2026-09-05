@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import type { CatId } from '@core/index';
-import { setCatPose } from './sprite-atlas';
+import type { Destroyable } from './destroyable';
+import { CAT_DISPLAY_SCALE, setCatPose } from './sprite-atlas';
 import { GameObjectPool } from './game-object-pool';
 
-export class TagSwitchSystem {
+export class TagSwitchSystem implements Destroyable {
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   readonly #reducedMotion: boolean;
   readonly #scene: Phaser.Scene;
@@ -22,40 +23,31 @@ export class TagSwitchSystem {
     );
   }
 
-  animate(previousId: CatId, nextId: CatId, onComplete: () => void): void {
-    const previous = this.#actors[previousId];
+  // GAM-014: both cats now stay physically present as a companion pair — switching hands
+  // control to `next` at its own real position instead of teleporting/hiding either body (the
+  // old "one cat magically becomes the other" swap didn't leave room for a following companion).
+  animate(nextId: CatId, onComplete: () => void): void {
     const next = this.#actors[nextId];
-    const position = { x: previous.x, y: previous.y };
+    const position = { x: next.x, y: next.y };
     const effect = this.#createEffect(nextId, position.x, position.y);
     this.#burstMotes(nextId, position.x, position.y);
-    const duration = this.#reducedMotion ? 1 : 150;
-    previous.setVelocity(0, 0);
+    setCatPose(next, nextId, 'ability');
+    this.#scene.cameras.main.startFollow(next, true, 0.09, 0.09);
+    next.setScale(CAT_DISPLAY_SCALE);
     this.#scene.tweens.add({
-      targets: previous,
-      alpha: 0,
-      scale: 0.18,
-      duration,
-      onComplete: () => {
-        previous.disableBody(true, true).setAlpha(1).setScale(0.58);
-        next.enableBody(true, position.x, position.y, true, true).setAlpha(0).setScale(0.2);
-        next.setFlipX(previous.flipX);
-        setCatPose(next, nextId, 'ability');
-        this.#scene.cameras.main.startFollow(next, true, 0.09, 0.09);
-        this.#scene.tweens.add({
-          targets: next,
-          alpha: 1,
-          scale: 0.58,
-          duration: this.#reducedMotion ? 1 : 210,
-          onComplete,
-        });
-      },
+      targets: next,
+      scale: CAT_DISPLAY_SCALE,
+      duration: this.#reducedMotion ? 1 : 360,
+      ease: 'Sine.inOut',
+      onComplete,
     });
     this.#scene.tweens.add({
       targets: effect,
       alpha: 0,
       scale: nextId === 'luma' ? 2.8 : 2.1,
       angle: nextId === 'luma' ? 0 : 110,
-      duration: this.#reducedMotion ? 1 : 380,
+      duration: this.#reducedMotion ? 1 : 520,
+      ease: 'Sine.out',
       onComplete: () => effect.destroy(),
     });
   }

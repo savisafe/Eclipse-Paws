@@ -7,7 +7,7 @@ export function BootScreen() {
       </div>
       <p className="boot-screen__title">Eclipse Paws</p>
       <p className="boot-screen__status" role="status">
-        Пробуждаем Эйлару…
+        Открываем врата сна…
       </p>
     </main>
   );

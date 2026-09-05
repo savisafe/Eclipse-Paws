@@ -10,14 +10,13 @@ interface GameHudProps {
 export function GameHud({ gameplay }: GameHudProps) {
   const snapshot = useGameplaySnapshot(gameplay);
   const seconds = Math.max(0, Math.ceil(snapshot.phaseRemainingMs / 1000));
-  const enemiesRemaining = snapshot.enemies.filter((enemy) => enemy.health > 0).length;
   const dominantCat = dominantCatForPhase(snapshot.phase);
 
   return (
     <header className="game-hud" aria-label="Игровой интерфейс">
       <div className="hud-portraits" aria-label="Хранители">
         <div
-          aria-label={`Кокс: ${dominantCat === 'luma' ? 'усилен' : 'ослаблен'}`}
+          aria-label={`Лумус: ${dominantCat === 'luma' ? 'усилен' : 'ослаблен'}`}
           aria-current={snapshot.activeCat === 'luma' ? 'true' : undefined}
           className={`hud-cat hud-cat--luma ${snapshot.activeCat === 'luma' ? 'is-active' : ''} ${dominantCat === 'luma' ? 'is-empowered' : 'is-weakened'}`}
         >
@@ -25,12 +24,12 @@ export function GameHud({ gameplay }: GameHudProps) {
             ☀
           </span>
           <span className="hud-cat__copy">
-            <strong>Кокс</strong>
+            <strong>Лумус</strong>
             <small>{dominantCat === 'luma' ? 'СИЛА ×1.5' : 'СЛАБО ×0.25'}</small>
           </span>
         </div>
         <div
-          aria-label={`Боня: ${dominantCat === 'nox' ? 'усилен' : 'ослаблен'}`}
+          aria-label={`Нокс: ${dominantCat === 'nox' ? 'усилен' : 'ослаблен'}`}
           aria-current={snapshot.activeCat === 'nox' ? 'true' : undefined}
           className={`hud-cat hud-cat--nox ${snapshot.activeCat === 'nox' ? 'is-active' : ''} ${dominantCat === 'nox' ? 'is-empowered' : 'is-weakened'}`}
         >
@@ -38,7 +37,7 @@ export function GameHud({ gameplay }: GameHudProps) {
             ☾
           </span>
           <span className="hud-cat__copy">
-            <strong>Боня</strong>
+            <strong>Нокс</strong>
             <small>{dominantCat === 'nox' ? 'СИЛА ×1.5' : 'СЛАБО ×0.25'}</small>
           </span>
         </div>
@@ -52,22 +51,13 @@ export function GameHud({ gameplay }: GameHudProps) {
         <strong>{seconds}</strong>
       </div>
 
-      <div className="eclipse-meter" aria-label={`Затмение: ${Math.round(snapshot.eclipseMeter)}%`}>
-        <span style={{ width: `${snapshot.eclipseMeter}%` }} />
-        <strong>
-          {snapshot.eclipseMeter >= snapshot.maxEclipseMeter
-            ? 'X · ОБЪЯТИЕ'
-            : `${Math.round(snapshot.eclipseMeter)}%`}
-        </strong>
-      </div>
-
       <div className="hud-status">
         <div
           className="hero-health"
           aria-label={`HP героев: ${snapshot.bondHealth} из ${snapshot.maxBondHealth}`}
         >
           <div className="hero-health__label">
-            <span>Кокс + Боня</span>
+            <span>Лумус + Нокс</span>
             <strong>
               {snapshot.bondHealth}/{snapshot.maxBondHealth} HP
             </strong>
@@ -75,17 +65,6 @@ export function GameHud({ gameplay }: GameHudProps) {
           <div className="hero-health__track" aria-hidden="true">
             <span style={{ width: `${(snapshot.bondHealth / snapshot.maxBondHealth) * 100}%` }} />
           </div>
-        </div>
-        <span className="enemy-counter">Монстры: {enemiesRemaining}</span>
-        <span className="spark-counter">Искры: {snapshot.sparksCollected}/3</span>
-        <div
-          className="hero-progress"
-          aria-label={`Уровень ${snapshot.heroLevel}, опыт ${snapshot.heroXp} из ${snapshot.heroXpToNext}`}
-        >
-          <strong>LV {snapshot.heroLevel}</strong>
-          <span className="hero-progress__track" aria-hidden="true">
-            <i style={{ width: `${(snapshot.heroXp / snapshot.heroXpToNext) * 100}%` }} />
-          </span>
         </div>
       </div>
 

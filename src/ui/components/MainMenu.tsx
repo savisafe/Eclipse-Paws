@@ -32,14 +32,9 @@ export function MainMenu({ onContinue, onNewGame, onSelectLevel, unlockedLevels 
         </div>
 
         <nav className="menu-actions" aria-label="Главное меню">
-          <button
-            className="menu-button"
-            disabled={unlockedLevels.length <= 1}
-            onClick={onContinue}
-            type="button"
-          >
+          <button className="menu-button" disabled onClick={onContinue} type="button">
             <span>Продолжить</span>
-            {unlockedLevels.length <= 1 ? <small>Нет сохранения</small> : null}
+            <small>В разработке</small>
           </button>
           {menuItems.map((item) => (
             <button

@@ -1,9 +1,20 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { LevelPoint, PlatformRect } from '@content/index';
-import { enemyAiProfileForLevel, type EnemyAiProfile, type EnemyConfig } from '@core/index';
+import {
+  canEnemyDetectTarget,
+  ECLIPSE_SLOW_FACTOR,
+  enemyAiProfileForLevel,
+  isHazardAhead,
+  isStrikeHit,
+  isTargetConcealed,
+  type EnemyAiProfile,
+  type EnemyConfig,
+} from '@core/index';
+import type { Destroyable } from './destroyable';
 import type { EffectTarget } from './platformer-effects';
 import { GARDEN_ENEMY_FRAMES } from './garden-enemy-atlas';
+import { SILENCE_ENEMY_FRAMES } from './silence-enemy-atlas';
 import { STAGE4_ENEMY_FRAMES } from './stage4-enemy-atlas';
 import { STAGE5_ENEMY_FRAMES } from './stage5-enemy-atlas';
 
@@ -93,10 +104,13 @@ function anchorToNearestPlatform(
   return { ...requested, x: sprite.x, y: sprite.y };
 }
 
-export class PlatformerEnemySystem {
+export class PlatformerEnemySystem implements Destroyable {
   readonly #ai: EnemyAiProfile;
   readonly #collectedDrops = new Set<string>();
   readonly #coverZones: readonly PlatformRect[];
+  // Enemies a level script keeps off-stage until its own turning point (§12: the hounds only
+  // appear once the sleep notices the cats).
+  readonly #dormant = new Set<string>();
   readonly #enemies = new Map<string, EnemyView>();
   readonly #gameplay: GameplayController;
   readonly #hazards: readonly LevelPoint[];
@@ -112,7 +126,9 @@ export class PlatformerEnemySystem {
     hazards: readonly LevelPoint[],
     coverZones: readonly PlatformRect[],
     levelIndex: number,
+    dormantEnemyIds: readonly string[] = [],
   ) {
+    dormantEnemyIds.forEach((enemyId) => this.#dormant.add(enemyId));
     this.#scene = scene;
     this.#gameplay = gameplay;
     this.#hazards = hazards;
@@ -123,7 +139,9 @@ export class PlatformerEnemySystem {
       const config = enemyTypes[spawn.configId];
       if (!config) throw new Error(`Unknown platformer monster: ${spawn.configId}`);
       const campaignFrames =
-        STAGE4_ENEMY_FRAMES[spawn.configId] ?? STAGE5_ENEMY_FRAMES[spawn.configId];
+        SILENCE_ENEMY_FRAMES[spawn.configId] ??
+        STAGE4_ENEMY_FRAMES[spawn.configId] ??
+        STAGE5_ENEMY_FRAMES[spawn.configId];
       const frames: EnemyFrames | undefined = campaignFrames ?? GARDEN_ENEMY_FRAMES[spawn.configId];
       if (!frames) throw new Error(`Missing atlas frames for monster: ${spawn.configId}`);
       const sprite = scene.physics.add
@@ -131,6 +149,7 @@ export class PlatformerEnemySystem {
         .setDepth(5)
         .setCollideWorldBounds(false);
       const isBoss = [
+        'silence-hound-alpha',
         'great-mushroom',
         'archivist-echo',
         'fortress-golem',
@@ -167,6 +186,11 @@ export class PlatformerEnemySystem {
         .setOrigin(0, 0.5)
         .setDepth(19);
 
+      if (this.#dormant.has(spawn.id)) {
+        sprite.disableBody(true, true);
+        healthBack.setVisible(false);
+        healthFill.setVisible(false);
+      }
       this.#enemies.set(spawn.id, {
         config,
         cooldownMs: 700,
@@ -187,13 +211,37 @@ export class PlatformerEnemySystem {
   }
 
   targets(): EffectTarget[] {
-    return [...this.#enemies.values()].map(({ id, sprite }) => ({ id, sprite }));
+    return [...this.#enemies.values()]
+      .filter((enemy) => !this.#dormant.has(enemy.id))
+      .map(({ id, sprite }) => ({ id, sprite }));
+  }
+
+  /** Brings dormant enemies on stage at the moment the level's script calls for them. */
+  release(enemyIds: readonly string[]): void {
+    enemyIds.forEach((enemyId) => {
+      const enemy = this.#enemies.get(enemyId);
+      if (!enemy || !this.#dormant.delete(enemyId)) return;
+      enemy.sprite.enableBody(true, enemy.spawn.x, enemy.spawn.y, true, true);
+      enemy.sprite.setAlpha(0);
+      enemy.healthBack.setVisible(true);
+      enemy.healthFill.setVisible(true);
+      this.#scene.tweens.add({ targets: enemy.sprite, alpha: 1, duration: 420 });
+    });
+  }
+
+  isDormant(enemyId: string): boolean {
+    return this.#dormant.has(enemyId);
   }
 
   update(targetCat: Phaser.Physics.Arcade.Sprite, deltaMs: number, hiding = false): void {
-    const concealed = hiding && this.#insideCover(targetCat.x, targetCat.y);
-    const states = new Map(this.#gameplay.getSnapshot().enemies.map((enemy) => [enemy.id, enemy]));
+    const concealed = isTargetConcealed(targetCat.x, targetCat.y, this.#coverZones, hiding);
+    const snapshot = this.#gameplay.getSnapshot();
+    const states = new Map(snapshot.enemies.map((enemy) => [enemy.id, enemy]));
+    const stunned = new Set(snapshot.stunnedEnemyIds);
+    // Затмение slows the sleep's creatures instead of damaging them (§12).
+    const speedFactor = snapshot.eclipseActiveMs > 0 ? ECLIPSE_SLOW_FACTOR : 1;
     this.#enemies.forEach((enemy) => {
+      if (this.#dormant.has(enemy.id)) return;
       const state = states.get(enemy.id);
       if (!state || state.health <= 0) {
         this.#updateLootDrop(enemy);
@@ -206,6 +254,18 @@ export class PlatformerEnemySystem {
         enemy.sprite.enableBody(true, enemy.spawn.x, enemy.spawn.y, true, true);
       this.#updateHealthBar(enemy, state.health);
       if (enemy.sprite.y > 790) this.#recoverFallenEnemy(enemy);
+      // Оглушающий крик buys a safe window: a stunned enemy holds still and drops its telegraph
+      // instead of resolving the strike (§12).
+      if (stunned.has(enemy.id)) {
+        enemy.telegraphMs = 0;
+        enemy.cooldownMs = Math.max(enemy.cooldownMs, 220);
+        enemy.sprite
+          .setVelocity(0, enemy.config.movement === 'flying' ? 0 : enemy.sprite.body!.velocity.y)
+          .setTint(0x8fd7ff);
+        enemy.sprite.anims.stop();
+        return;
+      }
+      if (enemy.sprite.tintTopLeft === 0x8fd7ff) enemy.sprite.clearTint();
       enemy.cooldownMs = Math.max(0, enemy.cooldownMs - deltaMs);
       enemy.jumpCooldownMs = Math.max(0, enemy.jumpCooldownMs - deltaMs);
       const targetBody = arcadeBody(targetCat);
@@ -217,7 +277,7 @@ export class PlatformerEnemySystem {
         targetCat.x,
         targetCat.y,
       );
-      const canDetectTarget = !concealed || COVER_SENSORS.has(enemy.config.id);
+      const canDetectTarget = canEnemyDetectTarget(concealed, enemy.config.id, COVER_SENSORS);
 
       if (!canDetectTarget && enemy.telegraphMs > 0) {
         enemy.telegraphMs = 0;
@@ -238,14 +298,14 @@ export class PlatformerEnemySystem {
             enemy.sprite,
             predictedX,
             targetCat.y + targetBody.velocity.y * this.#ai.predictionSeconds,
-            enemy.config.speed,
+            enemy.config.speed * speedFactor,
           );
         } else {
           this.#scene.physics.moveTo(
             enemy.sprite,
             enemy.spawn.x,
             enemy.spawn.y,
-            enemy.config.speed * 0.55,
+            enemy.config.speed * 0.55 * speedFactor,
           );
         }
         enemy.sprite.setFlipX(dx < 0);
@@ -256,6 +316,7 @@ export class PlatformerEnemySystem {
           targetCat.y,
           canDetectTarget && distance <= this.#ai.aggressionRange,
           deltaMs,
+          speedFactor,
         );
       }
     });
@@ -264,6 +325,7 @@ export class PlatformerEnemySystem {
   reset(): void {
     this.#collectedDrops.clear();
     this.#enemies.forEach((enemy) => {
+      if (this.#dormant.has(enemy.id)) return;
       enemy.cooldownMs = 800;
       enemy.telegraphMs = 0;
       enemy.direction = 1;
@@ -284,6 +346,7 @@ export class PlatformerEnemySystem {
   }
 
   isDefeated(enemyId: string): boolean {
+    if (this.#dormant.has(enemyId)) return false;
     return (
       (this.#gameplay.getSnapshot().enemies.find((enemy) => enemy.id === enemyId)?.health ?? 0) <= 0
     );
@@ -295,6 +358,7 @@ export class PlatformerEnemySystem {
     targetY: number,
     aggressive: boolean,
     deltaMs: number,
+    speedFactor = 1,
   ): void {
     const body = arcadeBody(enemy.sprite);
     if (!body.blocked.down && !body.touching.down) {
@@ -323,7 +387,7 @@ export class PlatformerEnemySystem {
     const approachDirection = aggressive ? Math.sign(dx || enemy.direction) : enemy.direction;
     if (
       enemy.jumpCooldownMs === 0 &&
-      this.#hazardAhead(enemy.sprite, approachDirection, body.bottom)
+      isHazardAhead(enemy.sprite.x, approachDirection, body.bottom, this.#hazards)
     ) {
       this.#jump(enemy, approachDirection, 0.68);
       return;
@@ -361,7 +425,9 @@ export class PlatformerEnemySystem {
       if (!(aggressive && this.#ai.canDropFromLedges && targetBelow)) enemy.direction *= -1;
     }
     this.#playMove(enemy);
-    enemy.sprite.setVelocityX(enemy.direction * enemy.config.speed).setFlipX(enemy.direction < 0);
+    enemy.sprite
+      .setVelocityX(enemy.direction * enemy.config.speed * speedFactor)
+      .setFlipX(enemy.direction < 0);
   }
 
   #jump(enemy: EnemyView, direction: number, heightMultiplier = 1): void {
@@ -388,27 +454,6 @@ export class PlatformerEnemySystem {
         bounds.top <= footY + 34
       );
     });
-  }
-
-  #hazardAhead(sprite: Phaser.Physics.Arcade.Sprite, direction: number, footY: number): boolean {
-    return this.#hazards.some((hazard) => {
-      const dx = hazard.x - sprite.x;
-      return (
-        Math.sign(dx || direction) === Math.sign(direction) &&
-        Math.abs(dx) < 125 &&
-        Math.abs(hazard.y - footY) < 90
-      );
-    });
-  }
-
-  #insideCover(x: number, y: number): boolean {
-    return this.#coverZones.some(
-      (cover) =>
-        x >= cover.x - cover.width / 2 &&
-        x <= cover.x + cover.width / 2 &&
-        y >= cover.y - cover.height / 2 &&
-        y <= cover.y + cover.height / 2,
-    );
   }
 
   #recoverFallenEnemy(enemy: EnemyView): void {
@@ -446,10 +491,20 @@ export class PlatformerEnemySystem {
     enemy.sprite.clearTint();
     enemy.sprite.setFrame(enemy.frames.idle);
     enemy.cooldownMs = this.#ai.strikeCooldownMs;
-    if (distance < this.#ai.attackRange + 24) this.#gameplay.takeDamage(enemy.config.contactDamage);
+    if (isStrikeHit(distance, this.#ai.attackRange)) {
+      this.#gameplay.takeDamage(enemy.config.contactDamage);
+    }
   }
 
   #playMove(enemy: EnemyView): void {
     enemy.sprite.anims.play(`${enemy.config.id}-move`, true);
+  }
+
+  // Enemy sprites/health bars are Phaser display objects — DisplayList already destroys them on
+  // scene shutdown. Drop our own references so this system doesn't keep them reachable any
+  // longer than the scene itself (ARC-010 uniform contract).
+  destroy(): void {
+    this.#enemies.clear();
+    this.#collectedDrops.clear();
   }
 }

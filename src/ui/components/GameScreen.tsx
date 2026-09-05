@@ -34,6 +34,7 @@ export function GameScreen({
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
   const effectsVolume = useSettingsStore((state) => state.effectsVolume);
   const vibration = useSettingsStore((state) => state.vibration);
+  const nightBrightness = useSettingsStore((state) => state.nightBrightness);
   useEffect(() => gameplay.setPaused(appState === 'paused'), [appState, gameplay]);
 
   return (
@@ -48,9 +49,14 @@ export function GameScreen({
         reducedMotion={reducedMotion}
         effectsVolume={effectsVolume}
         vibration={vibration}
+        nightBrightness={nightBrightness}
       />
       <GameHud gameplay={gameplay} />
-      <DialogueOverlay levelId={level.id} reducedMotion={reducedMotion} />
+      {/* Level 1 carries its own authored, world-triggered dialogue inside the scene
+          (`garden/garden-level-system.ts`), so the generic level-intro card would only repeat it. */}
+      {level.id === 'garden-first-dawn' ? null : (
+        <DialogueOverlay levelId={level.id} reducedMotion={reducedMotion} />
+      )}
       <TouchControls inputState={inputState} />
       <div className="orientation-hint" role="status">
         ↻ Поверните устройство горизонтально для лучшего обзора

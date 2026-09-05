@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import type { GameplayController } from '@application/index';
 import { KeyboardInputAdapter, type GameInputState } from '@adapters/input/index';
 import type { CampaignLevelDefinition } from '@content/index';
+import { readDebugLaunchParams } from '@ui/debug-launch';
+
+interface NightBrightnessScene {
+  setNightBrightness?: (value: number) => void;
+}
+
+interface PhaserGameHandle {
+  destroy: (removeCanvas: boolean) => void;
+  scene: { getScene: (key: string) => unknown };
+}
 
 interface GameCanvasProps {
   gameplay: GameplayController;
@@ -13,6 +23,7 @@ interface GameCanvasProps {
   reducedMotion: boolean;
   effectsVolume: number;
   vibration: boolean;
+  nightBrightness: number;
 }
 
 export function GameCanvas({
@@ -25,8 +36,15 @@ export function GameCanvas({
   reducedMotion,
   effectsVolume,
   vibration,
+  nightBrightness,
 }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Night brightness is the one setting that must apply без перезапуска сцены: it is an
+  // accessibility control the player reaches from the pause menu mid-level (§14).
+  const gameRef = useRef<PhaserGameHandle | null>(null);
+  // Held in a ref so changing it never re-creates the Phaser game (which would restart the level);
+  // the effect below pushes new values into the running scene instead.
+  const nightBrightnessRef = useRef(nightBrightness);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -42,15 +60,12 @@ export function GameCanvas({
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     let cancelled = false;
-    let game: { destroy: (removeCanvas: boolean) => void } | undefined;
+    let game: PhaserGameHandle | undefined;
 
     void import('@adapters/phaser/create-prototype-game')
       .then(({ createPrototypeGame }) => {
         if (cancelled) return;
-        const startNearFinish =
-          import.meta.env.DEV && new URLSearchParams(window.location.search).has('startNearFinish');
-        const startNearCombat =
-          import.meta.env.DEV && new URLSearchParams(window.location.search).has('startNearCombat');
+        const { startNearCombat, startNearFinish } = readDebugLaunchParams();
         game = createPrototypeGame({
           gameplay,
           inputState,
@@ -62,9 +77,11 @@ export function GameCanvas({
           reducedMotion,
           effectsVolume,
           vibration,
+          nightBrightness: nightBrightnessRef.current,
           startNearFinish,
           startNearCombat,
         });
+        gameRef.current = game ?? null;
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -74,6 +91,7 @@ export function GameCanvas({
       cancelled = true;
       disconnectKeyboard();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      gameRef.current = null;
       game?.destroy(true);
     };
   }, [
@@ -87,6 +105,13 @@ export function GameCanvas({
     reducedMotion,
     vibration,
   ]);
+
+  useEffect(() => {
+    nightBrightnessRef.current = nightBrightness;
+    const scene = gameRef.current?.scene.getScene('prototype-platformer') as
+      NightBrightnessScene | null | undefined;
+    scene?.setNightBrightness?.(nightBrightness);
+  }, [nightBrightness]);
 
   return (
     <div className="game-canvas-shell">

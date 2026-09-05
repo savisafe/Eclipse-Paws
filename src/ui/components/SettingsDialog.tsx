@@ -4,15 +4,19 @@ import * as Switch from '@radix-ui/react-switch';
 import { useSettingsStore } from '@ui/store/settings-store';
 
 interface VolumeSliderProps {
+  icon: 'music' | 'effects' | 'night';
   label: string;
   onValueChange: (value: number) => void;
   value: number;
 }
 
-function VolumeSlider({ label, onValueChange, value }: VolumeSliderProps) {
+// Also used for the night-brightness control: §14 asks for the real night's brightness to be
+// adjustable on its own, next to the other accessibility settings.
+function VolumeSlider({ icon, label, onValueChange, value }: VolumeSliderProps) {
   return (
     <label className="setting-row setting-row--stacked">
       <span>
+        <span aria-hidden="true" className={`setting-row__icon setting-row__icon--${icon}`} />
         {label} <output>{value}%</output>
       </span>
       <Slider.Root
@@ -37,16 +41,19 @@ export function SettingsDialog() {
   const musicVolume = useSettingsStore((state) => state.musicVolume);
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
   const vibration = useSettingsStore((state) => state.vibration);
+  const nightBrightness = useSettingsStore((state) => state.nightBrightness);
   const setEffectsVolume = useSettingsStore((state) => state.setEffectsVolume);
   const setMusicVolume = useSettingsStore((state) => state.setMusicVolume);
   const setReducedMotion = useSettingsStore((state) => state.setReducedMotion);
   const setVibration = useSettingsStore((state) => state.setVibration);
+  const setNightBrightness = useSettingsStore((state) => state.setNightBrightness);
 
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
-        <button className="menu-button" type="button">
+        <button className="menu-button" disabled type="button">
           <span>Настройки</span>
+          <small>В разработке</small>
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -54,14 +61,33 @@ export function SettingsDialog() {
         <Dialog.Content className="settings-dialog">
           <Dialog.Title>Настройки</Dialog.Title>
           <Dialog.Description>
-            Настройте звук, вибрацию и движение. Параметры сохраняются автоматически.
+            Настройте звук, яркость ночи, вибрацию и движение. Параметры сохраняются автоматически.
           </Dialog.Description>
 
           <div className="settings-dialog__controls">
-            <VolumeSlider label="Музыка" onValueChange={setMusicVolume} value={musicVolume} />
-            <VolumeSlider label="Эффекты" onValueChange={setEffectsVolume} value={effectsVolume} />
+            <VolumeSlider
+              icon="music"
+              label="Музыка"
+              onValueChange={setMusicVolume}
+              value={musicVolume}
+            />
+            <VolumeSlider
+              icon="effects"
+              label="Эффекты"
+              onValueChange={setEffectsVolume}
+              value={effectsVolume}
+            />
+            <VolumeSlider
+              icon="night"
+              label="Яркость ночи"
+              onValueChange={setNightBrightness}
+              value={nightBrightness}
+            />
             <label className="setting-row">
-              <span>Уменьшить движение</span>
+              <span>
+                <span aria-hidden="true" className="setting-row__icon setting-row__icon--motion" />
+                Уменьшить движение
+              </span>
               <Switch.Root
                 aria-label="Уменьшить движение"
                 checked={reducedMotion}
@@ -72,7 +98,13 @@ export function SettingsDialog() {
               </Switch.Root>
             </label>
             <label className="setting-row">
-              <span>Вибрация</span>
+              <span>
+                <span
+                  aria-hidden="true"
+                  className="setting-row__icon setting-row__icon--vibration"
+                />
+                Вибрация
+              </span>
               <Switch.Root
                 aria-label="Вибрация"
                 checked={vibration}

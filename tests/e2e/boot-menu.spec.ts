@@ -1,8 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function startGame(page: Page): Promise<void> {
+  // "Новая игра" now shows the prologue slideshow first (COM-010A) before seamlessly entering
+  // garden-first-dawn (COM-019) — no more intermediate "Начать уровень" click for a brand new
+  // game specifically (that card is still used for level-to-level transitions, see
+  // `finishAndAdvance` below).
   await page.getByRole('button', { name: 'Новая игра' }).click();
-  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await page.getByRole('button', { name: 'Пропустить' }).click();
 }
 
 test('boots into a keyboard-accessible menu without layout overflow', async ({ page }) => {
@@ -69,51 +73,68 @@ test('reaches the finish and shows a level result', async ({ page }) => {
   });
 });
 
-test('completes all five campaign levels and reaches the credits', async ({ page }) => {
-  test.setTimeout(90_000);
+test('completes all seven campaign levels and reaches the credits', async ({ page }) => {
+  test.setTimeout(150_000);
   const errors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
+
+  async function finishAndAdvance(nextTitleFragment: string): Promise<void> {
+    await page.keyboard.down('KeyD');
+    await page.waitForTimeout(2_000);
+    await page.keyboard.up('KeyD');
+    await page.getByRole('button', { name: new RegExp(`Далее: ${nextTitleFragment}`) }).click();
+  }
+
   await page.goto('/?startNearFinish=1');
   await startGame(page);
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Лес шепчущих теней/ }).click();
-  await expect(page.getByRole('heading', { name: 'Лес шепчущих теней' })).toBeVisible();
+
+  // 1. Сад первой зари -> 2. Лес шепчущих фонарей
+  await finishAndAdvance('Лес шепчущих фонарей');
+  await expect(page.getByRole('heading', { name: 'Лес шепчущих фонарей' })).toBeVisible();
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Небесная библиотека/ }).click();
-  await expect(page.getByRole('heading', { name: 'Небесная библиотека' })).toBeVisible();
-  await page.getByRole('button', { name: 'Начать уровень' }).click();
-  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 7', { timeout: 15_000 });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Крепость остановленных часов/ }).click();
-  await expect(page.getByRole('heading', { name: 'Крепость остановленных часов' })).toBeVisible();
+
+  // 2. Лес шепчущих фонарей -> 3. Город тысячи полуденных часов
+  await finishAndAdvance('Город тысячи полуденных часов');
+  await expect(page.getByRole('heading', { name: 'Город тысячи полуденных часов' })).toBeVisible();
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.enemy-counter')).toContainText('Монстры: 8', { timeout: 15_000 });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Сердце затмения/ }).click();
-  await expect(page.getByRole('heading', { name: 'Сердце затмения' })).toBeVisible();
+
+  // 3. Город тысячи полуденных часов -> 4. Море непрочитанных писем
+  await finishAndAdvance('Море непрочитанных писем');
+  await expect(page.getByRole('heading', { name: 'Море непрочитанных писем' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 7', { timeout: 15_000 });
+
+  // 4. Море непрочитанных писем -> 5. Карнавал забытых улыбок
+  await finishAndAdvance('Карнавал забытых улыбок');
+  await expect(page.getByRole('heading', { name: 'Карнавал забытых улыбок' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 4', { timeout: 15_000 });
+
+  // 5. Карнавал забытых улыбок -> 6. Поле последней звезды
+  await finishAndAdvance('Поле последней звезды');
+  await expect(page.getByRole('heading', { name: 'Поле последней звезды' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 5', { timeout: 15_000 });
+
+  // 6. Поле последней звезды -> 7. Сердце вечного сна
+  await finishAndAdvance('Сердце вечного сна');
+  await expect(page.getByRole('heading', { name: 'Сердце вечного сна' })).toBeVisible();
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.enemy-counter')).toContainText('Монстры: 9', { timeout: 15_000 });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Финал/ }).click();
+
+  // 7. Сердце вечного сна -> эпилог -> титры
+  await finishAndAdvance('Финал');
+  await expect(page.getByRole('main', { name: 'Эпилог: Те, кто остаются рядом' })).toBeVisible();
+  await page.getByRole('button', { name: 'Пропустить' }).click();
   await expect(page.getByRole('heading', { name: 'Eclipse Paws' })).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -125,23 +146,28 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
     if (message.type() === 'error') errors.push(message.text());
   });
 
-  await page.goto('/?startNearCombat=1&heroLevel=2');
-  await startGame(page);
+  // Level 2 rather than level 1: «Сад первой зари» is deliberately enemy-free until its turning
+  // point (ECLIPSE_PAWS_SCENARIO.md §12), so there is nothing to fight at its start any more.
+  await page.goto('/?level=whispering-lanterns&startNearCombat=1&heroLevel=2');
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
   await expect(page.locator('.phase-clock')).toContainText('Фаза: День');
 
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(1_300);
-  await page.keyboard.up('KeyD');
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Digit1');
-  await page.keyboard.press('Digit2');
-  await expect(page.locator('[aria-label^="luma-sky-lightning"]')).toHaveAttribute(
-    'aria-label',
-    /[1-3] сек\./,
-  );
+  // Луч света only fires when something is actually in front of Лумус, and how far a fixed walk
+  // gets depends on the frame pacing of the machine running the test — so approach in short bursts
+  // until the beam lands instead of assuming one 1.3s walk was enough.
+  const beam = page.locator('[aria-label^="Луч света"]');
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await page.keyboard.press('Digit2');
+    if (/[1-3] сек\./.test((await beam.getAttribute('aria-label')) ?? '')) break;
+    await page.keyboard.down('KeyD');
+    await page.waitForTimeout(450);
+    await page.keyboard.up('KeyD');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Digit1');
+  }
+  await expect(beam).toHaveAttribute('aria-label', /[1-3] сек\./);
 
   await page.keyboard.press('Tab');
   await expect(page.locator('.hud-cat--nox')).toHaveAttribute('aria-current', 'true');

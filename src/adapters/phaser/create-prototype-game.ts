@@ -15,6 +15,7 @@ export interface CreatePrototypeGameOptions {
   reducedMotion: boolean;
   effectsVolume: number;
   vibration: boolean;
+  nightBrightness: number;
   startNearFinish: boolean;
   startNearCombat: boolean;
 }

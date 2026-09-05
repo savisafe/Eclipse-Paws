@@ -10,7 +10,7 @@ describe('save game', () => {
     const migrated = parseSaveGame({
       schemaVersion: 0,
       completedLevels: ['garden-first-dawn'],
-      unlockedLevels: ['garden-first-dawn', 'whispering-forest'],
+      unlockedLevels: ['garden-first-dawn', 'whispering-lanterns'],
     });
     expect(migrated).toEqual(
       expect.objectContaining({
@@ -30,7 +30,7 @@ describe('save game', () => {
     expect(window.localStorage.getItem('test-save')).toBeNull();
   });
 
-  it('saves best result and unlocks the next level', async () => {
+  it('saves the best result without unlocking levels still in development', async () => {
     const repository = new LocalStorageSaveRepository(window.localStorage, 'test-save');
     const progress = new ProgressService(repository);
 
@@ -39,7 +39,17 @@ describe('save game', () => {
 
     expect(save.bestTimesMs['garden-first-dawn']).toBe(95_000);
     expect(save.sparksByLevel['garden-first-dawn']).toBe(2);
-    expect(save.unlockedLevels).toContain('whispering-forest');
+    expect(save.unlockedLevels).not.toContain('whispering-lanterns');
     expect(save.settings.vibration).toBe(true);
+  });
+
+  it('rejects a current-schema save with the wrong field types instead of trusting it (ARC-002)', () => {
+    const rejected = parseSaveGame({
+      schemaVersion: 2,
+      completedLevels: ['garden-first-dawn'],
+      unlockedLevels: ['garden-first-dawn'],
+      bestTimesMs: { 'garden-first-dawn': 'not-a-number' },
+    });
+    expect(rejected).toBeNull();
   });
 });

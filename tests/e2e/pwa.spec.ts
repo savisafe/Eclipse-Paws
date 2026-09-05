@@ -21,7 +21,7 @@ test('keeps every visible touch control at least 44 pixels', async ({ page }, te
   test.skip(!testInfo.project.name.includes('mobile'), 'Mobile-only touch assertion');
   await page.goto('/');
   await page.getByRole('button', { name: 'Новая игра' }).click();
-  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await page.getByRole('button', { name: 'Пропустить' }).click();
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });

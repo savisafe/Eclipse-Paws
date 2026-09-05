@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react';
-import { CAMPAIGN_DIALOGUES, type CampaignLevelId } from '@content/index';
+import { CAMPAIGN_DIALOGUES, type CampaignLevelId, type DialogueBeat } from '@content/index';
+import lumusPortrait from '../../assets/portraits/cards/lumus-neutral-v1.png?url';
+import noxPortrait from '../../assets/portraits/cards/nox-neutral-v1.png?url';
+import dreamPortrait from '../../assets/portraits/cards/dream-voice-v1.png?url';
+
+// The card shows a face as well as a name (§13/§14): light lines are Лумус, shadow lines Нокс,
+// and the dream's own voice gets the eclipse sigil.
+const PORTRAITS: Readonly<Record<DialogueBeat['tone'], { alt: string; url: string }>> = {
+  light: { alt: 'Лумус', url: lumusPortrait },
+  shadow: { alt: 'Нокс', url: noxPortrait },
+  world: { alt: 'Голос сна', url: dreamPortrait },
+};
 
 interface DialogueOverlayProps {
   levelId: CampaignLevelId;
@@ -45,8 +56,8 @@ export function DialogueOverlay({ levelId, reducedMotion }: DialogueOverlayProps
 
   return (
     <aside className={`dialogue-overlay dialogue-overlay--${beat.tone}`} aria-live="polite">
-      <div className="dialogue-portrait" aria-hidden="true">
-        {beat.tone === 'light' ? '☀' : beat.tone === 'shadow' ? '☾' : '✦'}
+      <div className="dialogue-portrait">
+        <img alt={PORTRAITS[beat.tone].alt} src={PORTRAITS[beat.tone].url} />
       </div>
       <div className="dialogue-copy">
         <strong>{beat.speaker}</strong>

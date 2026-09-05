@@ -1,150 +1,189 @@
 import Phaser from 'phaser';
-import spriteAtlasUrl from '../../assets/sprites/eclipse-paws-character-atlas-v1.png?url';
 import type { CatId } from '@core/index';
+import lumusAbility from '../../assets/sprites/heroes/cards/lumus-ability-v1.png?url';
+import lumusAttack from '../../assets/sprites/heroes/cards/lumus-attack-v1.png?url';
+import lumusIdle from '../../assets/sprites/heroes/cards/lumus-idle-v1.png?url';
+import lumusJump from '../../assets/sprites/heroes/cards/lumus-jump-v1.png?url';
+import lumusRunContact from '../../assets/sprites/heroes/cards/lumus-run-contact-v1.png?url';
+import lumusRunPassing from '../../assets/sprites/heroes/cards/lumus-run-passing-v1.png?url';
+import noxAbility from '../../assets/sprites/heroes/cards/nox-ability-v1.png?url';
+import noxAttack from '../../assets/sprites/heroes/cards/nox-attack-v1.png?url';
+import noxIdle from '../../assets/sprites/heroes/cards/nox-idle-v1.png?url';
+import noxJump from '../../assets/sprites/heroes/cards/nox-jump-v1.png?url';
+import noxRunContact from '../../assets/sprites/heroes/cards/nox-run-contact-v1.png?url';
+import noxRunPassing from '../../assets/sprites/heroes/cards/nox-run-passing-v1.png?url';
+import lightBeamIcon from '../../assets/icons/cards/lumus-light-beam-v1.png?url';
+import shadowNeedlesIcon from '../../assets/icons/cards/nox-shadow-needles-v1.png?url';
 
 export const ATLAS_TEXTURE_KEY = 'painted-character-atlas';
-const ATLAS_SOURCE_KEY = 'painted-character-atlas-source';
+export const CAT_DISPLAY_SCALE = 0.7;
 
 type CatPose = 'ability' | 'attack' | 'idle' | 'jump';
+
+// The cats are built from their canonical drawn poses in `src/assets/sprites/heroes` — six per
+// cat, in this order. The old build sliced them out of `eclipse-paws-character-atlas-v1.png`, a
+// legacy sheet the art index marks as superseded, which is why the cats used to look nothing like
+// their reference art.
+const POSE_SOURCES: readonly { key: string; url: string }[] = [
+  { key: 'hero-lumus-idle', url: lumusIdle },
+  { key: 'hero-lumus-run-contact', url: lumusRunContact },
+  { key: 'hero-lumus-run-passing', url: lumusRunPassing },
+  { key: 'hero-lumus-jump', url: lumusJump },
+  { key: 'hero-lumus-attack', url: lumusAttack },
+  { key: 'hero-lumus-ability', url: lumusAbility },
+  { key: 'hero-nox-idle', url: noxIdle },
+  { key: 'hero-nox-run-contact', url: noxRunContact },
+  { key: 'hero-nox-run-passing', url: noxRunPassing },
+  { key: 'hero-nox-jump', url: noxJump },
+  { key: 'hero-nox-attack', url: noxAttack },
+  { key: 'hero-nox-ability', url: noxAbility },
+];
+
+const CELL = 320;
+const COLUMNS = 6;
+const NORMALIZED_CAT_HEIGHT = 170;
+const MAX_CAT_WIDTH = 292;
 
 const CAT_FRAMES: Readonly<Record<CatId, Readonly<Record<CatPose, number>>>> = {
   luma: { idle: 0, jump: 3, attack: 4, ability: 5 },
   nox: { idle: 6, jump: 9, attack: 10, ability: 11 },
 };
 
-export const EFFECT_FRAMES = { lightning: 21, shadowSpikes: 22 } as const;
+// Ability effects are drawn art too: the light-beam and shadow-needle icons stand in for the
+// flashes those abilities leave behind.
+export const EFFECT_TEXTURES = {
+  lightBeam: 'effect-light-beam',
+  shadowNeedles: 'effect-shadow-needles',
+} as const;
 
-interface SourceCrop {
+export function preloadSpriteAtlas(scene: Phaser.Scene): void {
+  POSE_SOURCES.forEach(({ key, url }) => scene.load.image(key, url));
+  scene.load.image(EFFECT_TEXTURES.lightBeam, lightBeamIcon);
+  scene.load.image(EFFECT_TEXTURES.shadowNeedles, shadowNeedlesIcon);
+}
+
+interface Bounds {
   height: number;
   width: number;
   x: number;
   y: number;
-  yOffset?: number;
 }
 
-const SOURCE_CROPS: readonly (SourceCrop | null)[] = [
-  { x: 0, y: 0, width: 280, height: 275 },
-  { x: 280, y: 0, width: 370, height: 275 },
-  { x: 280, y: 0, width: 370, height: 275, yOffset: 5 },
-  { x: 650, y: 0, width: 320, height: 275 },
-  { x: 930, y: 0, width: 330, height: 275 },
-  { x: 1210, y: 0, width: 326, height: 275 },
-  { x: 0, y: 275, width: 290, height: 275 },
-  { x: 285, y: 275, width: 370, height: 275 },
-  { x: 285, y: 275, width: 370, height: 275, yOffset: 5 },
-  { x: 650, y: 275, width: 320, height: 275 },
-  { x: 940, y: 275, width: 320, height: 275 },
-  { x: 1210, y: 275, width: 326, height: 275 },
-  { x: 0, y: 550, width: 300, height: 220 },
-  { x: 270, y: 550, width: 360, height: 220 },
-  { x: 600, y: 540, width: 260, height: 230 },
-  { x: 840, y: 540, width: 270, height: 230 },
-  { x: 1080, y: 570, width: 250, height: 200 },
-  { x: 1290, y: 570, width: 246, height: 200 },
-  { x: 0, y: 750, width: 320, height: 274 },
-  { x: 285, y: 750, width: 330, height: 274 },
-  { x: 600, y: 750, width: 300, height: 274 },
-  { x: 875, y: 750, width: 260, height: 274 },
-  { x: 1100, y: 750, width: 280, height: 274 },
-  null,
-];
+// The drawn poses sit on a tall, mostly empty canvas, so each one is trimmed to the cat itself
+// before it goes into the atlas — otherwise the transparent margin eats most of the cell and the
+// cats come out tiny.
+function trimToContent(source: CanvasImageSource & { height: number; width: number }): Bounds {
+  const trimmer = document.createElement('canvas');
+  trimmer.width = source.width;
+  trimmer.height = source.height;
+  const context = trimmer.getContext('2d', { willReadFrequently: true });
+  if (!context) throw new Error('Canvas 2D is required to trim a hero pose.');
+  context.drawImage(source, 0, 0);
+  const { data } = context.getImageData(0, 0, source.width, source.height);
+  const visited = new Uint8Array(source.width * source.height);
+  const stack = new Int32Array(source.width * source.height);
+  let largest: Bounds | null = null;
+  let largestSize = 0;
 
-function isBackgroundPixel(data: Uint8ClampedArray, offset: number): boolean {
-  const red = data[offset] ?? 0;
-  const green = data[offset + 1] ?? 0;
-  const blue = data[offset + 2] ?? 0;
-  return (
-    Math.min(red, green, blue) >= 238 &&
-    Math.max(red, green, blue) - Math.min(red, green, blue) <= 5
-  );
-}
+  for (let start = 0; start < visited.length; start += 1) {
+    if (visited[start] || (data[start * 4 + 3] ?? 0) <= 12) continue;
+    let stackSize = 1;
+    let componentSize = 0;
+    let minX = source.width;
+    let minY = source.height;
+    let maxX = -1;
+    let maxY = -1;
+    stack[0] = start;
+    visited[start] = 1;
 
-function removeConnectedCheckerboard(image: ImageData): void {
-  const { data, width, height } = image;
-  const visited = new Uint8Array(width * height);
-  const queue = new Int32Array(width * height);
-  let head = 0;
-  let tail = 0;
+    while (stackSize > 0) {
+      const index = stack[(stackSize -= 1)] ?? 0;
+      const x = index % source.width;
+      const y = Math.floor(index / source.width);
+      componentSize += 1;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
 
-  const enqueue = (index: number) => {
-    if (visited[index] === 1 || !isBackgroundPixel(data, index * 4)) return;
-    visited[index] = 1;
-    queue[tail] = index;
-    tail += 1;
-  };
+      const neighbours = [index - 1, index + 1, index - source.width, index + source.width];
+      neighbours.forEach((next, direction) => {
+        if (
+          next < 0 ||
+          next >= visited.length ||
+          visited[next] ||
+          (direction === 0 && x === 0) ||
+          (direction === 1 && x === source.width - 1) ||
+          (data[next * 4 + 3] ?? 0) <= 12
+        )
+          return;
+        visited[next] = 1;
+        stack[stackSize] = next;
+        stackSize += 1;
+      });
+    }
 
-  for (let x = 0; x < width; x += 1) {
-    enqueue(x);
-    enqueue((height - 1) * width + x);
-  }
-  for (let y = 0; y < height; y += 1) {
-    enqueue(y * width);
-    enqueue(y * width + width - 1);
-  }
-
-  while (head < tail) {
-    const index = queue[head] ?? 0;
-    head += 1;
-    const x = index % width;
-    if (x > 0) enqueue(index - 1);
-    if (x < width - 1) enqueue(index + 1);
-    if (index >= width) enqueue(index - width);
-    if (index < width * (height - 1)) enqueue(index + width);
+    if (componentSize > largestSize) {
+      largestSize = componentSize;
+      largest = { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+    }
   }
 
-  for (let index = 0; index < visited.length; index += 1) {
-    if (visited[index] === 1) data[index * 4 + 3] = 0;
+  if (!largest) {
+    return { x: 0, y: 0, width: source.width, height: source.height };
   }
-}
-
-function createNormalizedAtlas(source: HTMLCanvasElement): HTMLCanvasElement {
-  const atlas = document.createElement('canvas');
-  atlas.width = 1536;
-  atlas.height = 1024;
-  const context = atlas.getContext('2d');
-  if (!context) throw new Error('Canvas 2D is required to normalize sprite frames.');
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = 'high';
-
-  SOURCE_CROPS.forEach((crop, frame) => {
-    if (!crop) return;
-    const column = frame % 6;
-    const row = Math.floor(frame / 6);
-    const maximumSize = frame >= 21 ? 244 : 226;
-    const scale = Math.min(maximumSize / crop.width, maximumSize / crop.height);
-    const width = crop.width * scale;
-    const height = crop.height * scale;
-    const x = column * 256 + (256 - width) / 2;
-    const y = row * 256 + (256 - height) / 2 + (crop.yOffset ?? 0);
-    context.drawImage(source, crop.x, crop.y, crop.width, crop.height, x, y, width, height);
-  });
-  return atlas;
-}
-
-export function preloadSpriteAtlas(scene: Phaser.Scene): void {
-  scene.load.image(ATLAS_SOURCE_KEY, spriteAtlasUrl);
+  return largest;
 }
 
 export function prepareSpriteAtlas(scene: Phaser.Scene): void {
-  const source = scene.textures.get(ATLAS_SOURCE_KEY).getSourceImage() as CanvasImageSource;
-  const canvas = document.createElement('canvas');
-  canvas.width = 1536;
-  canvas.height = 1024;
-  const context = canvas.getContext('2d', { willReadFrequently: true });
-  if (!context) throw new Error('Canvas 2D is required to prepare the sprite atlas.');
-  context.drawImage(source, 0, 0);
-  const image = context.getImageData(0, 0, canvas.width, canvas.height);
-  removeConnectedCheckerboard(image);
-  context.putImageData(image, 0, 0);
-  const normalizedAtlas = createNormalizedAtlas(canvas);
-  const processedTexture = scene.textures.addCanvas(ATLAS_TEXTURE_KEY, normalizedAtlas);
-  if (!processedTexture) throw new Error('Could not register the processed sprite atlas.');
-  for (let frame = 0; frame < 24; frame += 1) {
-    const column = frame % 6;
-    const row = Math.floor(frame / 6);
-    processedTexture.add(frame, 0, column * 256, row * 256, 256, 256);
-  }
-  scene.textures.remove(ATLAS_SOURCE_KEY);
+  if (scene.textures.exists(ATLAS_TEXTURE_KEY)) return;
+  const atlas = document.createElement('canvas');
+  atlas.width = CELL * COLUMNS;
+  atlas.height = CELL * 2;
+  const context = atlas.getContext('2d');
+  if (!context) throw new Error('Canvas 2D is required to prepare the hero atlas.');
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+
+  const poses = POSE_SOURCES.map(({ key }) => {
+    const source = scene.textures.get(key).getSourceImage() as CanvasImageSource & {
+      height: number;
+      width: number;
+    };
+    return { bounds: trimToContent(source), source };
+  });
+
+  poses.forEach(({ bounds, source }, frame) => {
+    // Height represents the cat's scale more reliably than its longest dimension: running and
+    // attack poses are naturally wide because of the tail and stretched legs. Keep the same
+    // visible height in every pose, with a safety cap for unusually wide artwork.
+    const scale = Math.min(NORMALIZED_CAT_HEIGHT / bounds.height, MAX_CAT_WIDTH / bounds.width);
+    const width = bounds.width * scale;
+    const height = bounds.height * scale;
+    const column = frame % COLUMNS;
+    const row = Math.floor(frame / COLUMNS);
+    context.drawImage(
+      source,
+      bounds.x,
+      bounds.y,
+      bounds.width,
+      bounds.height,
+      column * CELL + (CELL - width) / 2,
+      // Sit the cat on the bottom of its cell so idle, run and jump share one ground line.
+      row * CELL + (CELL - height) - 10,
+      width,
+      height,
+    );
+  });
+
+  const texture = scene.textures.addCanvas(ATLAS_TEXTURE_KEY, atlas);
+  if (!texture) throw new Error('Could not register the hero atlas.');
+  POSE_SOURCES.forEach((_, frame) => {
+    const column = frame % COLUMNS;
+    const row = Math.floor(frame / COLUMNS);
+    texture.add(frame, 0, column * CELL, row * CELL, CELL, CELL);
+  });
+  POSE_SOURCES.forEach(({ key }) => scene.textures.remove(key));
 }
 
 export function createAtlasAnimations(scene: Phaser.Scene): void {
@@ -171,4 +210,14 @@ export function setCatPose(
   pose: CatPose,
 ): void {
   sprite.setTexture(ATLAS_TEXTURE_KEY, CAT_FRAMES[catId][pose]);
+}
+
+// The canonical hero art faces left. Keep that art-specific detail here so movement, following
+// and switching all agree on which visual flip represents a world-space direction.
+export function setCatFacing(sprite: Phaser.Physics.Arcade.Sprite, direction: -1 | 1): void {
+  sprite.setFlipX(direction > 0);
+}
+
+export function catFacing(sprite: Phaser.Physics.Arcade.Sprite): -1 | 1 {
+  return sprite.flipX ? 1 : -1;
 }
