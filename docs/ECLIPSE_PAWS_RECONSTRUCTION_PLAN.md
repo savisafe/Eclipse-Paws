@@ -588,18 +588,18 @@ comic_prologue_panel_01.webp
 - [ ] `GAM-001` Утвердить camera perspective и размер котов на экране.
 - [ ] `GAM-002` Утвердить movement metrics и reference obstacle kit.
 - [ ] `GAM-003` Утвердить общий difficulty curve семи уровней.
-- [ ] `GAM-004` Создать mechanics matrix по уровням.
-- [ ] `GAM-005` Создать enemy role matrix.
-- [ ] `GAM-006` Зафиксировать checkpoint и fail-state rules.
+- [x] `GAM-004` Создать mechanics matrix по уровням.
+- [x] `GAM-005` Создать enemy role matrix.
+- [x] `GAM-006` Зафиксировать checkpoint и fail-state rules.
 - [ ] `ART-001` Создать `ART_BIBLE.md`.
 - [ ] `ART-002` Утвердить новые model sheets Лумуса и Нокса.
 - [ ] `ART-003` Утвердить варианты Элиаса и Арена.
 - [ ] `ART-004` Утвердить визуальный язык Безмолвия.
 - [ ] `ART-005` Выполнить silhouette/readability tests.
 - [ ] `ART-006` Утвердить day/night palettes каждого уровня.
-- [ ] `ART-007` Создать asset manifest и export pipeline.
-- [ ] `COM-001` Собрать storyboard пролога.
-- [ ] `COM-002` Собрать storyboard эпилога.
+- [ ] `ART-007` Создать asset manifest и export pipeline (манифест-инвентаризация готова, `docs/ASSET_MANIFEST.md`; export pipeline-скрипт ещё не написан — импорт ассетов сейчас ручной).
+- [x] `COM-001` Собрать storyboard пролога.
+- [x] `COM-002` Собрать storyboard эпилога.
 - [ ] `UIX-001` Утвердить wireframes menu, HUD, dialogue и chapter select.
 
 **Gate 2:** существует один playable metrics sandbox; ключевые персонажи узнаваемы без цвета; все уровни имеют briefs, palettes и budgets; финальный арт ещё не производится массово.
@@ -1036,51 +1036,67 @@ comic_prologue_panel_01.webp
 
 ### Task board
 
-| Task ID   | Название                                         | Статус  | Владелец | Зависимости          | Gate | Последняя проверка |
-| --------- | ------------------------------------------------ | ------- | -------- | -------------------- | ---- | ------------------ |
-| `AUD-001` | Проверка git status                              | DONE    | Claude   | —                    | 0    | 2026-09-05         |
-| `AUD-006` | Инвентаризация scenes/components/systems/assets  | DONE    | Claude   | `AUD-001`            | 0    | 2026-09-05         |
-| `AUD-007` | Карта импортов, циклические зависимости          | DONE    | Claude   | `AUD-001`            | 0    | 2026-09-05         |
-| `AUD-008` | Gameplay rules внутри React/Phaser scenes        | DONE    | Claude   | `AUD-006`            | 0    | 2026-09-05         |
-| `AUD-009` | Инвентаризация localStorage/save schema          | DONE    | Claude   | `AUD-006`            | 0    | 2026-09-05         |
-| `AUD-011` | Таблица KEEP/REFACTOR/REPLACE/REMOVE             | DONE    | Claude   | `AUD-006`, `AUD-008` | 0    | 2026-09-05         |
-| `AUD-012` | Сопоставление контента с новым сценарием         | DONE    | Claude   | `AUD-011`            | 0    | 2026-09-05         |
-| `AUD-002` | Baseline tag/commit                              | BACKLOG | —        | `AUD-001`            | 0    | —                  |
-| `AUD-003` | Команды install/run/build/test                   | DONE    | Claude   | `AUD-001`            | 0    | 2026-09-05         |
-| `AUD-004` | Видео текущего прохождения                       | BACKLOG | —        | `AUD-001`            | 0    | —                  |
-| `AUD-005` | Скриншоты существующих экранов/уровней           | BACKLOG | —        | `AUD-001`            | 0    | —                  |
-| `AUD-010` | Замер bundle/loading/FPS/memory/listeners        | BACKLOG | —        | `AUD-006`            | 0    | —                  |
-| `AUD-013` | Regression checklist старой playable-версии      | DONE    | Claude   | `AUD-004`            | 0    | 2026-09-05         |
-| `AUD-014` | Реестр известных багов (без исправления)         | DONE    | Claude   | `AUD-004`            | 0    | 2026-09-05         |
-| `AUD-015` | Feature flags: пролог/уровни/бой/управление      | BACKLOG | —        | Gate 0               | 0    | —                  |
-| `ARC-002` | strict TS/lint/format/typecheck                  | DONE    | —        | —                    | 1    | до сессии          |
-| `ARC-003` | Vitest + характеризационные тесты                | DONE    | —        | —                    | 1    | до сессии          |
-| `ARC-004` | Playwright smoke (boot/menu/start/pause/restart) | DONE    | —        | —                    | 1    | до сессии          |
-| `ARC-005` | Application state machine                        | DONE    | —        | —                    | 1    | до сессии          |
-| `ARC-006` | Event/command bridge Phaser↔React                | DONE    | —        | —                    | 1    | до сессии          |
-| `ARC-007` | Абстрактный `GameAction` + input adapters        | DONE    | —        | —                    | 1    | до сессии          |
-| `ARC-008` | `SaveRepository` + версионированный save schema  | DONE    | —        | —                    | 1    | до сессии          |
-| `ARC-001` | Утвердить целевую архитектуру и dependency rules | DONE    | Claude   | Gate 0               | 1    | 2026-09-05         |
-| `ARC-009` | Content schema validation                        | DONE    | Claude   | Gate 0               | 1    | 2026-09-05         |
-| `ARC-014` | Runtime-валидация content schemas (Zod)          | DONE    | Claude   | `ARC-009`            | 1    | 2026-09-05         |
-| `ARC-013` | Единый composition root и DI setup               | DONE    | Claude   | Gate 0               | 1    | 2026-09-05         |
-| `ARC-010` | Scene lifecycle contract и leak test             | BACKLOG | —        | Gate 0               | 1    | —                  |
-| `ARC-011` | Перенести одну механику end-to-end как пример    | DONE    | Claude   | Gate 0               | 1    | 2026-09-05         |
-| `ARC-012` | Описать добавление ability/enemy/level           | DONE    | Claude   | Gate 0               | 1    | 2026-09-05         |
-| `ARC-015` | Debug launcher главы/зоны/checkpoint             | DONE    | Claude   | Gate 0               | 1    | 2026-09-05         |
-| `ART-001` | Art Bible                                        | BACKLOG | —        | Gate 1               | 2    | —                  |
-| `GAM-010` | Movement foundation                              | BACKLOG | —        | Gate 2               | 3    | —                  |
-| `ABL-001` | Ability framework                                | BACKLOG | —        | Gate 3               | 4    | —                  |
-| `LV1-001` | Brief Сада первой зари                           | BACKLOG | —        | Gate 4               | 5    | —                  |
+| Task ID        | Название                                         | Статус      | Владелец | Зависимости          | Gate | Последняя проверка |
+| -------------- | ------------------------------------------------ | ----------- | -------- | -------------------- | ---- | ------------------ |
+| `AUD-001`      | Проверка git status                              | DONE        | Claude   | —                    | 0    | 2026-09-05         |
+| `AUD-006`      | Инвентаризация scenes/components/systems/assets  | DONE        | Claude   | `AUD-001`            | 0    | 2026-09-05         |
+| `AUD-007`      | Карта импортов, циклические зависимости          | DONE        | Claude   | `AUD-001`            | 0    | 2026-09-05         |
+| `AUD-008`      | Gameplay rules внутри React/Phaser scenes        | DONE        | Claude   | `AUD-006`            | 0    | 2026-09-05         |
+| `AUD-009`      | Инвентаризация localStorage/save schema          | DONE        | Claude   | `AUD-006`            | 0    | 2026-09-05         |
+| `AUD-011`      | Таблица KEEP/REFACTOR/REPLACE/REMOVE             | DONE        | Claude   | `AUD-006`, `AUD-008` | 0    | 2026-09-05         |
+| `AUD-012`      | Сопоставление контента с новым сценарием         | DONE        | Claude   | `AUD-011`            | 0    | 2026-09-05         |
+| `AUD-002`      | Baseline tag/commit                              | BACKLOG     | —        | `AUD-001`            | 0    | —                  |
+| `AUD-003`      | Команды install/run/build/test                   | DONE        | Claude   | `AUD-001`            | 0    | 2026-09-05         |
+| `AUD-004`      | Видео текущего прохождения                       | BACKLOG     | —        | `AUD-001`            | 0    | —                  |
+| `AUD-005`      | Скриншоты существующих экранов/уровней           | BACKLOG     | —        | `AUD-001`            | 0    | —                  |
+| `AUD-010`      | Замер bundle/loading/FPS/memory/listeners        | BACKLOG     | —        | `AUD-006`            | 0    | —                  |
+| `AUD-013`      | Regression checklist старой playable-версии      | DONE        | Claude   | `AUD-004`            | 0    | 2026-09-05         |
+| `AUD-014`      | Реестр известных багов (без исправления)         | DONE        | Claude   | `AUD-004`            | 0    | 2026-09-05         |
+| `AUD-015`      | Feature flags: пролог/уровни/бой/управление      | BACKLOG     | —        | Gate 0               | 0    | —                  |
+| `ARC-002`      | strict TS/lint/format/typecheck                  | DONE        | —        | —                    | 1    | до сессии          |
+| `ARC-003`      | Vitest + характеризационные тесты                | DONE        | —        | —                    | 1    | до сессии          |
+| `ARC-004`      | Playwright smoke (boot/menu/start/pause/restart) | DONE        | —        | —                    | 1    | до сессии          |
+| `ARC-005`      | Application state machine                        | DONE        | —        | —                    | 1    | до сессии          |
+| `ARC-006`      | Event/command bridge Phaser↔React                | DONE        | —        | —                    | 1    | до сессии          |
+| `ARC-007`      | Абстрактный `GameAction` + input adapters        | DONE        | —        | —                    | 1    | до сессии          |
+| `ARC-008`      | `SaveRepository` + версионированный save schema  | DONE        | —        | —                    | 1    | до сессии          |
+| `ARC-001`      | Утвердить целевую архитектуру и dependency rules | DONE        | Claude   | Gate 0               | 1    | 2026-09-05         |
+| `ARC-009`      | Content schema validation                        | DONE        | Claude   | Gate 0               | 1    | 2026-09-05         |
+| `ARC-014`      | Runtime-валидация content schemas (Zod)          | DONE        | Claude   | `ARC-009`            | 1    | 2026-09-05         |
+| `ARC-013`      | Единый composition root и DI setup               | DONE        | Claude   | Gate 0               | 1    | 2026-09-05         |
+| `ARC-010`      | Scene lifecycle contract и leak test             | BACKLOG     | —        | Gate 0               | 1    | —                  |
+| `ARC-011`      | Перенести одну механику end-to-end как пример    | DONE        | Claude   | Gate 0               | 1    | 2026-09-05         |
+| `ARC-012`      | Описать добавление ability/enemy/level           | DONE        | Claude   | Gate 0               | 1    | 2026-09-05         |
+| `ARC-015`      | Debug launcher главы/зоны/checkpoint             | DONE        | Claude   | Gate 0               | 1    | 2026-09-05         |
+| `LV-GRAYBOX-7` | Graybox-пересборка 7 уровней под новый сценарий  | DONE        | Claude   | Gate 4               | 5    | 2026-09-05         |
+| `GAM-010`      | Movement foundation                              | BACKLOG     | —        | Gate 2               | 3    | —                  |
+| `ABL-001`      | Ability framework                                | BACKLOG     | —        | Gate 3               | 4    | —                  |
+| `GAM-004`      | Mechanics matrix по уровням                      | DONE        | Claude   | —                    | 2    | 2026-09-05         |
+| `GAM-005`      | Enemy role matrix                                | DONE        | Claude   | —                    | 2    | 2026-09-05         |
+| `GAM-006`      | Checkpoint и fail-state rules                    | DONE        | Claude   | —                    | 2    | 2026-09-05         |
+| `COM-001`      | Storyboard пролога                               | DONE        | Claude   | —                    | 2    | 2026-09-05         |
+| `COM-002`      | Storyboard эпилога                               | DONE        | Claude   | —                    | 2    | 2026-09-05         |
+| `ART-007`      | Asset manifest (частично — без export pipeline)  | IN_PROGRESS | Claude   | —                    | 2    | 2026-09-05         |
+| `GAM-001`      | Camera perspective и размер котов                | BACKLOG     | —        | —                    | 2    | —                  |
+| `GAM-002`      | Movement metrics и obstacle kit                  | BACKLOG     | —        | —                    | 2    | —                  |
+| `GAM-003`      | Difficulty curve семи уровней                    | BACKLOG     | —        | —                    | 2    | —                  |
+| `ART-001`      | Art Bible                                        | BACKLOG     | —        | Gate 1               | 2    | —                  |
+| `LV1-001`      | Brief Сада первой зари                           | BACKLOG     | —        | Gate 4               | 5    | —                  |
 
 Координатор добавляет в таблицу только ближайшие задачи. Полный backlog уже находится в соответствующих фазах и не должен дублироваться целиком. `ARC-002`..`ARC-008` отмечены `DONE` без владельца и даты проверки — они были реализованы до начала работы по этому плану; проверено при аудите (`docs/AUDITS/CURRENT_STATE.md`), отдельного handoff для них не создавалось, так как их не выполнял координируемый агент.
 
 - Версия плана: 1.0-draft.
-- Текущая фаза: 0/1 (техническая часть Gate 0 закрыта аудитом; Фаза 1 начата параллельно, так как оставшиеся AUD-задачи не блокируют архитектурную работу).
+- Текущая фаза: 0/1/2 (техническая часть Gate 0 закрыта аудитом; Фаза 1 фактически закрыта кроме `ARC-010`; Фаза 2 начата — часть документационных пунктов, не требующих новых продуктовых решений, закрыта).
 - Последний принятый gate: отсутствует — техническая часть аудита (`AUD-001/003/006/007/008/009/011/012/013/014`) готова и зафиксирована в `docs/AUDITS/CURRENT_STATE.md`/`docs/AUDITS/KNOWN_ISSUES.md`/`docs/AUDITS/REGRESSION_CHECKLIST.md`/`README.md`; Gate 0 не закрыт полностью, так как `AUD-002/004/005/010/015` (baseline-теги, видео/скриншоты, замеры производительности, feature flags) не выполнялись. По Фазе 1: `ARC-002`..`ARC-008` уже были выполнены до этой сессии; `ARC-001`, `ARC-009`..`ARC-015` (кроме `ARC-010`) реализованы этой сессией и отмечены `DONE` — `ARC-011`/`ARC-015` изначально не имели визуальной проверки в браузере (dev-сервер завис за локальным диалогом подтверждения на машине пользователя), но подтверждены полным прогоном `npm run test:e2e` (15/15 зелёных в реальном headless-браузере), что является более сильной проверкой, чем визуальный осмотр. Более того, первый прогон e2e **поймал реальную регрессию** в первой версии `ARC-015` (автостарт срабатывал на служебные debug-флаги, ломая 8 существующих e2e-тестов) — регрессия исправлена и перепроверена в этой же сессии (см. `docs/HANDOFFS/ARC-015.md`). Весь известный backlog Фазы 1 без пересечения с art-агентом на этом исчерпан. `ARC-010` остаётся в `BACKLOG`.
-- Следующая задача: `ARC-010` (Destroyable/scene lifecycle contract для Phaser-систем) ждёт сигнала пользователя о завершении работы art-агента над `prototype-scene.ts`; либо решение пользователя по объёму оставшихся `AUD`-задач (`AUD-002/004/005/010/015`); либо дальнейшая декомпозиция stateful AI-логики (`#walkPlatform`/`#jump`) в `platformer-enemy-system.ts` тем же паттерном, что и `ARC-011`.
+- Следующая задача: `LV-GRAYBOX-7` принят координатором (пользователем) и отмечен `DONE`. Фаза 2: `GAM-004/005/006`, `COM-001/002` закрыты (формализация уже утверждённого сценария и уже доставленных ассетов в требуемые планом документы — `docs/GAME_DESIGN.md`, `docs/COMIC_STORYBOARD.md`); `ART-007` частично (инвентаризация готова — `docs/ASSET_MANIFEST.md`, export pipeline-скрипт не написан). Открыты и требуют реального продуктового решения (не формализации, а нового выбора): `GAM-001` (camera perspective), `GAM-002` (movement metrics), `GAM-003` (difficulty curve), весь `ART-00N` кроме `ART-007` (Art Bible, model sheets, day/night palettes — creative-направление, вне роли координирующего технического агента без Art Agent/пользователя), `UIX-001` (wireframes). Далее на выбор: UI-кит (кнопки/тумблеры/HUD-рамки из `assets/ui/*` → React/Radix, не пересекается с art-агентом); story slideshow engine (`COM-010A`, 8+8 панелей уже готовы, кода-потребителя нет); подключение нового атласа героев Лумус/Нокс (требует правки `prototype-scene.ts`, возможно пересечение с art-агентом); `ARC-010` (ждёт сигнала о завершении работы art-агента).
 - Активные задачи: отсутствуют.
-- Параллельно замечено: art-агент готовит декорации семи уровней (7 мастер-фонов `src/assets/environments/dream-*-v1.{png,jpg}` + `dream-environment-manifest.ts` + `docs/ENVIRONMENT_ART_DIRECTION.md`, plus `src/assets/concepts/{lumus,nox}-canonical-reference-v1.png`, незакоммичено) — учтено в аудите как KEEP/in-progress, не блокирует техническую реконструкцию. `ARC-010` затрагивает `prototype-scene.ts`, который тоже правит art-агент — пользователь сообщит о завершении и подготовит handoff art-агента перед стартом `ARC-010`.
-- Урок сессии: `npm run test` (unit, с замоканным `GameCanvas`) не ловит регрессии в жизненном цикле экранов — обязательно гонять `npm run test:e2e` при любом изменении `App.tsx`/`GameCanvas.tsx`/переходов между экранами.
-- Блокеры: `ARC-010` ожидает сигнала пользователя о завершении декораций (не технический блокер, а координационный). Решение по объёму оставшихся AUD-задач (видео/скриншоты/perf baseline) также требует пользователя.
+- Параллельно замечено: art-агент доставил дизайн-систему (~70%, коммит `82f4616 update: design
+system 70%`) — 7 окружений, декорации по всем уровням, полные наборы поз героев/NPC/врагов,
+  портреты, иконки способностей, 16 story-панелей и UI-кит. `dream-environment-manifest.ts` уже
+  был переключён на новые 7 `CampaignLevelId` до этой сессии. `LV-GRAYBOX-7` синхронизировал
+  контент-слой (`campaign-levels.ts` и зависимые файлы) с этим новым списком уровней. `ARC-010`
+  по-прежнему затрагивает `prototype-scene.ts`, который может ещё править art-агент — пользователь
+  сообщит о завершении и подготовит handoff art-агента перед стартом `ARC-010`.
+- Урок сессии: `npm run test` (unit, с замоканным `GameCanvas`) не ловит регрессии в жизненном цикле экранов — обязательно гонять `npm run test:e2e` при любом изменении `App.tsx`/`GameCanvas.tsx`/переходов между экранами. Второй урок: при замене контента полезно явно погрепать player-facing строки на предмет запрещённого канона — найденные в `GameHud`/`PauseOverlay`/`StoryIntro`/`Credits`/`CatSigil`/`LevelResult`/`BootScreen` имена «Кокс»/«Боня»/«Эйлара» и термины «Маятник»/«Сумеречник» не были очевидны из одного только content-слоя.
+- Блокеры: `ARC-010` ожидает сигнала пользователя о завершении декораций (не технический блокер, а координационный). Решение по объёму оставшихся AUD-задач (видео/скриншоты/perf baseline) также требует пользователя. Подключение реальных enemy/hero-атласов нового канона — отдельная будущая задача (арт уже доставлен, код-адаптеры — нет).
 - Последнее обновление: 2026-09-05.
