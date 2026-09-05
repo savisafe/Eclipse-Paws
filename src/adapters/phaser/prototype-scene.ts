@@ -17,6 +17,7 @@ import {
 } from './arena-decoration';
 import { createArenaTextures } from './arena-textures';
 import { CombatAbilitySystem } from './combat-ability-system';
+import { CompanionSystem } from './companion-system';
 import { LevelMechanicsSystem } from './level-mechanics-system';
 import { PlatformerEnemySystem } from './platformer-enemy-system';
 import { PlayerMovementSystem } from './player-movement-system';
@@ -64,6 +65,7 @@ export class PrototypeScene extends Phaser.Scene {
   #lastPhase: Phase = 'day';
   #lastRestartCount = 0;
   #combatSystem!: CombatAbilitySystem;
+  #companionSystem!: CompanionSystem;
   #levelMechanics!: LevelMechanicsSystem;
   #phaseOverlay!: Phaser.GameObjects.Rectangle;
   #platforms!: Phaser.Physics.Arcade.StaticGroup;
@@ -114,7 +116,6 @@ export class PrototypeScene extends Phaser.Scene {
     const finish = this.#level.checkpoints[2];
     if (this.#startNearFinish) this.#actors.luma.setPosition(finish.x - 20, finish.y);
     else if (this.#startNearCombat) this.#actors.luma.setPosition(540, 500);
-    this.#actors.nox.disableBody(true, true);
     this.#tagSwitchSystem = new TagSwitchSystem(this, this.#actors, this.#reducedMotion);
     this.physics.add.collider(Object.values(this.#actors), this.#platforms);
     this.#selection = this.add.ellipse(0, 0, 94, 24).setStrokeStyle(5, 0xffda72, 0.92).setDepth(2);
@@ -165,6 +166,13 @@ export class PrototypeScene extends Phaser.Scene {
       facing: this.#facing,
       gameplay: this.#gameplay,
       input: this.#inputState,
+    });
+    this.#companionSystem = new CompanionSystem({
+      actionLockMs: this.#actionLockMs,
+      actors: this.#actors,
+      gameplay: this.#gameplay,
+      reducedMotion: this.#reducedMotion,
+      scene: this,
     });
     this.#levelMechanics = new LevelMechanicsSystem({
       actors: this.#actors,
@@ -228,6 +236,7 @@ export class PrototypeScene extends Phaser.Scene {
     }
     if (this.#inputState.consume('restart-checkpoint')) this.#gameplay.restartCheckpoint();
     this.#playerMovement.update(deltaMs);
+    this.#companionSystem.update(deltaMs);
     const active = this.#actors[this.#gameplay.getSnapshot().activeCat];
     const hiding = this.#inputState.isPressed('move-down') && this.#insideCover(active.x, active.y);
     this.#hidingStatus.setVisible(hiding);
@@ -259,10 +268,9 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   #switchCat(): void {
-    const previousCat = this.#gameplay.getSnapshot().activeCat;
     const activeCat = this.#gameplay.switchActiveCat();
     this.#switching = true;
-    this.#tagSwitchSystem.animate(previousCat, activeCat, () => {
+    this.#tagSwitchSystem.animate(activeCat, () => {
       this.#switching = false;
       this.#facing[activeCat] = this.#actors[activeCat].flipX ? -1 : 1;
       this.#applyPhase(this.#gameplay.getSnapshot().phase);
@@ -285,12 +293,10 @@ export class PrototypeScene extends Phaser.Scene {
     const checkpoint =
       this.#level.checkpoints.find((point) => point.id === snapshot.checkpointId) ??
       this.#level.checkpoints[0];
-    this.#actors.luma.setPosition(checkpoint.x + 34, checkpoint.y).setVelocity(0, 0);
-    this.#actors.nox.setPosition(checkpoint.x - 58, checkpoint.y).setVelocity(0, 0);
-    const activeId = snapshot.activeCat;
-    const inactiveId = activeId === 'luma' ? 'nox' : 'luma';
-    this.#actors[activeId].enableBody(true, checkpoint.x, checkpoint.y, true, true);
-    this.#actors[inactiveId].disableBody(true, true);
+    this.#actors.luma.enableBody(true, checkpoint.x + 34, checkpoint.y, true, true);
+    this.#actors.luma.setVelocity(0, 0);
+    this.#actors.nox.enableBody(true, checkpoint.x - 58, checkpoint.y, true, true);
+    this.#actors.nox.setVelocity(0, 0);
     this.#enemySystem.reset();
     if (!this.#reducedMotion) this.cameras.main.flash(180, 255, 244, 206);
   }
@@ -320,6 +326,7 @@ export class PrototypeScene extends Phaser.Scene {
     this.#enemySystem.destroy();
     this.#levelMechanics.destroy();
     this.#playerMovement.destroy();
+    this.#companionSystem.destroy();
     this.#tutorialSystem?.destroy();
     this.#unsubscribeEvents?.();
   }

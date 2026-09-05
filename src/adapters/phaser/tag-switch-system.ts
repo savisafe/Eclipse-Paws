@@ -23,33 +23,23 @@ export class TagSwitchSystem implements Destroyable {
     );
   }
 
-  animate(previousId: CatId, nextId: CatId, onComplete: () => void): void {
-    const previous = this.#actors[previousId];
+  // GAM-014: both cats now stay physically present as a companion pair — switching hands
+  // control to `next` at its own real position instead of teleporting/hiding either body (the
+  // old "one cat magically becomes the other" swap didn't leave room for a following companion).
+  animate(nextId: CatId, onComplete: () => void): void {
     const next = this.#actors[nextId];
-    const position = { x: previous.x, y: previous.y };
+    const position = { x: next.x, y: next.y };
     const effect = this.#createEffect(nextId, position.x, position.y);
     this.#burstMotes(nextId, position.x, position.y);
-    const duration = this.#reducedMotion ? 1 : 150;
-    previous.setVelocity(0, 0);
+    setCatPose(next, nextId, 'ability');
+    this.#scene.cameras.main.startFollow(next, true, 0.09, 0.09);
+    next.setScale(0.72);
     this.#scene.tweens.add({
-      targets: previous,
-      alpha: 0,
-      scale: 0.18,
-      duration,
-      onComplete: () => {
-        previous.disableBody(true, true).setAlpha(1).setScale(0.58);
-        next.enableBody(true, position.x, position.y, true, true).setAlpha(0).setScale(0.2);
-        next.setFlipX(previous.flipX);
-        setCatPose(next, nextId, 'ability');
-        this.#scene.cameras.main.startFollow(next, true, 0.09, 0.09);
-        this.#scene.tweens.add({
-          targets: next,
-          alpha: 1,
-          scale: 0.58,
-          duration: this.#reducedMotion ? 1 : 210,
-          onComplete,
-        });
-      },
+      targets: next,
+      scale: 0.58,
+      duration: this.#reducedMotion ? 1 : 210,
+      ease: 'Back.out',
+      onComplete,
     });
     this.#scene.tweens.add({
       targets: effect,

@@ -4,9 +4,7 @@ import type { GameInputState } from '@adapters/input/index';
 import type { CatId } from '@core/index';
 import type { Destroyable } from './destroyable';
 import { updateCatAnimation } from './cat-animation';
-
-const PLAYER_SPEED = 255;
-const JUMP_SPEED = 560;
+import { JUMP_SPEED, PLAYER_SPEED } from './movement-constants';
 
 export class PlayerMovementSystem implements Destroyable {
   readonly #actionLockMs: Record<CatId, number>;

@@ -612,7 +612,7 @@ comic_prologue_panel_01.webp
 - [ ] `GAM-011` Реализовать slopes, подъёмы и спуски.
 - [ ] `GAM-012` Добавить jump buffer, coyote time и variable jump.
 - [ ] `GAM-013` Реализовать устойчивую камеру.
-- [ ] `GAM-014` Реализовать companion follow/avoid/wait/warp.
+- [x] `GAM-014` Реализовать companion follow/avoid/wait/warp.
 - [ ] `GAM-015` Реализовать безопасное переключение active cat.
 - [ ] `GAM-016` Реализовать shared bond health.
 - [ ] `GAM-017` Реализовать day/night state и transition.
@@ -1080,6 +1080,7 @@ comic_prologue_panel_01.webp
 | `GAM-001`      | Camera perspective и размер котов                | REVIEW      | Claude   | —                    | 2    | 2026-09-05         |
 | `GAM-002`      | Movement metrics и obstacle kit (по уровням)     | REVIEW      | Claude   | —                    | 2    | 2026-09-05         |
 | `GAM-003`      | Difficulty curve семи уровней                    | REVIEW      | Claude   | —                    | 2    | 2026-09-05         |
+| `GAM-014`      | Companion follow/avoid/wait/warp                 | REVIEW      | Claude   | Gate 2                | 3    | 2026-09-05         |
 | `ART-001`      | Art Bible                                        | BACKLOG     | —        | Gate 1               | 2    | —                  |
 | `COM-010A`     | Slideshow engine пролога/эпилога                 | DONE        | Claude   | —                    | 6    | 2026-09-05         |
 | `LV1-001`      | Brief Сада первой зари                           | BACKLOG     | —        | Gate 4               | 5    | —                  |
@@ -1117,7 +1118,14 @@ comic_prologue_panel_01.webp
   рельефа/интерактива (дословно по `ECLIPSE_PAWS_SCENARIO.md` §12), а GAM-003 — как
   качественная difficulty curve по тому же принципу сценария («сложность растёт комбинацией
   правил, не здоровьем врагов»), без точных цифр (они ждут реализации нового канона врагов). См.
-  `docs/GAME_DESIGN.md`.
+  `docs/GAME_DESIGN.md`. `GAM-014` (companion follow/avoid/wait/warp, Gate 3) также реализована и
+  ждёт REVIEW: до кода обнаружено, что переключение котов было телепорт-подменой (второй кот
+  физически не существовал, `disableBody`) — пользователь подтвердил переписать сам механизм.
+  Оба кота теперь всегда физически присутствуют; `TagSwitchSystem` больше не прячет/телепортирует
+  тела, только меняет фокус управления с тем же визуальным эффектом. Полный `test:e2e` прогнан
+  (15/15) — это самое крупное изменение центрального игрового цикла за сессию, визуальная проверка
+  в браузере не выполнена (известный блокер), настоятельно рекомендуется сыграть вручную перед
+  приёмкой. См. `docs/HANDOFFS/GAM-014.md`.
 - Параллельно замечено: art-агент доставил дизайн-систему (~70%, коммит `82f4616 update: design
 system 70%`) — 7 окружений, декорации по всем уровням, полные наборы поз героев/NPC/врагов,
   портреты, иконки способностей, 16 story-панелей и UI-кит. `dream-environment-manifest.ts` уже
