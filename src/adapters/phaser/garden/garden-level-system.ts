@@ -101,6 +101,7 @@ export class GardenLevelSystem implements Destroyable {
   static preload(scene: Phaser.Scene): void {
     GardenPropSystem.preload(scene);
     GardenNpcSystem.preload(scene);
+    GardenScenery.preload(scene);
     GardenDialoguePanel.preload(scene);
     scene.load.image('garden-golden-seed', seedIconUrl);
     scene.load.image('garden-handprint', handprintUrl);
@@ -202,6 +203,7 @@ export class GardenLevelSystem implements Destroyable {
     const snapshot = this.#gameplay.getSnapshot();
     const catId = snapshot.activeCat;
     const active = this.#actors[catId];
+    this.#scenery.update(active);
     this.#props.update(active, catId, deltaMs);
     this.#npcs.update(active.x, active.y, snapshot.phase);
     this.#night.update(this.#actors, catId, this.#enemies.targets());
