@@ -9,16 +9,15 @@ export function Credits({ onMenu }: CreditsProps) {
         <div className="credits-eclipse" aria-hidden="true">
           ☀ ☾
         </div>
-        <p>Естественный цикл восстановлен</p>
+        <p>Свет и тьма снова в равновесии</p>
         <h1 id="credits-title">Eclipse Paws</h1>
         <blockquote>
-          Рассвет пришёл не вместо ночи, а вслед за ней. Кокс и Боня свернулись рядом и впервые
-          услышали, как Маятник снова отсчитывает время.
+          Рассвет пришёл не вместо ночи, а вслед за ней. Лумус и Нокс свернулись рядом и впервые
+          услышали, как ровно бьётся сердце их хозяина.
         </blockquote>
         <div className="credits-names">
-          <span>Кокс · Хранительница света</span>
-          <span>Боня · Хранитель теней</span>
-          <span>Сумеречник · Освобождён</span>
+          <span>Лумус · Хранитель света</span>
+          <span>Нокс · Хранитель теней</span>
         </div>
         <button className="menu-button" onClick={onMenu} type="button">
           Вернуться в главное меню

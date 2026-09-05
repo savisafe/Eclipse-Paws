@@ -26,12 +26,12 @@ export function LevelResult({
   return (
     <main className="level-result">
       <section className="result-card" aria-labelledby="result-title">
-        <p className="result-card__eyebrow">Осколок Маятника найден</p>
+        <p className="result-card__eyebrow">Ещё один след Элиаса найден</p>
         <h1 id="result-title">Уровень пройден!</h1>
         <div className="result-shard" aria-hidden="true">
           ✦
         </div>
-        <p>«{levelTitle}» завершён. Цикл становится устойчивее.</p>
+        <p>«{levelTitle}» завершён. Путь домой становится немного яснее.</p>
         <dl className="result-stats">
           <div>
             <dt>Время</dt>

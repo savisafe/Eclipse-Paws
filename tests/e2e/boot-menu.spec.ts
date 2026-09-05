@@ -69,51 +69,66 @@ test('reaches the finish and shows a level result', async ({ page }) => {
   });
 });
 
-test('completes all five campaign levels and reaches the credits', async ({ page }) => {
-  test.setTimeout(90_000);
+test('completes all seven campaign levels and reaches the credits', async ({ page }) => {
+  test.setTimeout(150_000);
   const errors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
+
+  async function finishAndAdvance(nextTitleFragment: string): Promise<void> {
+    await page.keyboard.down('KeyD');
+    await page.waitForTimeout(2_000);
+    await page.keyboard.up('KeyD');
+    await page.getByRole('button', { name: new RegExp(`Далее: ${nextTitleFragment}`) }).click();
+  }
+
   await page.goto('/?startNearFinish=1');
   await startGame(page);
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Лес шепчущих теней/ }).click();
-  await expect(page.getByRole('heading', { name: 'Лес шепчущих теней' })).toBeVisible();
+
+  // 1. Сад первой зари -> 2. Лес шепчущих фонарей
+  await finishAndAdvance('Лес шепчущих фонарей');
+  await expect(page.getByRole('heading', { name: 'Лес шепчущих фонарей' })).toBeVisible();
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
     timeout: 15_000,
   });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Небесная библиотека/ }).click();
-  await expect(page.getByRole('heading', { name: 'Небесная библиотека' })).toBeVisible();
-  await page.getByRole('button', { name: 'Начать уровень' }).click();
-  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 7', { timeout: 15_000 });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Крепость остановленных часов/ }).click();
-  await expect(page.getByRole('heading', { name: 'Крепость остановленных часов' })).toBeVisible();
+
+  // 2. Лес шепчущих фонарей -> 3. Город тысячи полуденных часов
+  await finishAndAdvance('Город тысячи полуденных часов');
+  await expect(page.getByRole('heading', { name: 'Город тысячи полуденных часов' })).toBeVisible();
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.enemy-counter')).toContainText('Монстры: 8', { timeout: 15_000 });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Сердце затмения/ }).click();
-  await expect(page.getByRole('heading', { name: 'Сердце затмения' })).toBeVisible();
+
+  // 3. Город тысячи полуденных часов -> 4. Море непрочитанных писем
+  await finishAndAdvance('Море непрочитанных писем');
+  await expect(page.getByRole('heading', { name: 'Море непрочитанных писем' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 7', { timeout: 15_000 });
+
+  // 4. Море непрочитанных писем -> 5. Карнавал забытых улыбок
+  await finishAndAdvance('Карнавал забытых улыбок');
+  await expect(page.getByRole('heading', { name: 'Карнавал забытых улыбок' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 4', { timeout: 15_000 });
+
+  // 5. Карнавал забытых улыбок -> 6. Поле последней звезды
+  await finishAndAdvance('Поле последней звезды');
+  await expect(page.getByRole('heading', { name: 'Поле последней звезды' })).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.locator('.enemy-counter')).toContainText('Монстры: 5', { timeout: 15_000 });
+
+  // 6. Поле последней звезды -> 7. Сердце вечного сна
+  await finishAndAdvance('Сердце вечного сна');
+  await expect(page.getByRole('heading', { name: 'Сердце вечного сна' })).toBeVisible();
   await page.getByRole('button', { name: 'Начать уровень' }).click();
   await expect(page.locator('.enemy-counter')).toContainText('Монстры: 9', { timeout: 15_000 });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(2_000);
-  await page.keyboard.up('KeyD');
-  await page.getByRole('button', { name: /Далее: Финал/ }).click();
+
+  // 7. Сердце вечного сна -> Финал/титры
+  await finishAndAdvance('Финал');
   await expect(page.getByRole('heading', { name: 'Eclipse Paws' })).toBeVisible();
   expect(errors).toEqual([]);
 });

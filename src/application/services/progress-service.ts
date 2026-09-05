@@ -4,6 +4,7 @@ import {
   type SaveGame,
   type SavedSettings,
 } from '@core/index';
+import { CAMPAIGN_LEVEL_ORDER } from '@content/index';
 import type { SaveRepository } from '../ports/save-repository';
 
 export class ProgressService {
@@ -54,14 +55,9 @@ export class ProgressService {
   }
 
   #nextLevel(levelId: string): string | null {
-    const order = [
-      'garden-first-dawn',
-      'whispering-forest',
-      'sky-library',
-      'clock-fortress',
-      'eclipse-heart',
-    ];
-    const index = order.indexOf(levelId);
-    return index >= 0 ? (order[index + 1] ?? null) : null;
+    // ARC-012/KNOWN_ISSUES #3: was a second, independently-maintained copy of the level order —
+    // now reads from the single source of truth in content so adding a level can't desync the two.
+    const index = CAMPAIGN_LEVEL_ORDER.indexOf(levelId as (typeof CAMPAIGN_LEVEL_ORDER)[number]);
+    return index >= 0 ? (CAMPAIGN_LEVEL_ORDER[index + 1] ?? null) : null;
   }
 }

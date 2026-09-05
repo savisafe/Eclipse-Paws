@@ -177,13 +177,17 @@ export function App() {
         nextLevelTitle={
           nextLevel
             ? CAMPAIGN_LEVELS[nextLevel].title
-            : selectedLevel === 'eclipse-heart'
+            : selectedLevel === 'eternal-sleep-heart'
               ? 'Финал'
               : undefined
         }
         onMenu={returnToMenu}
         onNext={
-          nextLevel ? startNextLevel : selectedLevel === 'eclipse-heart' ? showCredits : undefined
+          nextLevel
+            ? startNextLevel
+            : selectedLevel === 'eternal-sleep-heart'
+              ? showCredits
+              : undefined
         }
         onReplay={startNewGame}
         sparks={snapshot.sparksCollected}

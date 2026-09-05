@@ -1,19 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { CAMPAIGN_LEVELS, createLevelContent } from '@content/index';
+import { CAMPAIGN_LEVEL_ORDER, CAMPAIGN_LEVELS, createLevelContent } from '@content/index';
 
 describe('campaign level content', () => {
-  it('gives all five levels unique enemy rosters and bosses', () => {
-    const levels = Object.values(CAMPAIGN_LEVELS);
-    const gardenRoster = new Set<string>(levels[0]?.enemies.map((enemy) => enemy.configId) ?? []);
-    const forestRoster = new Set<string>(levels[1]?.enemies.map((enemy) => enemy.configId) ?? []);
-    const libraryRoster = new Set<string>(levels[2]?.enemies.map((enemy) => enemy.configId) ?? []);
-    const fortressRoster = new Set<string>(levels[3]?.enemies.map((enemy) => enemy.configId) ?? []);
-    const eclipseRoster = new Set<string>(levels[4]?.enemies.map((enemy) => enemy.configId) ?? []);
+  const levels = CAMPAIGN_LEVEL_ORDER.map((id) => CAMPAIGN_LEVELS[id]);
 
-    expect([...gardenRoster].every((enemy) => !forestRoster.has(enemy))).toBe(true);
-    expect([...forestRoster].every((enemy) => !libraryRoster.has(enemy))).toBe(true);
-    expect([...libraryRoster].every((enemy) => !fortressRoster.has(enemy))).toBe(true);
-    expect([...fortressRoster].every((enemy) => !eclipseRoster.has(enemy))).toBe(true);
+  it('gives all seven levels unique adjacent enemy rosters and a valid boss', () => {
+    const rosters = levels.map((level) => new Set(level.enemies.map((enemy) => enemy.configId)));
+
+    for (let index = 0; index < rosters.length - 1; index += 1) {
+      const current = rosters[index]!;
+      const next = rosters[index + 1]!;
+      expect([...current].every((configId) => !next.has(configId))).toBe(true);
+    }
+
     levels.forEach((level) => {
       expect(level.enemies.some((enemy) => enemy.id === level.bossId)).toBe(true);
       expect(createLevelContent(level.id).enemies.length).toBe(level.enemies.length);
@@ -21,7 +20,6 @@ describe('campaign level content', () => {
   });
 
   it('uses unique layouts and a steadily rising difficulty curve', () => {
-    const levels = Object.values(CAMPAIGN_LEVELS);
     const layoutSignatures = new Set(
       levels.map((level) =>
         level.platforms
@@ -31,11 +29,11 @@ describe('campaign level content', () => {
     );
 
     expect(layoutSignatures.size).toBe(levels.length);
-    expect(levels.map((level) => level.difficulty)).toEqual([1, 2, 3, 4, 5]);
-    expect(levels.map((level) => level.enemies.length)).toEqual([4, 6, 7, 8, 9]);
-    expect(levels.map((level) => level.hazards.length)).toEqual([1, 2, 3, 5, 6]);
+    expect(levels.map((level) => level.difficulty)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(levels.map((level) => level.enemies.length)).toEqual([4, 6, 8, 7, 4, 5, 9]);
+    expect(levels.map((level) => level.hazards.length)).toEqual([1, 2, 5, 3, 1, 2, 6]);
     expect(levels.map((level) => level.phaseDurationMs)).toEqual([
-      45_000, 40_000, 35_000, 30_000, 26_000,
+      45_000, 40_000, 30_000, 35_000, 32_000, 28_000, 26_000,
     ]);
     expect(levels[0]?.coverZones).toHaveLength(0);
     expect(levels.slice(1).every((level) => level.coverZones.length > 0)).toBe(true);

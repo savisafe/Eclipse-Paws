@@ -21,7 +21,7 @@ describe('App', () => {
   it('shows boot then transitions to the accessible main menu', async () => {
     render(<App />);
 
-    expect(screen.getByRole('status')).toHaveTextContent('Пробуждаем Эйлару');
+    expect(screen.getByRole('status')).toHaveTextContent('Открываем врата сна');
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(450);
@@ -49,7 +49,7 @@ describe('App', () => {
 
   it('a debug launch query skips the menu and jumps straight into the requested level (ARC-015)', async () => {
     vi.resetModules();
-    window.history.replaceState(null, '', '?level=whispering-forest&heroLevel=3');
+    window.history.replaceState(null, '', '?level=whispering-lanterns&heroLevel=3');
     try {
       const { App: DebugLaunchApp } = await import('@ui/App');
       render(<DebugLaunchApp />);
@@ -62,7 +62,7 @@ describe('App', () => {
       });
 
       expect(screen.queryByRole('navigation', { name: 'Главное меню' })).not.toBeInTheDocument();
-      expect(screen.getByText('Открываем «Лес шепчущих теней»…')).toBeVisible();
+      expect(screen.getByText('Открываем «Лес шепчущих фонарей»…')).toBeVisible();
     } finally {
       window.history.replaceState(null, '', '');
     }

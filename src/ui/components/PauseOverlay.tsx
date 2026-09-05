@@ -12,7 +12,7 @@ export function PauseOverlay({ onResume, onReturnToMenu }: PauseOverlayProps) {
       aria-labelledby="pause-title"
     >
       <div className="pause-card">
-        <p>Небесный Маятник замер</p>
+        <p>Сон затаил дыхание</p>
         <h2 id="pause-title">Пауза</h2>
         <button autoFocus className="menu-button" onClick={onResume} type="button">
           Продолжить

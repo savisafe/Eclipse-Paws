@@ -45,7 +45,7 @@ export const campaignLevelDefinitionSchema = z.object({
   bossId: z.string().min(1),
   checkpoints: z.tuple([levelPointSchema, levelPointSchema, levelPointSchema]),
   coverZones: z.array(platformRectSchema),
-  difficulty: z.number().int().min(1).max(5),
+  difficulty: z.number().int().min(1).max(7),
   enemies: z.array(levelPointSchema.extend({ configId: z.string().min(1) })),
   hazards: z.array(levelPointSchema.extend({ activePhase: z.enum(['day', 'night']) })),
   id: z.string().min(1),

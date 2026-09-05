@@ -9,8 +9,24 @@ import { STAGE4_ENEMIES } from '../enemies/stage4-enemies';
 import { STAGE5_ENEMIES } from '../enemies/stage5-enemies';
 import { validateCampaignContent } from '../schema';
 
+// Level roster matches the seven Eclipse Paws locations from `ECLIPSE_PAWS_SCENARIO.md` /
+// `src/adapters/phaser/dream-environment-manifest.ts`. Geometry, enemy placement and mechanic
+// wiring below are an intentional **graybox pass** (see the level production pipeline in
+// `ECLIPSE_PAWS_RECONSTRUCTION_PLAN.md` §6): five of the seven levels reuse the previous 5-level
+// prototype's proven, already-tested geometry/enemy rosters/mechanics wholesale (only relabeled to
+// the new id/title), and the two new slots (`forgotten-smiles-carnival`, `last-star-field`) get
+// freshly authored placeholder geometry using existing, already-wired enemy configs — nothing here
+// references an enemy or mechanic that doesn't already have working atlas frames / adapter code,
+// so the game stays fully playable end-to-end. Real per-level content (unique rooms, the new
+// Silence-family enemies, actual scripted dialogue) is separate future LV1-NNN..LV7-NNN work.
 export type CampaignLevelId =
-  'garden-first-dawn' | 'whispering-forest' | 'sky-library' | 'clock-fortress' | 'eclipse-heart';
+  | 'garden-first-dawn'
+  | 'whispering-lanterns'
+  | 'midday-clock-city'
+  | 'unread-letters-sea'
+  | 'forgotten-smiles-carnival'
+  | 'last-star-field'
+  | 'eternal-sleep-heart';
 
 export interface LevelPoint {
   id: string;
@@ -26,11 +42,21 @@ export interface PlatformRect {
 }
 
 export interface CampaignLevelDefinition {
-  background: 'garden' | 'forest' | 'library' | 'fortress' | 'eclipse';
+  background:
+    | 'garden'
+    | 'forest'
+    | 'library'
+    | 'fortress'
+    | 'eclipse'
+    | 'city'
+    | 'sea'
+    | 'carnival'
+    | 'field'
+    | 'heart';
   bossId: string;
   checkpoints: readonly [LevelPoint, LevelPoint, LevelPoint];
   coverZones: readonly PlatformRect[];
-  difficulty: 1 | 2 | 3 | 4 | 5;
+  difficulty: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   enemies: readonly (LevelPoint & { configId: string })[];
   hazards: readonly (LevelPoint & { activePhase: 'day' | 'night' })[];
   id: CampaignLevelId;
@@ -74,9 +100,10 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
     index: 1,
     difficulty: 1,
     title: 'Сад первой зари',
-    subtitle: 'Осколок I · Обучение',
-    story: 'День застыл над древним садом. Солнечные цветы помнят путь к первому осколку.',
-    objective: 'освой движение · руны 1→2→3 [E] · первый страж',
+    subtitle: 'Глава I · Обучение',
+    story:
+      'Сад первой зари застыл во вневременном раннем утре. Лумус и Нокс ищут первый след Элиаса.',
+    objective: 'освой движение · раскрой цветочные руны 1→2→3 [E] · первый страж',
     background: 'garden',
     mechanic: 'flowers',
     phaseDurationMs: 45_000,
@@ -114,14 +141,16 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
       { configId: 'twilight-golem', id: 'twilight-golem-1', x: 3340, y: 445 },
     ],
   },
-  'whispering-forest': {
-    id: 'whispering-forest',
+  'whispering-lanterns': {
+    id: 'whispering-lanterns',
     index: 2,
     difficulty: 2,
-    title: 'Лес шепчущих теней',
-    subtitle: 'Осколок II · Две тропы',
-    story: 'Светлячки заблудились среди корней. Ночные мосты слышат только шаги Бони.',
-    objective: 'выбери тропу · используй ночные мосты · Великий Гриб',
+    title: 'Лес шепчущих фонарей',
+    subtitle: 'Глава II · Черновой уровень (graybox)',
+    story:
+      'Плейсхолдер: геометрия и противники перенесены из прежней версии без изменений. Фон и ' +
+      'название уже соответствуют новому сценарию — лес фонарей и обсерватория.',
+    objective: 'выбери тропу · пройди лес · Великий Гриб',
     background: 'forest',
     mechanic: 'shadow-bridges',
     phaseDurationMs: 40_000,
@@ -153,7 +182,7 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
       { x: 3090, y: 300, width: 160, height: 24 },
     ],
     checkpoints: checkpointTriplet(
-      ['forest-edge', 'whisper-lantern', 'forest-shard'],
+      ['forest-edge', 'whisper-lantern', 'forest-goal'],
       [180, 2200, 4180],
       500,
     ),
@@ -172,76 +201,17 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
       { id: 'great-mushroom-boss', configId: 'great-mushroom', x: 4020, y: 430 },
     ],
   },
-  'sky-library': {
-    id: 'sky-library',
+  'midday-clock-city': {
+    id: 'midday-clock-city',
     index: 3,
     difficulty: 3,
-    title: 'Небесная библиотека',
-    subtitle: 'Осколок III · Вертикальный путь',
-    story: 'Созвездия исчезли со свода. Зеркала покажут символы, если свет и тень чередуются.',
-    objective: 'зажги три зеркала [E] · меняй фазу · Архивариус Эхо',
-    background: 'library',
-    mechanic: 'constellations',
-    phaseDurationMs: 35_000,
-    worldWidth: 4700,
-    bossId: 'archivist-echo-boss',
-    coverZones: [
-      { x: 1710, y: 560, width: 180, height: 170 },
-      { x: 3290, y: 560, width: 180, height: 170 },
-    ],
-    platforms: [
-      { x: 520, y: 670, width: 1040, height: 100 },
-      { x: 1450, y: 670, width: 620, height: 100 },
-      { x: 2300, y: 670, width: 820, height: 100 },
-      { x: 3200, y: 670, width: 780, height: 100 },
-      { x: 4100, y: 670, width: 920, height: 100 },
-      { x: 720, y: 535, width: 260, height: 28 },
-      { x: 1120, y: 455, width: 250, height: 28 },
-      { x: 1510, y: 360, width: 240, height: 28 },
-      { x: 1870, y: 265, width: 230, height: 28 },
-      { x: 2240, y: 365, width: 260, height: 28 },
-      { x: 2550, y: 515, width: 270, height: 28 },
-      { x: 3020, y: 405, width: 240, height: 28 },
-      { x: 3420, y: 300, width: 240, height: 28 },
-      { x: 3970, y: 510, width: 280, height: 28 },
-      { x: 4470, y: 420, width: 300, height: 28 },
-    ],
-    phasePlatforms: [
-      { x: 1320, y: 410, width: 135, height: 22 },
-      { x: 2050, y: 300, width: 135, height: 22 },
-      { x: 2820, y: 455, width: 135, height: 22 },
-      { x: 3700, y: 390, width: 135, height: 22 },
-    ],
-    checkpoints: checkpointTriplet(
-      ['library-entry', 'orrery', 'library-shard'],
-      [180, 2550, 4580],
-      500,
-    ),
-    sparks: [point('glyph-a', 1510, 290), point('glyph-b', 3020, 335), point('glyph-c', 4470, 350)],
-    hazards: [
-      hazard('ink-a', 1320, 'day'),
-      hazard('ink-b', 2860, 'night'),
-      hazard('ink-c', 3850, 'day'),
-    ],
-    enemies: [
-      { id: 'harpy-1', configId: 'mirror-harpy', x: 880, y: 290 },
-      { id: 'ink-1', configId: 'ink-sprite', x: 1460, y: 470 },
-      { id: 'owl-1', configId: 'echo-owl', x: 2050, y: 230 },
-      { id: 'harpy-2', configId: 'mirror-harpy', x: 2860, y: 260 },
-      { id: 'ink-2', configId: 'ink-sprite', x: 3550, y: 460 },
-      { id: 'owl-2', configId: 'echo-owl', x: 4100, y: 260 },
-      { id: 'archivist-echo-boss', configId: 'archivist-echo', x: 4470, y: 300 },
-    ],
-  },
-  'clock-fortress': {
-    id: 'clock-fortress',
-    index: 4,
-    difficulty: 4,
-    title: 'Крепость остановленных часов',
-    subtitle: 'Осколок IV · Полоса механизмов',
-    story: 'Маятники крепости замерли между ударами. Каждый механизм подчиняется своей фазе.',
+    title: 'Город тысячи полуденных часов',
+    subtitle: 'Глава III · Черновой уровень (graybox)',
+    story:
+      'Плейсхолдер: геометрия и противники перенесены из прежней версии без изменений. Фон и ' +
+      'название уже соответствуют новому сценарию — спешащий город с центральной часовой башней.',
     objective: 'пройди часовой механизм · чередуй фазы · Сумеречный голем',
-    background: 'fortress',
+    background: 'city',
     mechanic: 'clocks',
     phaseDurationMs: 30_000,
     worldWidth: 5100,
@@ -279,7 +249,7 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
       { x: 4320, y: 420, width: 125, height: 22 },
     ],
     checkpoints: checkpointTriplet(
-      ['fortress-gate', 'great-clock', 'fortress-shard'],
+      ['city-gate', 'great-clock', 'city-goal'],
       [180, 2570, 4980],
       500,
     ),
@@ -306,15 +276,178 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
       { id: 'fortress-golem-boss', configId: 'fortress-golem', x: 4800, y: 420 },
     ],
   },
-  'eclipse-heart': {
-    id: 'eclipse-heart',
+  'unread-letters-sea': {
+    id: 'unread-letters-sea',
+    index: 4,
+    difficulty: 4,
+    title: 'Море непрочитанных писем',
+    subtitle: 'Глава IV · Черновой уровень (graybox)',
+    story:
+      'Плейсхолдер: геометрия и противники перенесены из прежней версии без изменений. Фон и ' +
+      'название уже соответствуют новому сценарию — бумажное море и погасший маяк.',
+    objective: 'зажги три зеркала [E] · меняй фазу · Архивариус Эхо',
+    background: 'sea',
+    mechanic: 'constellations',
+    phaseDurationMs: 35_000,
+    worldWidth: 4700,
+    bossId: 'archivist-echo-boss',
+    coverZones: [
+      { x: 1710, y: 560, width: 180, height: 170 },
+      { x: 3290, y: 560, width: 180, height: 170 },
+    ],
+    platforms: [
+      { x: 520, y: 670, width: 1040, height: 100 },
+      { x: 1450, y: 670, width: 620, height: 100 },
+      { x: 2300, y: 670, width: 820, height: 100 },
+      { x: 3200, y: 670, width: 780, height: 100 },
+      { x: 4100, y: 670, width: 920, height: 100 },
+      { x: 720, y: 535, width: 260, height: 28 },
+      { x: 1120, y: 455, width: 250, height: 28 },
+      { x: 1510, y: 360, width: 240, height: 28 },
+      { x: 1870, y: 265, width: 230, height: 28 },
+      { x: 2240, y: 365, width: 260, height: 28 },
+      { x: 2550, y: 515, width: 270, height: 28 },
+      { x: 3020, y: 405, width: 240, height: 28 },
+      { x: 3420, y: 300, width: 240, height: 28 },
+      { x: 3970, y: 510, width: 280, height: 28 },
+      { x: 4470, y: 420, width: 300, height: 28 },
+    ],
+    phasePlatforms: [
+      { x: 1320, y: 410, width: 135, height: 22 },
+      { x: 2050, y: 300, width: 135, height: 22 },
+      { x: 2820, y: 455, width: 135, height: 22 },
+      { x: 3700, y: 390, width: 135, height: 22 },
+    ],
+    checkpoints: checkpointTriplet(['sea-shore', 'sea-orrery', 'sea-goal'], [180, 2550, 4580], 500),
+    sparks: [point('glyph-a', 1510, 290), point('glyph-b', 3020, 335), point('glyph-c', 4470, 350)],
+    hazards: [
+      hazard('ink-a', 1320, 'day'),
+      hazard('ink-b', 2860, 'night'),
+      hazard('ink-c', 3850, 'day'),
+    ],
+    enemies: [
+      { id: 'harpy-1', configId: 'mirror-harpy', x: 880, y: 290 },
+      { id: 'ink-1', configId: 'ink-sprite', x: 1460, y: 470 },
+      { id: 'owl-1', configId: 'echo-owl', x: 2050, y: 230 },
+      { id: 'harpy-2', configId: 'mirror-harpy', x: 2860, y: 260 },
+      { id: 'ink-2', configId: 'ink-sprite', x: 3550, y: 460 },
+      { id: 'owl-2', configId: 'echo-owl', x: 4100, y: 260 },
+      { id: 'archivist-echo-boss', configId: 'archivist-echo', x: 4470, y: 300 },
+    ],
+  },
+  'forgotten-smiles-carnival': {
+    id: 'forgotten-smiles-carnival',
     index: 5,
     difficulty: 5,
-    title: 'Сердце затмения',
-    subtitle: 'Финальный осколок · Боевая арена',
-    story: 'В центре расколотого Маятника Сумеречник стал Пожирателем Зари. Цикл нужно исцелить.',
-    objective: 'переживи стражей · используй обе силы · исцели Маятник',
-    background: 'eclipse',
+    title: 'Карнавал забытых улыбок',
+    subtitle: 'Глава V · Черновой уровень (graybox)',
+    story:
+      'Плейсхолдер: новая, но пока черновая геометрия и временный набор противников. Фон и ' +
+      'название уже соответствуют новому сценарию — вечный праздник, который повторяется по кругу.',
+    objective: 'пройди по кругу карнавала · собери огни · Маэстро Улыбка',
+    background: 'carnival',
+    mechanic: 'shadow-bridges',
+    phaseDurationMs: 32_000,
+    worldWidth: 3900,
+    bossId: 'carnival-golem-1',
+    coverZones: [{ x: 1900, y: 560, width: 200, height: 160 }],
+    platforms: [
+      { x: 480, y: 670, width: 960, height: 100 },
+      { x: 1350, y: 670, width: 560, height: 100 },
+      { x: 2100, y: 670, width: 760, height: 100 },
+      { x: 2900, y: 670, width: 680, height: 100 },
+      { x: 3550, y: 670, width: 400, height: 100 },
+      { x: 640, y: 520, width: 260, height: 28 },
+      { x: 1150, y: 430, width: 240, height: 28 },
+      { x: 1700, y: 500, width: 260, height: 28 },
+      { x: 2350, y: 400, width: 260, height: 28 },
+      { x: 3000, y: 470, width: 260, height: 28 },
+    ],
+    phasePlatforms: [
+      { x: 900, y: 380, width: 140, height: 22 },
+      { x: 2650, y: 350, width: 140, height: 22 },
+    ],
+    checkpoints: checkpointTriplet(
+      ['carnival-gate', 'carousel', 'carnival-goal'],
+      [180, 1900, 3800],
+      500,
+    ),
+    sparks: [
+      point('confetti-a', 900, 340),
+      point('confetti-b', 2350, 350),
+      point('confetti-c', 3200, 400),
+    ],
+    hazards: [hazard('mirror-maze', 2450, 'night')],
+    enemies: [
+      { configId: 'shadefang', id: 'shadefang-carnival-1', x: 780, y: 460 },
+      { configId: 'light-wisp', id: 'light-wisp-carnival-1', x: 1450, y: 320 },
+      { configId: 'spore-beast', id: 'spore-beast-carnival-1', x: 2450, y: 460 },
+      { configId: 'twilight-golem', id: 'carnival-golem-1', x: 3450, y: 450 },
+    ],
+  },
+  'last-star-field': {
+    id: 'last-star-field',
+    index: 6,
+    difficulty: 6,
+    title: 'Поле последней звезды',
+    subtitle: 'Глава VI · Черновой уровень (graybox)',
+    story:
+      'Плейсхолдер: новая, но пока черновая геометрия и временный набор противников. Фон и ' +
+      'название уже соответствуют новому сценарию — луг детства и тихое послевоенное поле.',
+    objective: 'пройди луг · собери созвездие · воздушный змей',
+    background: 'field',
+    mechanic: 'clocks',
+    phaseDurationMs: 28_000,
+    worldWidth: 4100,
+    bossId: 'field-mushroom-boss',
+    coverZones: [
+      { x: 1500, y: 560, width: 200, height: 160 },
+      { x: 3100, y: 560, width: 200, height: 160 },
+    ],
+    platforms: [
+      { x: 460, y: 670, width: 920, height: 100 },
+      { x: 1300, y: 670, width: 560, height: 100 },
+      { x: 2000, y: 670, width: 680, height: 100 },
+      { x: 2800, y: 670, width: 640, height: 100 },
+      { x: 3500, y: 670, width: 460, height: 100 },
+      { x: 620, y: 500, width: 260, height: 28 },
+      { x: 1150, y: 400, width: 250, height: 28 },
+      { x: 1750, y: 320, width: 260, height: 28 },
+      { x: 2400, y: 450, width: 280, height: 28 },
+      { x: 3050, y: 350, width: 270, height: 28 },
+      { x: 3650, y: 500, width: 300, height: 28 },
+    ],
+    phasePlatforms: [
+      { x: 950, y: 320, width: 150, height: 24 },
+      { x: 2150, y: 280, width: 150, height: 24 },
+      { x: 3350, y: 300, width: 150, height: 24 },
+    ],
+    checkpoints: checkpointTriplet(
+      ['field-hill', 'lone-tree', 'field-goal'],
+      [180, 2050, 4000],
+      500,
+    ),
+    sparks: [point('star-a', 950, 260), point('star-b', 2150, 220), point('star-c', 3350, 250)],
+    hazards: [hazard('trench-a', 1650, 'night'), hazard('trench-b', 3200, 'day')],
+    enemies: [
+      { id: 'thorn-field-1', configId: 'thorn-stalker', x: 780, y: 460 },
+      { id: 'moth-field-1', configId: 'lantern-moth', x: 1500, y: 270 },
+      { id: 'spore-field-1', configId: 'elder-spore', x: 2200, y: 460 },
+      { id: 'thorn-field-2', configId: 'thorn-stalker', x: 2900, y: 450 },
+      { id: 'field-mushroom-boss', configId: 'great-mushroom', x: 3800, y: 430 },
+    ],
+  },
+  'eternal-sleep-heart': {
+    id: 'eternal-sleep-heart',
+    index: 7,
+    difficulty: 7,
+    title: 'Сердце вечного сна',
+    subtitle: 'Глава VII · Финал · Черновой уровень (graybox)',
+    story:
+      'Плейсхолдер: геометрия и противники перенесены из прежней версии без изменений. Фон и ' +
+      'название уже соответствуют новому сценарию — дом Сомниума и дверь в реальность.',
+    objective: 'защити Элиаса · используй обе силы · разбей замки Стража',
+    background: 'heart',
     mechanic: 'boss-rush',
     phaseDurationMs: 26_000,
     worldWidth: 4200,
@@ -339,7 +472,7 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
       { x: 3300, y: 420, width: 130, height: 22 },
     ],
     checkpoints: checkpointTriplet(
-      ['tower-entry', 'broken-pendulum', 'restored-pendulum'],
+      ['heart-entry', 'broken-door', 'heart-goal'],
       [180, 2200, 4070],
       500,
     ),
@@ -372,13 +505,15 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
 
 export const CAMPAIGN_LEVEL_ORDER: readonly CampaignLevelId[] = [
   'garden-first-dawn',
-  'whispering-forest',
-  'sky-library',
-  'clock-fortress',
-  'eclipse-heart',
+  'whispering-lanterns',
+  'midday-clock-city',
+  'unread-letters-sea',
+  'forgotten-smiles-carnival',
+  'last-star-field',
+  'eternal-sleep-heart',
 ];
 
-// ARC-002: fail fast with a readable message on malformed content, instead of silently defaulting
+// ARC-014: fail fast with a readable message on malformed content, instead of silently defaulting
 // (see `createLevelContent` below, which used to fall back to `health: 1` for unknown configIds).
 validateCampaignContent({
   abilities: {

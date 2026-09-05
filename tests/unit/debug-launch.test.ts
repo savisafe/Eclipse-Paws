@@ -35,9 +35,9 @@ describe('debug launch params (ARC-015)', () => {
   });
 
   it('parses a valid level, checkpoint, heroLevel and phaseDurationMs', () => {
-    setSearch('?level=whispering-forest&checkpoint=forest-shard&heroLevel=3&phaseDurationMs=500');
+    setSearch('?level=whispering-lanterns&checkpoint=forest-shard&heroLevel=3&phaseDurationMs=500');
     const params = readDebugLaunchParams();
-    expect(params.level).toBe('whispering-forest');
+    expect(params.level).toBe('whispering-lanterns');
     expect(params.checkpointId).toBe('forest-shard');
     expect(params.heroLevel).toBe(3);
     expect(params.phaseDurationMs).toBe(500);
@@ -76,7 +76,7 @@ describe('debug launch params (ARC-015)', () => {
 
   describe('shouldAutoStartDebugLaunch', () => {
     it('is true when a level or checkpoint is requested', () => {
-      expect(shouldAutoStartDebugLaunch({ ...NO_FLAGS, level: 'whispering-forest' })).toBe(true);
+      expect(shouldAutoStartDebugLaunch({ ...NO_FLAGS, level: 'whispering-lanterns' })).toBe(true);
       expect(shouldAutoStartDebugLaunch({ ...NO_FLAGS, checkpointId: 'forest-shard' })).toBe(true);
     });
 

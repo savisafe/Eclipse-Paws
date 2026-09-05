@@ -17,7 +17,7 @@ export function GameHud({ gameplay }: GameHudProps) {
     <header className="game-hud" aria-label="Игровой интерфейс">
       <div className="hud-portraits" aria-label="Хранители">
         <div
-          aria-label={`Кокс: ${dominantCat === 'luma' ? 'усилен' : 'ослаблен'}`}
+          aria-label={`Лумус: ${dominantCat === 'luma' ? 'усилен' : 'ослаблен'}`}
           aria-current={snapshot.activeCat === 'luma' ? 'true' : undefined}
           className={`hud-cat hud-cat--luma ${snapshot.activeCat === 'luma' ? 'is-active' : ''} ${dominantCat === 'luma' ? 'is-empowered' : 'is-weakened'}`}
         >
@@ -25,12 +25,12 @@ export function GameHud({ gameplay }: GameHudProps) {
             ☀
           </span>
           <span className="hud-cat__copy">
-            <strong>Кокс</strong>
+            <strong>Лумус</strong>
             <small>{dominantCat === 'luma' ? 'СИЛА ×1.5' : 'СЛАБО ×0.25'}</small>
           </span>
         </div>
         <div
-          aria-label={`Боня: ${dominantCat === 'nox' ? 'усилен' : 'ослаблен'}`}
+          aria-label={`Нокс: ${dominantCat === 'nox' ? 'усилен' : 'ослаблен'}`}
           aria-current={snapshot.activeCat === 'nox' ? 'true' : undefined}
           className={`hud-cat hud-cat--nox ${snapshot.activeCat === 'nox' ? 'is-active' : ''} ${dominantCat === 'nox' ? 'is-empowered' : 'is-weakened'}`}
         >
@@ -38,7 +38,7 @@ export function GameHud({ gameplay }: GameHudProps) {
             ☾
           </span>
           <span className="hud-cat__copy">
-            <strong>Боня</strong>
+            <strong>Нокс</strong>
             <small>{dominantCat === 'nox' ? 'СИЛА ×1.5' : 'СЛАБО ×0.25'}</small>
           </span>
         </div>
@@ -67,7 +67,7 @@ export function GameHud({ gameplay }: GameHudProps) {
           aria-label={`HP героев: ${snapshot.bondHealth} из ${snapshot.maxBondHealth}`}
         >
           <div className="hero-health__label">
-            <span>Кокс + Боня</span>
+            <span>Лумус + Нокс</span>
             <strong>
               {snapshot.bondHealth}/{snapshot.maxBondHealth} HP
             </strong>

@@ -14,7 +14,7 @@ export function StoryIntro({ onBack, onStart, story, subtitle, title }: StoryInt
         <h1 id="story-title">{title}</h1>
         <blockquote>{story}</blockquote>
         <div className="story-meow" aria-label="Коты готовы к путешествию">
-          Кокс: «Мяу!» · Боня: «Мр-р.»
+          Лумус: «Мяу!» · Нокс: «Мр-р.»
         </div>
         <button className="menu-button" onClick={onStart} type="button">
           Начать уровень
