@@ -585,9 +585,9 @@ comic_prologue_panel_01.webp
 
 **Цель:** зафиксировать игровые метрики и визуальные стандарты до массовой отрисовки.
 
-- [ ] `GAM-001` Утвердить camera perspective и размер котов на экране.
-- [ ] `GAM-002` Утвердить movement metrics и reference obstacle kit.
-- [ ] `GAM-003` Утвердить общий difficulty curve семи уровней.
+- [x] `GAM-001` Утвердить camera perspective и размер котов на экране.
+- [x] `GAM-002` Утвердить movement metrics и obstacle kit (по уровням, не единый набор).
+- [x] `GAM-003` Утвердить общий difficulty curve семи уровней.
 - [x] `GAM-004` Создать mechanics matrix по уровням.
 - [x] `GAM-005` Создать enemy role matrix.
 - [x] `GAM-006` Зафиксировать checkpoint и fail-state rules.
@@ -1077,9 +1077,9 @@ comic_prologue_panel_01.webp
 | `COM-001`      | Storyboard пролога                               | DONE        | Claude   | —                    | 2    | 2026-09-05         |
 | `COM-002`      | Storyboard эпилога                               | DONE        | Claude   | —                    | 2    | 2026-09-05         |
 | `ART-007`      | Asset manifest (частично — без export pipeline)  | IN_PROGRESS | Claude   | —                    | 2    | 2026-09-05         |
-| `GAM-001`      | Camera perspective и размер котов                | BACKLOG     | —        | —                    | 2    | —                  |
-| `GAM-002`      | Movement metrics и obstacle kit                  | BACKLOG     | —        | —                    | 2    | —                  |
-| `GAM-003`      | Difficulty curve семи уровней                    | BACKLOG     | —        | —                    | 2    | —                  |
+| `GAM-001`      | Camera perspective и размер котов                | REVIEW      | Claude   | —                    | 2    | 2026-09-05         |
+| `GAM-002`      | Movement metrics и obstacle kit (по уровням)     | REVIEW      | Claude   | —                    | 2    | 2026-09-05         |
+| `GAM-003`      | Difficulty curve семи уровней                    | REVIEW      | Claude   | —                    | 2    | 2026-09-05         |
 | `ART-001`      | Art Bible                                        | BACKLOG     | —        | Gate 1               | 2    | —                  |
 | `COM-010A`     | Slideshow engine пролога/эпилога                 | DONE        | Claude   | —                    | 6    | 2026-09-05         |
 | `LV1-001`      | Brief Сада первой зари                           | BACKLOG     | —        | Gate 4               | 5    | —                  |
@@ -1108,7 +1108,16 @@ comic_prologue_panel_01.webp
   добавлен как архитектурная защита, не как исправление бага; unit-тест не удалось написать
   (импорт `phaser` падает под jsdom без пакета `canvas` — подтверждённая причина, почему ни один
   Phaser-адаптер не покрыт unit-тестами), вместо этого прогнан полный `test:e2e` (15/15,
-  7 реальных циклов создания/уничтожения сцены). См. `docs/HANDOFFS/ARC-010.md`.
+  7 реальных циклов создания/уничтожения сцены). См. `docs/HANDOFFS/ARC-010.md`. `GAM-001`/`GAM-002`/
+  `GAM-003` также закрыты в этой сессии живым диалогом с пользователем (не единолично): GAM-001
+  (камера/масштаб котов) и GAM-002 (movement metrics) утверждены как текущие de-facto значения
+  прототипа на все 7 уровней. Первая версия GAM-002/GAM-003, которую я предложил, ошибочно
+  описывала **единый** obstacle kit для всех уровней — пользователь поправил («смотри сценарий,
+  там описан каждый уровень»), после чего GAM-002 переписан как per-level таблица уникального
+  рельефа/интерактива (дословно по `ECLIPSE_PAWS_SCENARIO.md` §12), а GAM-003 — как
+  качественная difficulty curve по тому же принципу сценария («сложность растёт комбинацией
+  правил, не здоровьем врагов»), без точных цифр (они ждут реализации нового канона врагов). См.
+  `docs/GAME_DESIGN.md`.
 - Параллельно замечено: art-агент доставил дизайн-систему (~70%, коммит `82f4616 update: design
 system 70%`) — 7 окружений, декорации по всем уровням, полные наборы поз героев/NPC/врагов,
   портреты, иконки способностей, 16 story-панелей и UI-кит. `dream-environment-manifest.ts` уже
