@@ -1,5 +1,22 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { CAMPAIGN_LEVEL_ORDER, CAMPAIGN_LEVELS, type CampaignLevelId } from '@content/index';
+import gardenFirstDawn from '../../assets/ui/chapters/garden-first-dawn-v1.png?url';
+import whisperingLanterns from '../../assets/ui/chapters/whispering-lanterns-v1.png?url';
+import middayClockCity from '../../assets/ui/chapters/midday-clock-city-v1.png?url';
+import unreadLettersSea from '../../assets/ui/chapters/unread-letters-sea-v1.png?url';
+import forgottenSmilesCarnival from '../../assets/ui/chapters/forgotten-smiles-carnival-v1.png?url';
+import lastStarField from '../../assets/ui/chapters/last-star-field-v1.png?url';
+import eternalSleepHeart from '../../assets/ui/chapters/eternal-sleep-heart-v1.png?url';
+
+const CHAPTER_ICONS: Record<CampaignLevelId, string> = {
+  'garden-first-dawn': gardenFirstDawn,
+  'whispering-lanterns': whisperingLanterns,
+  'midday-clock-city': middayClockCity,
+  'unread-letters-sea': unreadLettersSea,
+  'forgotten-smiles-carnival': forgottenSmilesCarnival,
+  'last-star-field': lastStarField,
+  'eternal-sleep-heart': eternalSleepHeart,
+};
 
 interface LevelSelectDialogProps {
   onSelect: (levelId: CampaignLevelId) => void;
@@ -31,7 +48,14 @@ export function LevelSelectDialog({ onSelect, unlockedLevels }: LevelSelectDialo
                     onClick={() => onSelect(levelId)}
                     type="button"
                   >
-                    <span>{level.index}</span>
+                    <span
+                      className="level-select-button__icon"
+                      style={{
+                        backgroundImage: unlocked ? `url(${CHAPTER_ICONS[levelId]})` : undefined,
+                      }}
+                    >
+                      <em>{level.index}</em>
+                    </span>
                     <strong>{level.title}</strong>
                     <small>{unlocked ? level.subtitle : 'Закрыто'}</small>
                   </button>

@@ -54,36 +54,23 @@ button:focus-visible {
 }
 
 .boot-mark {
-  position: relative;
-  width: 7rem;
-  height: 7rem;
+  width: clamp(11rem, 40vw, 16rem);
+  aspect-ratio: 1.5;
+  background-image: url('../../assets/ui/eclipse-paws-logo-v1.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
   filter: drop-shadow(0 0 1.5rem rgb(255 209 107 / 35%));
 }
 
-.boot-mark__sun,
-.boot-mark__moon {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-}
-
-.boot-mark__sun {
-  background: var(--gold);
-}
-
-.boot-mark__moon {
-  translate: 24% -8%;
-  background: #20204d;
-  box-shadow: inset 0.3rem 0 0 rgb(255 255 255 / 8%);
-}
-
 .boot-screen__title {
-  margin: 1.5rem 0 0.25rem;
-  color: var(--cream);
-  font-size: clamp(1.7rem, 7vw, 2.6rem);
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .boot-screen__status {
@@ -304,31 +291,34 @@ button:focus-visible {
 
 .menu-button {
   display: flex;
-  min-height: 3.25rem;
+  min-height: 3.5rem;
   align-items: center;
   justify-content: space-between;
-  padding: 0.7rem 1.2rem;
-  border: 1px solid rgb(255 223 153 / 50%);
-  border-radius: 1.1rem;
+  padding: 0.7rem 1.8rem;
+  border: 0;
   color: var(--ink);
-  background: linear-gradient(180deg, #fff5d7, #f3c97f);
-  box-shadow: 0 0.35rem 0 #966c55;
+  background-image: url('../../assets/ui/button-normal-v1.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   font-weight: 850;
   cursor: pointer;
-  transition:
-    translate 150ms ease,
-    box-shadow 150ms ease;
+  transition: translate 150ms ease;
 }
 
-.menu-button:not(:disabled):hover {
-  box-shadow: 0 0.5rem 0 #966c55;
+.menu-button:not(:disabled):hover,
+.menu-button:not(:disabled):focus-visible {
+  background-image: url('../../assets/ui/button-focus-v1.png');
   translate: 0 -0.15rem;
 }
 
+.menu-button:not(:disabled):active {
+  background-image: url('../../assets/ui/button-pressed-v1.png');
+  translate: 0 0.05rem;
+}
+
 .menu-button:disabled {
-  color: #b8b7ca;
-  background: rgb(48 47 83 / 82%);
-  box-shadow: none;
+  color: #8b8a9c;
+  background-image: url('../../assets/ui/button-disabled-v1.png');
   cursor: not-allowed;
 }
 
@@ -400,6 +390,11 @@ button:focus-visible {
   display: grid;
 }
 
+.setting-row > span:first-child {
+  display: inline-flex;
+  align-items: center;
+}
+
 .setting-row output {
   float: right;
   color: var(--turquoise);
@@ -442,43 +437,70 @@ button:focus-visible {
 
 .motion-switch {
   position: relative;
-  width: 3.25rem;
-  height: 1.8rem;
+  width: 3.7rem;
+  height: 2.1rem;
   flex: none;
   border: 0;
-  border-radius: 999px;
-  background: #11142e;
+  background-image: url('../../assets/ui/toggle-off-v1.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   cursor: pointer;
 }
 
 .motion-switch[data-state='checked'] {
-  background: var(--turquoise);
+  background-image: url('../../assets/ui/toggle-on-v1.png');
 }
 
 .motion-switch__thumb {
-  display: block;
-  width: 1.35rem;
-  height: 1.35rem;
-  translate: 0.22rem 0;
-  border-radius: 50%;
-  background: var(--cream);
-  transition: translate 150ms ease;
+  display: none;
 }
 
-.motion-switch__thumb[data-state='checked'] {
-  translate: 1.65rem 0;
+.setting-row__icon {
+  display: block;
+  width: 1.6rem;
+  aspect-ratio: 1;
+  margin-right: 0.6rem;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.setting-row__icon--music {
+  background-image: url('../../assets/ui/icons/music-v1.png');
+}
+
+.setting-row__icon--effects {
+  background-image: url('../../assets/ui/icons/sound-effects-v1.png');
+}
+
+.setting-row__icon--motion {
+  background-image: url('../../assets/ui/icons/reduced-motion-v1.png');
+}
+
+.setting-row__icon--vibration {
+  background-image: url('../../assets/ui/icons/vibration-v1.png');
 }
 
 .dialog-close {
   width: 100%;
-  min-height: 3rem;
+  min-height: 3.3rem;
   margin-top: 1.5rem;
   border: 0;
-  border-radius: 1rem;
   color: var(--ink);
-  background: linear-gradient(180deg, #fff5d7, #f3c97f);
+  background-image: url('../../assets/ui/button-normal-v1.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   font-weight: 850;
   cursor: pointer;
+}
+
+.dialog-close:hover {
+  background-image: url('../../assets/ui/button-focus-v1.png');
+}
+
+.dialog-close:active {
+  background-image: url('../../assets/ui/button-pressed-v1.png');
 }
 
 .level-select-list {
@@ -501,14 +523,31 @@ button:focus-visible {
   cursor: pointer;
 }
 
-.level-select-button > span {
+.level-select-button__icon {
+  position: relative;
+  display: block;
+  width: 2.4rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: rgb(255 255 255 / 12%);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.level-select-button__icon em {
+  position: absolute;
+  right: -0.2rem;
+  bottom: -0.2rem;
   display: grid;
-  width: 2.2rem;
+  width: 1.15rem;
   aspect-ratio: 1;
   place-items: center;
   border-radius: 50%;
-  color: #292653;
   background: var(--gold);
+  color: #292653;
+  font-size: 0.65rem;
+  font-style: normal;
   font-weight: 900;
 }
 
