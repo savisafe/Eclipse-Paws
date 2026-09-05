@@ -28,9 +28,7 @@ export function LevelResult({
       <section className="result-card" aria-labelledby="result-title">
         <p className="result-card__eyebrow">Ещё один след Элиаса найден</p>
         <h1 id="result-title">Уровень пройден!</h1>
-        <div className="result-shard" aria-hidden="true">
-          ✦
-        </div>
+        <div className="result-shard" aria-hidden="true" />
         <p>«{levelTitle}» завершён. Путь домой становится немного яснее.</p>
         <dl className="result-stats">
           <div>

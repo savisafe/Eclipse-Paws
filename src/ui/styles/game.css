@@ -110,18 +110,23 @@
 
 .hud-cat__face {
   display: grid;
-  width: 2rem;
+  width: 2.1rem;
   aspect-ratio: 1;
   place-items: center;
   border-radius: 50%;
   color: #34265e;
-  background: var(--cream);
-  font-size: 1.15rem;
+  background-color: var(--cream);
+  background-image: url('../../assets/ui/hero-portrait-frames-v1.png');
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  font-size: 1.1rem;
 }
 
 .hud-cat--nox .hud-cat__face {
   color: var(--silver);
-  background: #28204e;
+  background-color: #28204e;
+  background-position: right center;
 }
 
 .phase-clock {
@@ -141,8 +146,16 @@
 }
 
 .phase-clock__icon {
+  display: grid;
+  width: 2rem;
+  aspect-ratio: 1;
+  place-items: center;
   color: var(--gold);
-  font-size: 1.25rem;
+  background-image: url('../../assets/ui/phase-indicator-frame-v1.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  font-size: 1.05rem;
 }
 
 .phase-clock strong {
@@ -768,8 +781,13 @@
 }
 
 .result-shard {
-  color: var(--gold);
-  font-size: 5rem;
+  width: 6rem;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  background-image: url('../../assets/ui/loading-emblem-v1.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
   filter: drop-shadow(0 0 1.5rem rgb(255 205 91 / 75%));
 }
 
