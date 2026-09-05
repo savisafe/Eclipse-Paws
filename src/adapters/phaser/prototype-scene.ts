@@ -313,8 +313,14 @@ export class PrototypeScene extends Phaser.Scene {
   #shutdown(): void {
     this.input.off('pointerdown', this.#handlePointerDown, this);
     this.#inputState.reset();
+    // ARC-010: every owned system implements Destroyable — call all of them uniformly, not just
+    // the ones that happen to hold a non-Phaser resource today (see destroyable.ts for why).
     this.#combatSystem.destroy();
     this.#tagSwitchSystem.destroy();
+    this.#enemySystem.destroy();
+    this.#levelMechanics.destroy();
+    this.#playerMovement.destroy();
+    this.#tutorialSystem?.destroy();
     this.#unsubscribeEvents?.();
   }
 

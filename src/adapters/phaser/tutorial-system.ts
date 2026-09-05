@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { Destroyable } from './destroyable';
 
 export interface TutorialSignals {
   attacked: boolean;
@@ -16,19 +17,24 @@ const STEPS = [
   '5/5 · ПЕРВАЯ ПЕЧАТЬ\nПодойди к руне 1 и нажми E',
 ] as const;
 
-export class TutorialSystem {
+export class TutorialSystem implements Destroyable {
+  readonly #icon: Phaser.GameObjects.Arc;
   readonly #panel: Phaser.GameObjects.Container;
   readonly #reducedMotion: boolean;
+  readonly #scene: Phaser.Scene;
   readonly #text: Phaser.GameObjects.Text;
+  #completionCall: Phaser.Time.TimerEvent | null = null;
   #finished = false;
   #step = 0;
 
   constructor(scene: Phaser.Scene, reducedMotion: boolean) {
+    this.#scene = scene;
     this.#reducedMotion = reducedMotion;
     const backdrop = scene.add
       .rectangle(0, 0, 310, 76, 0x111633, 0.94)
       .setStrokeStyle(3, 0x80e9e2, 0.82);
     const icon = scene.add.circle(-126, 0, 23, 0x2d315d, 1).setStrokeStyle(3, 0xffd873, 0.9);
+    this.#icon = icon;
     const paw = scene.add
       .text(-126, -1, '✦', {
         color: '#ffe49a',
@@ -78,9 +84,8 @@ export class TutorialSystem {
     }
     this.#finished = true;
     this.#text.setText('✓ ОБУЧЕНИЕ ЗАВЕРШЕНО').setColor('#ffe18a');
-    const scene = this.#panel.scene;
-    scene.time.delayedCall(this.#reducedMotion ? 500 : 1000, () => {
-      scene.tweens.add({
+    this.#completionCall = this.#scene.time.delayedCall(this.#reducedMotion ? 500 : 1000, () => {
+      this.#scene.tweens.add({
         targets: this.#panel,
         alpha: 0,
         y: 135,
@@ -88,5 +93,14 @@ export class TutorialSystem {
         onComplete: () => this.#panel.destroy(true),
       });
     });
+  }
+
+  // The pulsing icon tween (`repeat: -1`) and the completion delayedCall outlive `observe()` calls
+  // — Phaser's TweenManager/Clock already kill both on scene shutdown, but destroy() makes that
+  // explicit and lets this system be torn down independently of a full scene shutdown (ARC-010).
+  destroy(): void {
+    this.#scene.tweens.killTweensOf(this.#icon);
+    this.#completionCall?.remove(false);
+    this.#panel.destroy(true);
   }
 }

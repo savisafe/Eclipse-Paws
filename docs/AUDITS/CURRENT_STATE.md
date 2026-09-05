@@ -154,7 +154,7 @@ FIXED_STEP_MS) fixedUpdate(...)`. Полностью соответствует 
 | SaveRepository/localStorage изоляция    | KEEP                                  | Единственная точка доступа, порт соблюдён                               |
 | Декомпозиция сцены на системы (паттерн) | KEEP (паттерн), REFACTOR (композиция) | Системы маленькие, но собираются вручную в `prototype-scene.ts`         |
 | `platformer-enemy-system.ts`            | REFACTOR                              | Смешаны core-правила и рендер, самый большой файл                       |
-| Cleanup/destroy() сцены                 | REFACTOR                              | Реализовано у 2 из ~6 систем                                            |
+| Cleanup/destroy() сцены                 | ~~REFACTOR~~ **ЗАКРЫТО** (`ARC-010`)  | Все 6 систем реализуют `Destroyable`; расследование показало, что Phaser сам чистит твины/таймеры/game-объекты на `SHUTDOWN` — реальной утечки не было, см. `docs/HANDOFFS/ARC-010.md` |
 | SaveGame validation                     | REFACTOR                              | Ручная → Zod, логика миграции остаётся                                  |
 | Content validation                      | REPLACE (добавить с нуля)             | Zod отсутствует полностью                                               |
 | Seeded RNG                              | REPLACE (добавить с нуля)             | Не существует в проекте вовсе                                           |
@@ -209,11 +209,12 @@ controller,progress-service}.ts` → `application/services/*`. Фиксация 
    end-to-end как архитектурный пример» из `ARC-011`. Требует предварительного расширения
    `game-session.test.ts`/`boot-menu.spec.ts` как safety net перед изменением — наибольший риск
    среди всех первых шагов, так как игровой баланс сейчас перемешан с Phaser API.
-4. **`ARC-010` — scene lifecycle contract и leak test.** Единый интерфейс `destroy(): void` для
-   всех Phaser-систем (`PlatformerEnemySystem`, `LevelMechanicsSystem`, `PlayerMovementSystem`,
-   `TutorialSystem`), централизованный вызов в `PrototypeScene#shutdown()` — сейчас вызывается
-   только для 2 из ~6 систем. Требует синхронизации с art-агентом, так как оба трогают
-   `prototype-scene.ts`.
+4. **`ARC-010` — scene lifecycle contract и leak test. Статус: ЗАКРЫТО, см.
+   `docs/HANDOFFS/ARC-010.md`.** Единый интерфейс `Destroyable` для всех 6 Phaser-систем,
+   централизованный вызов в `PrototypeScene#shutdown()`. Расследование перед реализацией показало,
+   что Phaser 3.90 сам подписывается на `SHUTDOWN` сцены и уничтожает все твины/`delayedCall`/
+   game-объекты — заявленная здесь «средняя-высокая» утечка не подтвердилась; контракт добавлен
+   как архитектурная защита на будущее, а не исправление подтверждённого бага.
 5. **Без номера (relates to Фаза 14, `MOB-001`) — решение по Capacitor.** Удалить неиспользуемые
    `@capacitor/*` зависимости либо довести до реального использования
    (`capacitor.config.ts`, native projects, недостающие адаптеры) — решение пользователя, влияет

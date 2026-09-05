@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import type { CatId } from '@core/index';
+import type { Destroyable } from './destroyable';
 import { setCatPose } from './sprite-atlas';
 import { GameObjectPool } from './game-object-pool';
 
-export class TagSwitchSystem {
+export class TagSwitchSystem implements Destroyable {
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   readonly #reducedMotion: boolean;
   readonly #scene: Phaser.Scene;

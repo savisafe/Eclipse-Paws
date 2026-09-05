@@ -10,6 +10,7 @@ import {
   type EnemyAiProfile,
   type EnemyConfig,
 } from '@core/index';
+import type { Destroyable } from './destroyable';
 import type { EffectTarget } from './platformer-effects';
 import { GARDEN_ENEMY_FRAMES } from './garden-enemy-atlas';
 import { STAGE4_ENEMY_FRAMES } from './stage4-enemy-atlas';
@@ -101,7 +102,7 @@ function anchorToNearestPlatform(
   return { ...requested, x: sprite.x, y: sprite.y };
 }
 
-export class PlatformerEnemySystem {
+export class PlatformerEnemySystem implements Destroyable {
   readonly #ai: EnemyAiProfile;
   readonly #collectedDrops = new Set<string>();
   readonly #coverZones: readonly PlatformRect[];
@@ -440,5 +441,13 @@ export class PlatformerEnemySystem {
 
   #playMove(enemy: EnemyView): void {
     enemy.sprite.anims.play(`${enemy.config.id}-move`, true);
+  }
+
+  // Enemy sprites/health bars are Phaser display objects — DisplayList already destroys them on
+  // scene shutdown. Drop our own references so this system doesn't keep them reachable any
+  // longer than the scene itself (ARC-010 uniform contract).
+  destroy(): void {
+    this.#enemies.clear();
+    this.#collectedDrops.clear();
   }
 }

@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
 import type { CatId } from '@core/index';
+import type { Destroyable } from './destroyable';
 import { updateCatAnimation } from './cat-animation';
 
 const PLAYER_SPEED = 255;
 const JUMP_SPEED = 560;
 
-export class PlayerMovementSystem {
+export class PlayerMovementSystem implements Destroyable {
   readonly #actionLockMs: Record<CatId, number>;
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   readonly #facing: Record<CatId, number>;
@@ -62,5 +63,11 @@ export class PlayerMovementSystem {
       this.#coyoteMs = 0;
     }
     updateCatAnimation(active, activeId, this.#actionLockMs, deltaMs);
+  }
+
+  // No owned Phaser resources (tweens/timers/game objects) or subscriptions of its own — it only
+  // mutates sprites the scene owns. Present to satisfy the uniform Destroyable contract (ARC-010).
+  destroy(): void {
+    // Intentionally empty.
   }
 }

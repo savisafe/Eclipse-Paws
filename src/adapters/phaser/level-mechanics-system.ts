@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { CampaignLevelDefinition } from '@content/index';
 import type { CatId, Phase } from '@core/index';
+import type { Destroyable } from './destroyable';
 import { GardenCollectibleSystem } from './garden-collectible-system';
 import { FinalBossSystem } from './final-boss-system';
 import { GardenFlowerPuzzle } from './garden-flower-puzzle';
@@ -11,7 +12,7 @@ import type { PlatformerEnemySystem } from './platformer-enemy-system';
 import { PlatformerHazardSystem } from './platformer-hazard-system';
 import { PlatformerProgressSystem } from './platformer-progress-system';
 
-export class LevelMechanicsSystem {
+export class LevelMechanicsSystem implements Destroyable {
   readonly #collectibles: GardenCollectibleSystem;
   readonly #constellations: LibraryConstellationSystem | null;
   readonly #enemies: PlatformerEnemySystem;
@@ -101,5 +102,15 @@ export class LevelMechanicsSystem {
   applyPhase(phase: Phase): void {
     this.#phaseBridges.update(phase);
     this.#constellations?.applyPhase(phase);
+  }
+
+  // All 7 sub-systems here only own Phaser display objects and tweens/delayedCalls created via
+  // `scene.add`/`scene.tweens`/`scene.time` — Phaser's DisplayList/TweenManager/Clock already
+  // destroy those on scene shutdown (verified against the installed Phaser 3.90 source). None of
+  // them hold an AudioContext, a raw timer, or an app-level event subscription. Present as a
+  // no-op to satisfy the uniform Destroyable contract (ARC-010) and give a home for real cleanup
+  // if a future sub-system ever needs one.
+  destroy(): void {
+    // Intentionally empty — see comment above.
   }
 }

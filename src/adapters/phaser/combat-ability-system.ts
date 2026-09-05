@@ -2,13 +2,14 @@ import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import type { CatId } from '@core/index';
 import type { HapticsPort } from '@adapters/haptics/index';
+import type { Destroyable } from './destroyable';
 import type { PlatformerEnemySystem } from './platformer-enemy-system';
 import { playPrimaryAttack, playSpecialAbility } from './platformer-effects';
 import { SfxSynth } from './sfx-synth';
 import { setCatPose } from './sprite-atlas';
 import { GameObjectPool } from './game-object-pool';
 
-export class CombatAbilitySystem {
+export class CombatAbilitySystem implements Destroyable {
   readonly #actionLockMs: Record<CatId, number>;
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   readonly #enemies: PlatformerEnemySystem;
