@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { CampaignLevelDefinition } from '@content/index';
 import type { Destroyable } from '../destroyable';
 import gardenerCottageUrl from '../../../assets/decorations/garden/gardener-cottage-v1.png?url';
+import { gardenMapObjects, gardenMapProperty, type GardenMapObject } from './garden-map-layout';
 
 /**
  * The dressing of «Сад первой зари» (ECLIPSE_PAWS_SCENARIO.md §12, «Визуальный образ» /
@@ -84,63 +85,91 @@ export class GardenScenery implements Destroyable {
       horizon.fillEllipse(x, 540 - ((x / 520) % 2) * 24, 720, 210);
     }
 
+    const landscape = gardenMapObjects(this.#scene, 'Landscape');
     const terrain = this.#track(this.#scene.add.graphics().setDepth(0));
-    terrain.fillStyle(0x405b38, 0.52);
-    terrain.fillEllipse(430, 630, 1120, 170);
-    terrain.fillEllipse(1390, 638, 1040, 150);
-    terrain.fillEllipse(2330, 640, 1060, 170);
-    terrain.fillEllipse(3270, 650, 960, 125);
-    terrain.fillEllipse(4140, 638, 1050, 150);
-    terrain.fillEllipse(4940, 635, 970, 160);
-    terrain.fillEllipse(5820, 642, 1060, 150);
+    terrain.fillStyle(0x8d7655, 0.98);
+    landscape
+      .filter((object) => object.type === 'terrain' && object.polygon)
+      .forEach((object) => {
+        const points = object.polygon?.map(
+          (point) => new Phaser.Math.Vector2(object.x + (point.x ?? 0), object.y + (point.y ?? 0)),
+        );
+        if (!points || points.length < 3) return;
+        terrain.fillPoints(points, true);
+
+        // Only the authored upper edge gets a grass cap; the closing points at the bottom belong
+        // to the soil body. Editing the polygon in Tiled now edits the visible silhouette too.
+        const upperEdge = points.slice(0, -2);
+        terrain.lineStyle(17, 0x668b4e, 1);
+        terrain.strokePoints(upperEdge, false);
+        terrain.lineStyle(6, 0x91b86c, 0.92);
+        terrain.strokePoints(upperEdge, false);
+      });
 
     // Root descent: broad organic rails visually replace a stack of abstract platforms.
+    const rootPath = this.#requiredLandscapeObject(landscape, 'roots');
     const roots = this.#track(this.#scene.add.graphics().setDepth(2));
     roots.lineStyle(22, 0x6c5338, 0.92);
     roots.beginPath();
-    roots.moveTo(1840, 617);
-    roots.lineTo(2030, 574);
-    roots.lineTo(2220, 598);
-    roots.lineTo(2420, 654);
-    roots.lineTo(2600, 638);
-    roots.lineTo(2780, 616);
+    this.#tracePolyline(roots, rootPath);
     roots.strokePath();
     roots.lineStyle(5, 0xb18a58, 0.45);
     roots.beginPath();
-    roots.moveTo(1840, 611);
-    roots.lineTo(2030, 568);
-    roots.lineTo(2220, 592);
-    roots.lineTo(2420, 648);
-    roots.lineTo(2600, 632);
-    roots.lineTo(2780, 610);
+    this.#tracePolyline(roots, rootPath, -6);
     roots.strokePath();
 
     // Shallow stream in the greenhouse zone. It is scenery, not instant-death water.
+    const stream = this.#requiredLandscapeObject(landscape, 'water');
     const water = this.#track(this.#scene.add.graphics().setDepth(2));
     water.fillStyle(0x62cbd1, 0.48);
-    water.fillRoundedRect(2890, 604, 720, 28, 14);
+    water.fillRoundedRect(stream.x, stream.y, stream.width, stream.height, stream.height / 2);
     water.lineStyle(3, 0xd7ffff, 0.5);
-    for (let x = 2920; x < 3570; x += 105) {
+    for (let x = stream.x + 30; x < stream.x + stream.width - 40; x += 105) {
       water.beginPath();
-      water.moveTo(x, 610);
-      water.lineTo(x + 52, 614);
+      water.moveTo(x, stream.y + 6);
+      water.lineTo(x + 52, stream.y + 10);
       water.strokePath();
     }
 
     // Greenhouse and gardener's cottage are deliberately large silhouettes: landmarks anchor
     // nearby props and make the zone readable before the player reaches it.
+    const greenhouseArea = this.#requiredLandscapeObject(landscape, 'greenhouse');
     const greenhouse = this.#track(this.#scene.add.graphics().setDepth(-1));
     greenhouse.fillStyle(0xddecc5, 0.16);
-    greenhouse.fillRoundedRect(2890, 375, 700, 235, 24);
+    greenhouse.fillRoundedRect(
+      greenhouseArea.x,
+      greenhouseArea.y,
+      greenhouseArea.width,
+      greenhouseArea.height,
+      24,
+    );
     greenhouse.lineStyle(9, 0x566b4d, 0.65);
-    greenhouse.strokeRoundedRect(2890, 375, 700, 235, 24);
-    for (let x = 3000; x < 3580; x += 145) greenhouse.lineBetween(x, 382, x, 608);
-    greenhouse.lineBetween(2896, 493, 3584, 493);
+    greenhouse.strokeRoundedRect(
+      greenhouseArea.x,
+      greenhouseArea.y,
+      greenhouseArea.width,
+      greenhouseArea.height,
+      24,
+    );
+    for (let x = greenhouseArea.x + 110; x < greenhouseArea.x + greenhouseArea.width; x += 145)
+      greenhouse.lineBetween(
+        x,
+        greenhouseArea.y + 7,
+        x,
+        greenhouseArea.y + greenhouseArea.height - 2,
+      );
+    greenhouse.lineBetween(
+      greenhouseArea.x + 6,
+      greenhouseArea.y + greenhouseArea.height / 2,
+      greenhouseArea.x + greenhouseArea.width - 6,
+      greenhouseArea.y + greenhouseArea.height / 2,
+    );
 
+    const cottage = this.#requiredLandscapeObject(landscape, 'cottage');
     this.#track(
       this.#scene.add
-        .image(4110, 624, 'garden-cottage')
-        .setDisplaySize(560, 373)
+        .image(cottage.x + cottage.width / 2, cottage.y + cottage.height, 'garden-cottage')
+        .setDisplaySize(cottage.width, cottage.height)
         .setOrigin(0.5, 1)
         // The painted asset carries a very soft black-to-gold atmospheric matte. Screen makes
         // black disappear into the garden and retains only its warm window/lantern bloom.
@@ -150,10 +179,23 @@ export class GardenScenery implements Destroyable {
   }
 
   #addResponsiveGarden(reducedMotion: boolean): void {
-    [330, 650, 980, 1550, 2140, 2630, 3740, 4460].forEach((x, index) => {
+    const ambient = gardenMapObjects(this.#scene, 'Ambient');
+    const flowerLine = this.#requiredLandscapeObject(ambient, 'flower-line');
+    const flowerXs: number[] = [];
+    for (
+      let x = flowerLine.x;
+      x <= flowerLine.x + flowerLine.width;
+      x += gardenMapProperty(flowerLine, 'spacing', 310)
+    )
+      flowerXs.push(x);
+    flowerXs.forEach((x, index) => {
       const flower = this.#track(
         this.#scene.add
-          .image(x, 584 - (index % 2) * 8, index % 3 === 0 ? 'garden-flower-closed' : 'garden-seed')
+          .image(
+            x,
+            flowerLine.y - (index % 2) * 8,
+            index % 3 === 0 ? 'garden-flower-closed' : 'garden-seed',
+          )
           .setDisplaySize(index % 3 === 0 ? 54 : 38, index % 3 === 0 ? 54 : 52)
           .setOrigin(0.5, 1)
           .setAlpha(0.78)
@@ -171,10 +213,34 @@ export class GardenScenery implements Destroyable {
         });
       }
     });
-    for (let x = 430; x < 4460; x += 310) {
-      const view = this.#track(this.#scene.add.circle(x, 613, 4, 0xeaffff, 0.72).setDepth(4));
+    const dewLine = this.#requiredLandscapeObject(ambient, 'dew-line');
+    for (
+      let x = dewLine.x;
+      x < dewLine.x + dewLine.width;
+      x += gardenMapProperty(dewLine, 'spacing', 310)
+    ) {
+      const view = this.#track(this.#scene.add.circle(x, dewLine.y, 4, 0xeaffff, 0.72).setDepth(4));
       this.#touchDew.push({ burst: false, view });
     }
+  }
+
+  #requiredLandscapeObject(objects: readonly GardenMapObject[], type: string): GardenMapObject {
+    const object = objects.find((candidate) => candidate.type === type);
+    if (!object) throw new Error(`Garden map is missing a "${type}" object`);
+    return object;
+  }
+
+  #tracePolyline(
+    graphics: Phaser.GameObjects.Graphics,
+    object: GardenMapObject,
+    yOffset = 0,
+  ): void {
+    const [first, ...rest] = object.polyline ?? [];
+    if (!first) throw new Error(`Garden map object "${object.name}" has no polyline`);
+    graphics.moveTo(object.x + (first.x ?? 0), object.y + (first.y ?? 0) + yOffset);
+    rest.forEach((point) =>
+      graphics.lineTo(object.x + (point.x ?? 0), object.y + (point.y ?? 0) + yOffset),
+    );
   }
 
   // Flower beds punctuate the banks instead of carpeting them. Large quiet gaps around authored

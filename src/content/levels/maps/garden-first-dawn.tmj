@@ -1,0 +1,297 @@
+{
+  "compressionlevel": -1,
+  "height": 15,
+  "infinite": false,
+  "layers": [
+    {
+      "draworder": "topdown",
+      "id": 1,
+      "name": "Landscape",
+      "objects": [
+        {
+          "id": 1,
+          "name": "awakening-bank",
+          "type": "terrain",
+          "x": 0,
+          "y": 608,
+          "polygon": [
+            { "x": 0, "y": 0 },
+            { "x": 120, "y": -18 },
+            { "x": 310, "y": -30 },
+            { "x": 520, "y": -16 },
+            { "x": 720, "y": -42 },
+            { "x": 910, "y": -10 },
+            { "x": 910, "y": 112 },
+            { "x": 0, "y": 112 }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "alley-bank",
+          "type": "terrain",
+          "x": 910,
+          "y": 598,
+          "polygon": [
+            { "x": 0, "y": 0 },
+            { "x": 190, "y": -20 },
+            { "x": 390, "y": -8 },
+            { "x": 590, "y": -35 },
+            { "x": 780, "y": -14 },
+            { "x": 960, "y": 8 },
+            { "x": 960, "y": 122 },
+            { "x": 0, "y": 122 }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "root-bank",
+          "type": "terrain",
+          "x": 1870,
+          "y": 606,
+          "polygon": [
+            { "x": 0, "y": 0 },
+            { "x": 160, "y": -44 },
+            { "x": 330, "y": -58 },
+            { "x": 510, "y": -25 },
+            { "x": 690, "y": 12 },
+            { "x": 840, "y": -12 },
+            { "x": 960, "y": -4 },
+            { "x": 960, "y": 114 },
+            { "x": 0, "y": 114 }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "greenhouse-bank",
+          "type": "terrain",
+          "x": 2830,
+          "y": 604,
+          "polygon": [
+            { "x": 0, "y": 0 },
+            { "x": 150, "y": -8 },
+            { "x": 310, "y": 8 },
+            { "x": 470, "y": -18 },
+            { "x": 650, "y": -10 },
+            { "x": 840, "y": 2 },
+            { "x": 840, "y": 116 },
+            { "x": 0, "y": 116 }
+          ]
+        },
+        {
+          "id": 5,
+          "name": "cottage-bank",
+          "type": "terrain",
+          "x": 3670,
+          "y": 598,
+          "polygon": [
+            { "x": 0, "y": 0 },
+            { "x": 160, "y": -16 },
+            { "x": 350, "y": -30 },
+            { "x": 530, "y": -22 },
+            { "x": 700, "y": -42 },
+            { "x": 840, "y": -8 },
+            { "x": 840, "y": 122 },
+            { "x": 0, "y": 122 }
+          ]
+        },
+        {
+          "id": 6,
+          "name": "sundial-bank",
+          "type": "terrain",
+          "x": 4510,
+          "y": 590,
+          "polygon": [
+            { "x": 0, "y": 0 },
+            { "x": 150, "y": -8 },
+            { "x": 320, "y": -20 },
+            { "x": 520, "y": -20 },
+            { "x": 700, "y": -8 },
+            { "x": 840, "y": 10 },
+            { "x": 840, "y": 130 },
+            { "x": 0, "y": 130 }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "night-bank",
+          "type": "terrain",
+          "x": 5350,
+          "y": 606,
+          "polygon": [
+            { "x": 0, "y": 0 },
+            { "x": 150, "y": -16 },
+            { "x": 310, "y": -5 },
+            { "x": 470, "y": -34 },
+            { "x": 650, "y": -18 },
+            { "x": 890, "y": -4 },
+            { "x": 890, "y": 118 },
+            { "x": 0, "y": 118 }
+          ]
+        },
+        {
+          "id": 8,
+          "name": "root-descent",
+          "type": "roots",
+          "x": 1840,
+          "y": 611,
+          "polyline": [
+            { "x": 0, "y": 0 },
+            { "x": 190, "y": -43 },
+            { "x": 380, "y": -19 },
+            { "x": 580, "y": 37 },
+            { "x": 760, "y": 21 },
+            { "x": 940, "y": -1 }
+          ]
+        },
+        {
+          "id": 9,
+          "name": "greenhouse-stream",
+          "type": "water",
+          "x": 2890,
+          "y": 604,
+          "width": 720,
+          "height": 28
+        },
+        {
+          "id": 10,
+          "name": "abandoned-greenhouse",
+          "type": "greenhouse",
+          "x": 2890,
+          "y": 375,
+          "width": 700,
+          "height": 235
+        },
+        {
+          "id": 11,
+          "name": "gardener-cottage",
+          "type": "cottage",
+          "x": 3830,
+          "y": 251,
+          "width": 560,
+          "height": 373
+        }
+      ],
+      "opacity": 1,
+      "type": "objectgroup",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "draworder": "topdown",
+      "id": 2,
+      "name": "Ambient",
+      "objects": [
+        {
+          "id": 20,
+          "name": "flowers",
+          "type": "flower-line",
+          "x": 220,
+          "y": 584,
+          "width": 4300,
+          "properties": [{ "name": "spacing", "type": "int", "value": 310 }]
+        },
+        {
+          "id": 21,
+          "name": "dew",
+          "type": "dew-line",
+          "x": 430,
+          "y": 613,
+          "width": 4030,
+          "properties": [{ "name": "spacing", "type": "int", "value": 310 }]
+        }
+      ],
+      "opacity": 1,
+      "type": "objectgroup",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "draworder": "topdown",
+      "id": 3,
+      "name": "Zones",
+      "objects": [
+        {
+          "id": 30,
+          "name": "awakening-meadow",
+          "type": "zone",
+          "x": 0,
+          "y": 0,
+          "width": 910,
+          "height": 720
+        },
+        {
+          "id": 31,
+          "name": "long-morning-alley",
+          "type": "zone",
+          "x": 910,
+          "y": 0,
+          "width": 960,
+          "height": 720
+        },
+        {
+          "id": 32,
+          "name": "root-descent",
+          "type": "zone",
+          "x": 1870,
+          "y": 0,
+          "width": 960,
+          "height": 720
+        },
+        {
+          "id": 33,
+          "name": "abandoned-greenhouse",
+          "type": "zone",
+          "x": 2830,
+          "y": 0,
+          "width": 840,
+          "height": 720
+        },
+        {
+          "id": 34,
+          "name": "gardener-house",
+          "type": "zone",
+          "x": 3670,
+          "y": 0,
+          "width": 840,
+          "height": 720
+        },
+        {
+          "id": 35,
+          "name": "sundial-square",
+          "type": "zone",
+          "x": 4510,
+          "y": 0,
+          "width": 840,
+          "height": 720
+        },
+        {
+          "id": 36,
+          "name": "night-path",
+          "type": "zone",
+          "x": 5350,
+          "y": 0,
+          "width": 890,
+          "height": 720
+        }
+      ],
+      "opacity": 1,
+      "type": "objectgroup",
+      "visible": true,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "nextlayerid": 4,
+  "nextobjectid": 37,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "tiledversion": "1.11.2",
+  "tileheight": 48,
+  "tilesets": [],
+  "tilewidth": 48,
+  "type": "map",
+  "version": "1.10",
+  "width": 130
+}

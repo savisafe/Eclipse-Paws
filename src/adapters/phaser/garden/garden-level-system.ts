@@ -9,6 +9,7 @@ import { GardenNightSystem } from './garden-night-system';
 import { GardenNpcSystem } from './garden-npc-system';
 import { GardenPropSystem } from './garden-prop-system';
 import { GardenScenery } from './garden-scenery';
+import { preloadGardenMap } from './garden-map-layout';
 import seedIconUrl from '../../../assets/icons/cards/garden-golden-seed-v1.png?url';
 import handprintUrl from '../../../assets/decorations/heart/elias-real-hand-dream-wall-v1.png?url';
 
@@ -99,6 +100,7 @@ export class GardenLevelSystem implements Destroyable {
   }
 
   static preload(scene: Phaser.Scene): void {
+    preloadGardenMap(scene);
     GardenPropSystem.preload(scene);
     GardenNpcSystem.preload(scene);
     GardenScenery.preload(scene);
