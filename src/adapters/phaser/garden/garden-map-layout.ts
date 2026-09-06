@@ -29,8 +29,3 @@ export function gardenMapObjects(
   if (!layer) throw new Error(`Garden map is missing the "${layerName}" object layer`);
   return layer.objects as GardenMapObject[];
 }
-
-export function gardenMapProperty(object: GardenMapObject, name: string, fallback: number): number {
-  const value = object.properties?.find((property) => property.name === name)?.value;
-  return typeof value === 'number' ? value : fallback;
-}

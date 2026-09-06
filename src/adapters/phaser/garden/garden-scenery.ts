@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { CampaignLevelDefinition } from '@content/index';
 import type { Destroyable } from '../destroyable';
 import gardenerCottageUrl from '../../../assets/decorations/garden/gardener-cottage-v1.png?url';
-import { gardenMapObjects, gardenMapProperty, type GardenMapObject } from './garden-map-layout';
+import { gardenMapObjects, type GardenMapObject } from './garden-map-layout';
 
 /**
  * The dressing of «Сад первой зари» (ECLIPSE_PAWS_SCENARIO.md §12, «Визуальный образ» /
@@ -15,51 +15,15 @@ import { gardenMapObjects, gardenMapProperty, type GardenMapObject } from './gar
  */
 export class GardenScenery implements Destroyable {
   readonly #objects: Phaser.GameObjects.GameObject[] = [];
-  readonly #responsivePlants: Phaser.GameObjects.Image[] = [];
-  readonly #touchDew: { burst: boolean; view: Phaser.GameObjects.Arc }[] = [];
   readonly #scene: Phaser.Scene;
 
-  constructor(scene: Phaser.Scene, level: CampaignLevelDefinition, reducedMotion: boolean) {
+  constructor(scene: Phaser.Scene, level: CampaignLevelDefinition) {
     this.#scene = scene;
     this.#addLandscape(level);
-    this.#addFlowerBeds(level, reducedMotion);
-    this.#addFrozenDew(level, reducedMotion);
-    this.#addResponsiveGarden(reducedMotion);
   }
 
   static preload(scene: Phaser.Scene): void {
     scene.load.image('garden-cottage', gardenerCottageUrl);
-  }
-
-  /**
-   * Small, wordless interactions keep the long safe opening playful: flowers turn to the active
-   * cat, seed heads recoil from a passing tail and low dew scatters under paws. They never gate
-   * progress, so the authored tutorial remains legible.
-   */
-  update(active: Phaser.Physics.Arcade.Sprite): void {
-    this.#responsivePlants.forEach((plant) => {
-      const distance = active.x - plant.x;
-      // Never call setScale here: these large source paintings are sized with setDisplaySize,
-      // and replacing that scale would restore their full-resolution (screen-filling) dimensions.
-      // A small opacity lift reads as recognition without making rooted plants inexplicably lean.
-      plant.setAlpha(Math.abs(distance) < 230 ? 0.96 : 0.78);
-    });
-    this.#touchDew.forEach((dew) => {
-      if (
-        dew.burst ||
-        Phaser.Math.Distance.Between(active.x, active.y, dew.view.x, dew.view.y) > 58
-      )
-        return;
-      dew.burst = true;
-      this.#scene.tweens.add({
-        targets: dew.view,
-        y: dew.view.y - 22,
-        alpha: 0,
-        scale: 2.5,
-        duration: 420,
-        ease: 'Sine.Out',
-      });
-    });
   }
 
   destroy(): void {
@@ -178,52 +142,6 @@ export class GardenScenery implements Destroyable {
     );
   }
 
-  #addResponsiveGarden(reducedMotion: boolean): void {
-    const ambient = gardenMapObjects(this.#scene, 'Ambient');
-    const flowerLine = this.#requiredLandscapeObject(ambient, 'flower-line');
-    const flowerXs: number[] = [];
-    for (
-      let x = flowerLine.x;
-      x <= flowerLine.x + flowerLine.width;
-      x += gardenMapProperty(flowerLine, 'spacing', 310)
-    )
-      flowerXs.push(x);
-    flowerXs.forEach((x, index) => {
-      const flower = this.#track(
-        this.#scene.add
-          .image(
-            x,
-            flowerLine.y - (index % 2) * 8,
-            index % 3 === 0 ? 'garden-flower-closed' : 'garden-seed',
-          )
-          .setDisplaySize(index % 3 === 0 ? 54 : 38, index % 3 === 0 ? 54 : 52)
-          .setOrigin(0.5, 1)
-          .setAlpha(0.78)
-          .setDepth(3),
-      );
-      this.#responsivePlants.push(flower);
-      if (!reducedMotion) {
-        this.#scene.tweens.add({
-          targets: flower,
-          y: flower.y - 5,
-          duration: 1700 + index * 130,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.InOut',
-        });
-      }
-    });
-    const dewLine = this.#requiredLandscapeObject(ambient, 'dew-line');
-    for (
-      let x = dewLine.x;
-      x < dewLine.x + dewLine.width;
-      x += gardenMapProperty(dewLine, 'spacing', 310)
-    ) {
-      const view = this.#track(this.#scene.add.circle(x, dewLine.y, 4, 0xeaffff, 0.72).setDepth(4));
-      this.#touchDew.push({ burst: false, view });
-    }
-  }
-
   #requiredLandscapeObject(objects: readonly GardenMapObject[], type: string): GardenMapObject {
     const object = objects.find((candidate) => candidate.type === type);
     if (!object) throw new Error(`Garden map is missing a "${type}" object`);
@@ -241,63 +159,5 @@ export class GardenScenery implements Destroyable {
     rest.forEach((point) =>
       graphics.lineTo(object.x + (point.x ?? 0), object.y + (point.y ?? 0) + yOffset),
     );
-  }
-
-  // Flower beds punctuate the banks instead of carpeting them. Large quiet gaps around authored
-  // props keep the route and the two cats readable at a glance.
-  #addFlowerBeds(level: CampaignLevelDefinition, reducedMotion: boolean): void {
-    const banks = level.platforms.filter((platform) => platform.height > 40);
-    banks.forEach((bank, bankIndex) => {
-      const top = bank.y - bank.height / 2;
-      const left = bank.x - bank.width / 2;
-      for (let offset = 90; offset < bank.width - 90; offset += 290) {
-        const index = bankIndex + offset;
-        const open = index % 3 !== 0;
-        const scale = 28 + (index % 4) * 5;
-        const flower = this.#track(
-          this.#scene.add
-            .image(
-              left + offset,
-              top - scale * 0.42,
-              open ? 'garden-flower-open' : 'garden-flower-closed',
-            )
-            .setDepth(2)
-            .setAlpha(0.72),
-        );
-        flower.setDisplaySize(scale, scale * (flower.height / flower.width));
-        if (reducedMotion) continue;
-        // Огромные цветы «медленно поворачиваются вслед за Лумусом» — a slow, endless sway.
-        this.#scene.tweens.add({
-          targets: flower,
-          angle: index % 2 === 0 ? 4 : -4,
-          duration: 2600 + (index % 5) * 320,
-          yoyo: true,
-          repeat: -1,
-          ease: 'Sine.InOut',
-        });
-      }
-    });
-  }
-
-  // «капли росы не высыхают» — the dew keeps catching the light and never goes.
-  #addFrozenDew(level: CampaignLevelDefinition, reducedMotion: boolean): void {
-    const banks = level.platforms.filter((platform) => platform.height > 40);
-    banks.forEach((bank, bankIndex) => {
-      const top = bank.y - bank.height / 2;
-      const left = bank.x - bank.width / 2;
-      for (let offset = 55; offset < bank.width - 30; offset += 148) {
-        const drop = this.#track(
-          this.#scene.add.circle(left + offset, top - 2, 2, 0xffffff, 0.55).setDepth(2),
-        );
-        if (reducedMotion) continue;
-        this.#scene.tweens.add({
-          targets: drop,
-          alpha: 0.25,
-          duration: 1400 + ((bankIndex + offset) % 6) * 260,
-          yoyo: true,
-          repeat: -1,
-        });
-      }
-    });
   }
 }

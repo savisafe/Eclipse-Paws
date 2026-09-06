@@ -81,15 +81,7 @@ export const GARDEN_ZONES: readonly GardenZone[] = [
 ];
 
 export type GardenPropArt =
-  | 'light-flower'
-  | 'garden-bells'
-  | 'living-hedge'
-  | 'ancient-sundial'
-  | 'memory-statue'
-  | 'watering-can'
-  | 'parachute-seed'
-  | 'water-sluice'
-  | 'memory-gate';
+  'light-flower' | 'garden-bells' | 'living-hedge' | 'ancient-sundial' | 'memory-gate';
 
 /** Which cat's power the prop answers to — light, shadow, or either. */
 export type GardenPropOwner = 'luma' | 'nox' | 'any';
@@ -108,12 +100,6 @@ export type GardenPropRole =
   // The level's main mechanism: light half + shadow half, together they move the dream's time.
   | 'sundial-light'
   | 'sundial-shadow'
-  // Story props: a statue speaks differently to each cat, the watering can is a cat joke.
-  | 'statue'
-  | 'watering-can'
-  // A seed you can glide down on, and the sluice that raises leaves into a path.
-  | 'parachute-seed'
-  | 'water-sluice'
   // The gate the level ends at; it only opens after the hounds are gone.
   | 'gate';
 
@@ -156,18 +142,6 @@ export const GARDEN_PROPS: readonly GardenProp[] = [
     lineNight: 'Ночью цветок закрыт — здесь больше не пройти.',
   },
   {
-    id: 'statue-alley',
-    role: 'statue',
-    art: 'memory-statue',
-    owner: 'any',
-    x: 1704,
-    y: 520,
-    zone: 'long-morning-alley',
-    hint: 'Рассмотреть [E]',
-    lineDay: 'У неё стёрли лицо. А руки всё равно кого-то держат.',
-    lineNight: 'Она говорит одно слово. Кажется, это имя.',
-  },
-  {
     id: 'hedge-descent',
     role: 'hedge',
     art: 'living-hedge',
@@ -190,40 +164,6 @@ export const GARDEN_PROPS: readonly GardenProp[] = [
     lineDay: 'Переключатель щёлкнул. Изгородь запомнила, что её просили открыться.',
   },
   {
-    id: 'seed-descent',
-    role: 'parachute-seed',
-    art: 'parachute-seed',
-    owner: 'any',
-    x: 2724,
-    y: 470,
-    zone: 'root-descent',
-    hint: 'Схватиться в прыжке',
-    lineDay: 'Семя-парашют держит кота. Сад виден до самой башни.',
-  },
-  {
-    id: 'flower-greenhouse',
-    role: 'flower-trampoline',
-    art: 'light-flower',
-    owner: 'luma',
-    x: 3120,
-    y: 600,
-    zone: 'abandoned-greenhouse',
-    hint: 'Раскрыть светом [E]',
-    lineDay: 'Верхний путь через теплицу открыт.',
-    lineNight: 'Ночью цветок закрыт — здесь больше не пройти.',
-  },
-  {
-    id: 'sluice-greenhouse',
-    role: 'water-sluice',
-    art: 'water-sluice',
-    owner: 'any',
-    x: 3528,
-    y: 610,
-    zone: 'abandoned-greenhouse',
-    hint: 'Повернуть шлюз [E]',
-    lineDay: 'Вода пошла другим руслом. Широкие листья поднялись из канала.',
-  },
-  {
     id: 'flower-trail-house',
     role: 'flower-trail',
     art: 'light-flower',
@@ -233,29 +173,6 @@ export const GARDEN_PROPS: readonly GardenProp[] = [
     zone: 'gardener-house',
     hint: 'Раскрыть светом [E]',
     lineDay: 'Пыльца легла на след. Кто-то прошёл здесь и не оглянулся.',
-  },
-  {
-    id: 'watering-can-house',
-    role: 'watering-can',
-    art: 'watering-can',
-    owner: 'any',
-    x: 4056,
-    y: 600,
-    zone: 'gardener-house',
-    hint: 'Тронуть лапой [E]',
-    lineDay: 'Лейка просыпается и поливает Нокса. Нокс делает вид, что так и задумано.',
-  },
-  {
-    id: 'statue-house',
-    role: 'statue',
-    art: 'memory-statue',
-    owner: 'any',
-    x: 4344,
-    y: 540,
-    zone: 'gardener-house',
-    hint: 'Рассмотреть [E]',
-    lineDay: 'Двое. Один выше. Второй смеётся.',
-    lineNight: 'Второго здесь давно нет. Первый всё ещё ждёт.',
   },
   {
     id: 'sundial-light',
@@ -343,33 +260,6 @@ export const GARDEN_NPCS: readonly GardenNpc[] = [
       {
         speaker: 'Тень малыша',
         text: 'Я помню закат. Просто мне велели забыть, что он бывает.',
-        emotion: 'worry',
-      },
-    ],
-  },
-  {
-    id: 'little-one-greenhouse',
-    name: 'Солнечный малыш',
-    art: 'sun-little-one',
-    x: 3192,
-    y: 600,
-    zone: 'abandoned-greenhouse',
-    dayLines: [
-      {
-        speaker: 'Солнечный малыш',
-        text: 'Здесь раньше кто-то работал. Он гладил листья и говорил с ними.',
-        emotion: 'joy',
-      },
-      {
-        speaker: 'Солнечный малыш',
-        text: 'Потом перестал приходить. Но лейка всё ещё его ждёт.',
-        emotion: 'neutral',
-      },
-    ],
-    nightLines: [
-      {
-        speaker: 'Тень малыша',
-        text: 'Он приходил не к цветам. Ему просто некуда было идти.',
         emotion: 'worry',
       },
     ],

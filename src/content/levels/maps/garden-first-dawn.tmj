@@ -179,36 +179,6 @@
     },
     {
       "draworder": "topdown",
-      "id": 2,
-      "name": "Ambient",
-      "objects": [
-        {
-          "id": 20,
-          "name": "flowers",
-          "type": "flower-line",
-          "x": 220,
-          "y": 584,
-          "width": 4300,
-          "properties": [{ "name": "spacing", "type": "int", "value": 310 }]
-        },
-        {
-          "id": 21,
-          "name": "dew",
-          "type": "dew-line",
-          "x": 430,
-          "y": 613,
-          "width": 4030,
-          "properties": [{ "name": "spacing", "type": "int", "value": 310 }]
-        }
-      ],
-      "opacity": 1,
-      "type": "objectgroup",
-      "visible": true,
-      "x": 0,
-      "y": 0
-    },
-    {
-      "draworder": "topdown",
       "id": 3,
       "name": "Zones",
       "objects": [

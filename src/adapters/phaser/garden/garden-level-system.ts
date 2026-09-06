@@ -73,7 +73,7 @@ export class GardenLevelSystem implements Destroyable {
     this.#reducedMotion = options.reducedMotion;
     this.#scene = options.scene;
     // Dressing first, so flower beds and dew sit behind the interactive props.
-    this.#scenery = new GardenScenery(options.scene, options.level, options.reducedMotion);
+    this.#scenery = new GardenScenery(options.scene, options.level);
     this.#props = new GardenPropSystem(options.scene, options.actors);
     this.#npcs = new GardenNpcSystem(options.scene, options.reducedMotion);
     this.#night = new GardenNightSystem(options.scene, options.level, options.nightBrightness);
@@ -178,9 +178,8 @@ export class GardenLevelSystem implements Destroyable {
 
     const reaction = this.#props.interact(active, catId, phase);
     if (!reaction) return;
-    // What a cat notices (a statue, the gate) is said by that cat; what a mechanism does is
-    // narrated by the dream itself.
-    const observation = reaction.role === 'statue' || reaction.role === 'gate';
+    // The gate is observed by the active cat; mechanisms are narrated by the dream itself.
+    const observation = reaction.role === 'gate';
     this.#dialogue.say([
       observation
         ? {
@@ -205,7 +204,6 @@ export class GardenLevelSystem implements Destroyable {
     const snapshot = this.#gameplay.getSnapshot();
     const catId = snapshot.activeCat;
     const active = this.#actors[catId];
-    this.#scenery.update(active);
     this.#props.update(active, catId, deltaMs);
     this.#npcs.update(active.x, active.y, snapshot.phase);
     this.#night.update(this.#actors, catId, this.#enemies.targets());

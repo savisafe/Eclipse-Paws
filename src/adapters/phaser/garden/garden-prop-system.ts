@@ -9,12 +9,8 @@ import sundialNightUrl from '../../../assets/decorations/garden/ancient-sundial-
 import bellsUrl from '../../../assets/decorations/garden/garden-bells-v1.png?url';
 import flowerClosedUrl from '../../../assets/decorations/garden/light-flower-closed-v1.png?url';
 import flowerOpenUrl from '../../../assets/decorations/garden/light-flower-open-v1.png?url';
-import hedgeUrl from '../../../assets/decorations/garden/living-hedge-gate-v1.png?url';
+import hedgeClosedUrl from '../../../assets/decorations/garden/living-hedge-gate-closed-v2.png?url';
 import hedgeOpenUrl from '../../../assets/decorations/garden/living-hedge-gate-open-v1.png?url';
-import wateringCanUrl from '../../../assets/decorations/garden/mechanical-watering-can-v1.png?url';
-import statueUrl from '../../../assets/decorations/garden/memory-statue-v1.png?url';
-import seedUrl from '../../../assets/decorations/garden/parachute-seed-v1.png?url';
-import sluiceUrl from '../../../assets/decorations/garden/water-sluice-wheel-v1.png?url';
 import gateUrl from '../../../assets/icons/items/garden-memory-gate-v1.png?url';
 
 const TEXTURES = {
@@ -23,18 +19,17 @@ const TEXTURES = {
   'garden-bells': bellsUrl,
   'garden-flower-closed': flowerClosedUrl,
   'garden-flower-open': flowerOpenUrl,
-  'garden-hedge': hedgeUrl,
+  'garden-hedge': hedgeClosedUrl,
   'garden-hedge-open': hedgeOpenUrl,
-  'garden-watering-can': wateringCanUrl,
-  'garden-statue': statueUrl,
-  'garden-seed': seedUrl,
-  'garden-sluice': sluiceUrl,
   'garden-gate': gateUrl,
 } as const;
 
 const INTERACT_RANGE = 118;
 const HEDGE_OPEN_MS = 6_000;
 const GARDEN_GROUND_Y = 620;
+// The hedge is a route gate, not a platform. Its body reaches above the camera so neither cat can
+// land on its crown and skip the light interaction with a normal jump.
+const HEDGE_COLLIDER_HEIGHT = 760;
 
 interface PropView {
   activated: boolean;
@@ -59,14 +54,6 @@ function textureFor(prop: GardenProp, activated: boolean): string {
       return activated ? 'garden-sundial-night' : 'garden-sundial';
     case 'garden-bells':
       return 'garden-bells';
-    case 'memory-statue':
-      return 'garden-statue';
-    case 'watering-can':
-      return 'garden-watering-can';
-    case 'parachute-seed':
-      return 'garden-seed';
-    case 'water-sluice':
-      return 'garden-sluice';
     case 'memory-gate':
       return 'garden-gate';
   }
@@ -75,18 +62,12 @@ function textureFor(prop: GardenProp, activated: boolean): string {
 function displayWidthFor(prop: GardenProp): number {
   switch (prop.role) {
     case 'hedge':
-      return 270;
+      return 360;
     case 'sundial-light':
     case 'sundial-shadow':
       return 150;
-    case 'statue':
-      return 88;
     case 'gate':
       return 170;
-    case 'parachute-seed':
-      return 76;
-    case 'water-sluice':
-      return 240;
     default:
       return 104;
   }
@@ -102,7 +83,6 @@ function displayWidthFor(prop: GardenProp): number {
  * before the first fight ("Кошачьи способности используются и для характера перемещения").
  */
 export class GardenPropSystem implements Destroyable {
-  readonly #ambientObjects: Phaser.GameObjects.GameObject[] = [];
   readonly #props = new Map<string, PropView>();
   readonly #prompt: GardenPrompt;
   readonly #scene: Phaser.Scene;
@@ -120,19 +100,20 @@ export class GardenPropSystem implements Destroyable {
         .setDepth(config.role === 'gate' ? 6 : 4);
       const width = displayWidthFor(config);
       view.setDisplaySize(width, width * (view.height / view.width));
-      // The authored coordinates predate the garden's new single level floor. Anchor both memory
-      // statues by their visible base so they stand on the grass instead of floating above it.
-      if (config.role === 'statue' || config.role === 'water-sluice') {
-        view.setY(GARDEN_GROUND_Y - view.displayHeight / 2);
-      }
-      if (config.role === 'water-sluice') this.#addSluiceWater(config.x);
       let body: Phaser.GameObjects.Rectangle | null = null;
 
       // The hedge is the level's one real blocker until Лумус opens it. Its collision box is an
       // explicit invisible rectangle rather than the decoration sprite itself: a static body
       // taken from a 1536x1024 source image would wall off a third of the zone.
       if (config.role === 'hedge') {
-        body = scene.add.rectangle(config.x, config.y + 18, 118, 220, 0x000000, 0);
+        body = scene.add.rectangle(
+          config.x,
+          GARDEN_GROUND_Y - HEDGE_COLLIDER_HEIGHT / 2,
+          170,
+          HEDGE_COLLIDER_HEIGHT,
+          0x000000,
+          0,
+        );
         scene.physics.add.existing(body, true);
         this.#solids.add(body);
       }
@@ -220,15 +201,9 @@ export class GardenPropSystem implements Destroyable {
         this.#activateFlower(prop);
         break;
       case 'hedge':
+        if (this.hedgeOpen) return null;
         this.#openHedge();
         this.#hedgeTimerMs = HEDGE_OPEN_MS;
-        prop.view.setTexture('garden-hedge-open');
-        break;
-      case 'water-sluice':
-        if (prop.activated) return null;
-        prop.activated = true;
-        this.#raiseLeaves(config.x);
-        this.#pulse(prop.view);
         break;
       case 'sundial-light':
       case 'sundial-shadow':
@@ -236,24 +211,6 @@ export class GardenPropSystem implements Destroyable {
         prop.activated = true;
         prop.view.setTexture('garden-sundial-night');
         this.#pulse(prop.view);
-        break;
-      case 'statue':
-        this.#scene.tweens.add({
-          targets: prop.view,
-          alpha: 0.72,
-          duration: 320,
-          yoyo: true,
-        });
-        break;
-      case 'watering-can':
-        this.#scene.tweens.add({
-          targets: prop.view,
-          angle: 14,
-          duration: 260,
-          yoyo: true,
-          ease: 'Sine.InOut',
-        });
-        this.#splash(config.x + 34, GARDEN_GROUND_Y - 12);
         break;
       case 'gate':
         break;
@@ -308,11 +265,6 @@ export class GardenPropSystem implements Destroyable {
       prop.body?.destroy();
     });
     this.#props.clear();
-    this.#ambientObjects.forEach((object) => {
-      this.#scene.tweens.killTweensOf(object);
-      object.destroy();
-    });
-    this.#ambientObjects.length = 0;
     this.#solids.destroy(true);
     this.#prompt.destroy();
   }
@@ -321,7 +273,8 @@ export class GardenPropSystem implements Destroyable {
     let best: PropView | null = null;
     let bestDistance = INTERACT_RANGE;
     this.#props.forEach((prop) => {
-      if (prop.config.role === 'hedge-switch' || prop.config.role === 'parachute-seed') return;
+      if (prop.config.role === 'hedge-switch') return;
+      if (prop.config.role === 'hedge' && this.hedgeOpen) return;
       if (prop.config.owner !== 'any' && prop.config.owner !== catId) return;
       const distance = Phaser.Math.Distance.Between(active.x, active.y, prop.view.x, prop.view.y);
       if (distance < bestDistance) {
@@ -364,98 +317,47 @@ export class GardenPropSystem implements Destroyable {
           body.velocity.y >= 0;
         if (onPad) active.setVelocityY(-JUMP_SPEED * 1.22);
       }
-      if (prop.config.role === 'parachute-seed') {
-        const holding =
-          Phaser.Math.Distance.Between(active.x, active.y, prop.view.x, prop.view.y) < 90 &&
-          body.velocity.y > 40;
-        if (holding) {
-          active.setVelocityY(70);
-          prop.view.setAngle(Math.sin(this.#scene.time.now / 260) * 6);
-        }
-      }
     });
-  }
-
-  #raiseLeaves(x: number): void {
-    [0, 1].forEach((index) => {
-      const leaf = this.#scene.add
-        .ellipse(x + 90 + index * 140, 596 - index * 52, 132, 26, 0x6fbf6a, 0.95)
-        .setStrokeStyle(3, 0xd6ff9c, 0.9)
-        .setDepth(4);
-      this.#scene.physics.add.existing(leaf, true);
-      this.#solids.add(leaf);
-    });
-  }
-
-  #addSluiceWater(x: number): void {
-    const footing = this.#scene.add
-      .ellipse(x, GARDEN_GROUND_Y - 3, 270, 30, 0x314739, 0.34)
-      .setDepth(2);
-    const stream = this.#scene.add.graphics().setDepth(3);
-    stream.lineStyle(18, 0x78d7dc, 0.42);
-    stream.beginPath();
-    stream.moveTo(x - 34, GARDEN_GROUND_Y - 55);
-    stream.lineTo(x + 26, GARDEN_GROUND_Y - 23);
-    stream.lineTo(x + 150, GARDEN_GROUND_Y - 8);
-    stream.strokePath();
-    stream.lineStyle(5, 0xd8ffff, 0.58);
-    stream.beginPath();
-    stream.moveTo(x - 30, GARDEN_GROUND_Y - 60);
-    stream.lineTo(x + 38, GARDEN_GROUND_Y - 27);
-    stream.lineTo(x + 150, GARDEN_GROUND_Y - 11);
-    stream.strokePath();
-    this.#ambientObjects.push(footing, stream);
-
-    for (let index = 0; index < 4; index += 1) {
-      const ripple = this.#scene.add
-        .ellipse(x + 48, GARDEN_GROUND_Y - 8, 34, 8, 0xc8ffff, 0.42)
-        .setDepth(3)
-        .setScale(0.35);
-      this.#ambientObjects.push(ripple);
-      this.#scene.tweens.add({
-        targets: ripple,
-        x: x + 150,
-        scaleX: 1.25,
-        alpha: 0,
-        duration: 1100,
-        delay: index * 280,
-        repeat: -1,
-        ease: 'Sine.Out',
-      });
-    }
-  }
-
-  #splash(x: number, y: number): void {
-    for (let index = 0; index < 5; index += 1) {
-      const drop = this.#scene.add.circle(x, y, 3, 0xbffcff, 0.9).setDepth(6);
-      this.#ambientObjects.push(drop);
-      this.#scene.tweens.add({
-        targets: drop,
-        x: x + 28 + index * 8,
-        y: y + 10 + (index % 2) * 7,
-        alpha: 0,
-        duration: 430 + index * 45,
-        onComplete: () => {
-          const objectIndex = this.#ambientObjects.indexOf(drop);
-          if (objectIndex >= 0) this.#ambientObjects.splice(objectIndex, 1);
-          drop.destroy();
-        },
-      });
-    }
   }
 
   #openHedge(): void {
     const hedge = this.#props.get('hedge-descent');
     if (!hedge?.body?.body) return;
     (hedge.body.body as Phaser.Physics.Arcade.StaticBody).enable = false;
-    hedge.view.setTexture('garden-hedge-open').setAlpha(0.65);
+    this.#animateHedge(hedge, true);
   }
 
   #closeHedge(): void {
     const hedge = this.#props.get('hedge-descent');
     if (!hedge?.body?.body) return;
-    (hedge.body.body as Phaser.Physics.Arcade.StaticBody).enable = true;
-    hedge.view.setTexture('garden-hedge').setAlpha(1);
+    this.#animateHedge(hedge, false);
+  }
+
+  // The foliage visibly parts before the collision changes back. A texture pop made the hedge
+  // look like it vanished; squeezing the branches towards the trunks makes Лумус' light feel as
+  // though it is physically clearing a path.
+  #animateHedge(hedge: PropView, opening: boolean): void {
+    const body = hedge.body?.body as Phaser.Physics.Arcade.StaticBody | undefined;
+    const fullScaleX = displayWidthFor(hedge.config) / hedge.view.width;
+    this.#scene.tweens.killTweensOf(hedge.view);
+    this.#scene.tweens.add({
+      targets: hedge.view,
+      scaleX: fullScaleX * 0.08,
+      alpha: 0.72,
+      duration: 230,
+      ease: 'Sine.In',
+      onComplete: () => {
+        hedge.view.setTexture(opening ? 'garden-hedge-open' : 'garden-hedge');
+        if (!opening && body) body.enable = true;
+        this.#scene.tweens.add({
+          targets: hedge.view,
+          scaleX: fullScaleX,
+          alpha: 1,
+          duration: 310,
+          ease: 'Back.Out',
+        });
+      },
+    });
   }
 
   #pulse(view: Phaser.GameObjects.Image): void {
