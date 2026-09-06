@@ -132,8 +132,8 @@ export class GardenNightSystem implements Destroyable {
     // Even at 0 % brightness the night is never a black screen: the player must always keep some
     // orientation (§12).
     const darkness = 0.96 - (this.#brightness / 100) * 0.3;
-    // A limited circle of vision, not a lit screen: ~250px around Нокс, tighter around Лумус,
-    // whose own glow is warm but small ("Лумус виден неподалёку благодаря слабому тёплому
+    // A limited circle of vision, not a lit screen: ~250px around Нокс, tighter around Люмус,
+    // whose own glow is warm but small ("Люмус виден неподалёку благодаря слабому тёплому
     // свечению, но не освещает весь экран").
     const visionScale = activeCat === 'nox' ? 0.5 : 0.4;
 

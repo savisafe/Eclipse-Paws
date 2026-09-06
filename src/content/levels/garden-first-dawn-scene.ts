@@ -7,7 +7,7 @@
 //
 // Dialogue marked "verbatim" is quoted from the scenario. The rest is a first draft: §15 lists
 // "окончательные реплики и имя Садовника в первом уровне" as still open, so these lines stay
-// short, stay in character (Лумус — прямо и эмоционально, Нокс — короче и суше) and avoid
+// short, stay in character (Люмус — прямо и эмоционально, Нокс — короче и суше) and avoid
 // inventing plot beats the scenario does not have.
 
 export type GardenZoneId =
@@ -32,7 +32,7 @@ export const GARDEN_ZONES: readonly GardenZone[] = [
   {
     id: 'awakening-meadow',
     title: 'Луг пробуждения',
-    landmark: 'клумба, в которую упал Лумус',
+    landmark: 'клумба, в которую упал Люмус',
     xStart: 0,
     xEnd: 910,
   },
@@ -87,13 +87,13 @@ export type GardenPropArt =
 export type GardenPropOwner = 'luma' | 'nox' | 'any';
 
 export type GardenPropRole =
-  // Opens under Лумус' light and then works as a soft trampoline (§12).
+  // Opens under Люмус' light and then works as a soft trampoline (§12).
   | 'flower-trampoline'
   // Opens under light and releases pollen that shows Элиас' trail.
   | 'flower-trail'
   // Answers to Оглушающий крик — the level's safe introduction to the ability.
   | 'bells'
-  // Blocks the path until Лумус holds the branches aside.
+  // Blocks the path until Люмус holds the branches aside.
   | 'hedge'
   // A remote switch: reachable only with Нокс' Теневой наскок.
   | 'hedge-switch'
@@ -157,10 +157,10 @@ export const GARDEN_PROPS: readonly GardenProp[] = [
     role: 'hedge-switch',
     art: 'living-hedge',
     owner: 'nox',
-    x: 2376,
-    y: 430,
+    x: 2100,
+    y: 500,
     zone: 'root-descent',
-    hint: 'Теневой наскок [1]',
+    hint: 'Синий бутон: Теневой наскок [1]',
     lineDay: 'Переключатель щёлкнул. Изгородь запомнила, что её просили открыться.',
   },
   {
@@ -275,7 +275,7 @@ export const GARDEN_NPCS: readonly GardenNpc[] = [
     // and shows its own speaker on the card.
     dayLines: [
       {
-        speaker: 'Лумус',
+        speaker: 'Люмус',
         text: 'Мы ищем нашего хозяина. Высокий, седой, пахнет книгами и вечно забывает поесть.',
         emotion: 'joy',
       },
@@ -346,13 +346,13 @@ export const GARDEN_BEATS: readonly GardenBeat[] = [
     id: 'landing',
     lines: [
       {
-        speaker: 'Лумус',
+        speaker: 'Люмус',
         text: 'Мяу. Я в клумбе. Клумба мягкая. Всё под контролем.',
         emotion: 'joy',
       },
       {
         speaker: 'Нокс',
-        text: 'Из клумбы торчат только твои уши. Идём, свет.',
+        text: 'Из клумбы торчат только твои уши. Идём.',
         emotion: 'neutral',
       },
     ],
@@ -360,14 +360,14 @@ export const GARDEN_BEATS: readonly GardenBeat[] = [
   {
     id: 'frozen-morning',
     lines: [
-      { speaker: 'Лумус', text: 'Здесь тепло. Но утро не двигается с места.', emotion: 'neutral' },
+      { speaker: 'Люмус', text: 'Здесь тепло. Но утро не двигается с места.', emotion: 'neutral' },
       {
         speaker: 'Нокс',
         text: 'Солнце стоит. Роса не сохнет. Тени не переезжали с ночи.',
         emotion: 'worry',
       },
       {
-        speaker: 'Лумус',
+        speaker: 'Люмус',
         text: 'Значит, найдём хозяина и разбудим его. Он объяснит.',
         emotion: 'resolve',
       },
@@ -378,7 +378,7 @@ export const GARDEN_BEATS: readonly GardenBeat[] = [
     lines: [
       { speaker: 'Нокс', text: 'Врата открываются ночью. Ночи здесь нет.', emotion: 'worry' },
       {
-        speaker: 'Лумус',
+        speaker: 'Люмус',
         text: 'Тогда сделаем ночь сами. Ты видел те часы на площади?',
         emotion: 'resolve',
       },
@@ -407,7 +407,7 @@ export const GARDEN_BEATS: readonly GardenBeat[] = [
       { speaker: 'Голос сна', text: 'Небо трескается, как стекло лабораторной сферы.' },
       {
         speaker: 'Нокс',
-        text: 'Гончие. Они не живые — это сон выставил охрану. За спину, Лумус.',
+        text: 'Гончие. Они не живые — это сон выставил охрану. За спину, Люмус.',
         emotion: 'resolve',
       },
     ],
@@ -417,7 +417,7 @@ export const GARDEN_BEATS: readonly GardenBeat[] = [
     lines: [
       { speaker: 'Голос сна', text: 'Механизм срывается. Утро возвращается рывком.' },
       {
-        speaker: 'Лумус',
+        speaker: 'Люмус',
         text: 'Моя очередь. Крикну — они замрут, а ты отдышись.',
         emotion: 'resolve',
       },
@@ -432,7 +432,7 @@ export const GARDEN_BEATS: readonly GardenBeat[] = [
         emotion: 'joy',
       },
       {
-        speaker: 'Лумус',
+        speaker: 'Люмус',
         text: 'Семя светится и темнеет одновременно. Возьмём с собой.',
         emotion: 'joy',
       },
@@ -446,7 +446,7 @@ export const GARDEN_BEATS: readonly GardenBeat[] = [
         text: 'Отпечаток ладони. Он был здесь и пошёл глубже.',
         emotion: 'neutral',
       },
-      { speaker: 'Лумус', text: 'Тогда и мы глубже. Он не любит ждать один.', emotion: 'resolve' },
+      { speaker: 'Люмус', text: 'Тогда и мы глубже. Он не любит ждать один.', emotion: 'resolve' },
     ],
   },
 ];

@@ -117,7 +117,7 @@ export const CAMPAIGN_LEVELS: Readonly<Record<CampaignLevelId, CampaignLevelDefi
     title: 'Сад первой зари',
     subtitle: 'Глава I · Обучение',
     story:
-      'Сад первой зари застыл во вневременном раннем утре. Лумус и Нокс ищут первый след Элиаса.',
+      'Сад первой зари застыл во вневременном раннем утре. Люмус и Нокс ищут первый след Элиаса.',
     objective: 'найди Садовника · разбуди солнечные часы · переживи первую ночь сада',
     background: 'garden',
     mechanic: 'flowers',

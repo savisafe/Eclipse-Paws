@@ -70,6 +70,9 @@ export interface PrototypeSceneOptions {
   nightBrightness: number;
   startNearFinish: boolean;
   startNearCombat: boolean;
+  tutorialActive: boolean;
+  tutorialStartStep: number;
+  onTutorialStepChange: (step: number, completed: boolean) => void;
 }
 
 export class PrototypeScene extends Phaser.Scene {
@@ -87,6 +90,9 @@ export class PrototypeScene extends Phaser.Scene {
   readonly #nightBrightness: number;
   readonly #startNearFinish: boolean;
   readonly #startNearCombat: boolean;
+  readonly #tutorialActive: boolean;
+  readonly #tutorialStartStep: number;
+  readonly #onTutorialStepChange: (step: number, completed: boolean) => void;
   #accumulatorMs = 0;
   #actors!: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   #enemySystem!: PlatformerEnemySystem;
@@ -120,6 +126,9 @@ export class PrototypeScene extends Phaser.Scene {
     this.#nightBrightness = options.nightBrightness;
     this.#startNearFinish = options.startNearFinish;
     this.#startNearCombat = options.startNearCombat;
+    this.#tutorialActive = options.tutorialActive;
+    this.#tutorialStartStep = options.tutorialStartStep;
+    this.#onTutorialStepChange = options.onTutorialStepChange;
   }
 
   // Which sprite atlases a level needs follows from the enemies it actually spawns, not from its
@@ -202,7 +211,13 @@ export class PrototypeScene extends Phaser.Scene {
       .setDepth(35)
       .setVisible(false);
     if (this.#level.index === 1 && !this.#startNearCombat && !this.#startNearFinish) {
-      this.#tutorialSystem = new TutorialSystem(this, this.#reducedMotion, GARDEN_TUTORIAL_STEPS);
+      this.#tutorialSystem = new TutorialSystem(
+        this,
+        this.#reducedMotion,
+        GARDEN_TUTORIAL_STEPS,
+        this.#onTutorialStepChange,
+      );
+      if (this.#tutorialActive) this.#tutorialSystem.start(this.#tutorialStartStep);
     }
     if (this.#isGarden) {
       this.#gardenSystem = new GardenLevelSystem({
@@ -282,10 +297,41 @@ export class PrototypeScene extends Phaser.Scene {
     this.#gardenSystem?.setNightBrightness(nightBrightness);
   }
 
+  startTutorial(step = 0): void {
+    this.#tutorialSystem?.start(step);
+  }
+
+  stopTutorial(): void {
+    this.#tutorialSystem?.stop();
+  }
+
   override update(_time: number, deltaMs: number): void {
     if (this.#inputState.consume('pause')) this.#onPauseRequested();
     if (this.#gameplay.getSnapshot().paused) {
       this.#stopAllActors();
+      return;
+    }
+    const garden = this.#gardenSystem;
+    const dialogueBusy = garden?.dialogueBusy ?? false;
+    this.#tutorialSystem?.setOccluded(dialogueBusy);
+    if (dialogueBusy) {
+      // Dialogue is modal for gameplay, but not for the scene clock: the typewriter and card
+      // animations must keep running. Only [E] is accepted here, and it advances the card without
+      // ticking movement, combat, enemies, phase timers, triggers or checkpoint progress.
+      if (this.#inputState.consume('interact')) {
+        const snapshot = this.#gameplay.getSnapshot();
+        garden?.interact(this.#actors[snapshot.activeCat], snapshot.activeCat);
+      }
+      this.#inputState.consume('switch-cat');
+      this.#inputState.consume('primary-ability');
+      this.#inputState.consume('special-ability');
+      this.#inputState.consume('support-ability');
+      this.#inputState.consume('ultimate');
+      this.#inputState.consume('restart-checkpoint');
+      this.#accumulatorMs = 0;
+      this.#hidingStatus.setVisible(false);
+      this.#stopAllActors();
+      this.#updateSelection();
       return;
     }
 

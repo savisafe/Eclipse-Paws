@@ -44,11 +44,11 @@ export function LevelResult({
             </dd>
           </div>
         </dl>
-        <button className="menu-button" onClick={onReplay} type="button">
+        <button className="result-card__primary" onClick={onReplay} type="button">
           Пройти ещё раз
         </button>
         {onNext && nextLevelTitle ? (
-          <button className="menu-button" onClick={onNext} type="button">
+          <button className="result-card__primary" onClick={onNext} type="button">
             Далее: {nextLevelTitle}
           </button>
         ) : null}

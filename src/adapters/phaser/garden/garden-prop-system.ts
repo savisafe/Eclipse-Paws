@@ -45,6 +45,7 @@ export interface PropReaction {
 }
 
 function textureFor(prop: GardenProp, activated: boolean): string {
+  if (prop.role === 'hedge-switch') return 'garden-flower-closed';
   switch (prop.art) {
     case 'light-flower':
       return activated ? 'garden-flower-open' : 'garden-flower-closed';
@@ -100,9 +101,12 @@ export class GardenPropSystem implements Destroyable {
         .setDepth(config.role === 'gate' ? 6 : 4);
       const width = displayWidthFor(config);
       view.setDisplaySize(width, width * (view.height / view.width));
+      if (config.role === 'hedge-switch') {
+        view.setDisplaySize(72, 72).setTint(0x8db5ff).setDepth(7).setAlpha(0.96);
+      }
       let body: Phaser.GameObjects.Rectangle | null = null;
 
-      // The hedge is the level's one real blocker until Лумус opens it. Its collision box is an
+      // The hedge is the level's one real blocker until Люмус opens it. Its collision box is an
       // explicit invisible rectangle rather than the decoration sprite itself: a static body
       // taken from a 1536x1024 source image would wall off a third of the zone.
       if (config.role === 'hedge') {
@@ -334,7 +338,7 @@ export class GardenPropSystem implements Destroyable {
   }
 
   // The foliage visibly parts before the collision changes back. A texture pop made the hedge
-  // look like it vanished; squeezing the branches towards the trunks makes Лумус' light feel as
+  // look like it vanished; squeezing the branches towards the trunks makes Люмус' light feel as
   // though it is physically clearing a path.
   #animateHedge(hedge: PropView, opening: boolean): void {
     const body = hedge.body?.body as Phaser.Physics.Arcade.StaticBody | undefined;

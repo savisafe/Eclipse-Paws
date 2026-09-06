@@ -4,10 +4,10 @@ import lumusPortrait from '../../assets/portraits/cards/lumus-neutral-v1.png?url
 import noxPortrait from '../../assets/portraits/cards/nox-neutral-v1.png?url';
 import dreamPortrait from '../../assets/portraits/cards/dream-voice-v1.png?url';
 
-// The card shows a face as well as a name (§13/§14): light lines are Лумус, shadow lines Нокс,
+// The card shows a face as well as a name (§13/§14): light lines are Люмус, shadow lines Нокс,
 // and the dream's own voice gets the eclipse sigil.
 const PORTRAITS: Readonly<Record<DialogueBeat['tone'], { alt: string; url: string }>> = {
-  light: { alt: 'Лумус', url: lumusPortrait },
+  light: { alt: 'Люмус', url: lumusPortrait },
   shadow: { alt: 'Нокс', url: noxPortrait },
   world: { alt: 'Голос сна', url: dreamPortrait },
 };

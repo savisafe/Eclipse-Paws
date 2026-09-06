@@ -153,15 +153,6 @@
           "height": 28
         },
         {
-          "id": 10,
-          "name": "abandoned-greenhouse",
-          "type": "greenhouse",
-          "x": 2890,
-          "y": 375,
-          "width": 700,
-          "height": 235
-        },
-        {
           "id": 11,
           "name": "gardener-cottage",
           "type": "cottage",

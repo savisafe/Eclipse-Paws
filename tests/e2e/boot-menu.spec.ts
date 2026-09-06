@@ -7,7 +7,25 @@ async function startGame(page: Page): Promise<void> {
   // `finishAndAdvance` below).
   await page.getByRole('button', { name: 'Новая игра' }).click();
   await page.getByRole('button', { name: 'Пропустить' }).click();
+  await page.getByRole('button', { name: 'Нет, пропустить' }).click();
 }
+
+test('предлагает интерактивное обучение при новой игре и оставляет его в паузе', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Новая игра' }).click();
+  await page.getByRole('button', { name: 'Пропустить' }).click();
+
+  await expect(page.getByRole('dialog', { name: 'Хотите пройти обучение?' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.getByRole('button', { name: 'Да, начать' }).click();
+  await expect(page.locator('.hud-status .tutorial-dom-mark')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Начать обучение' })).toBeVisible();
+});
 
 test('boots into a keyboard-accessible menu without layout overflow', async ({ page }) => {
   const errors: string[] = [];
@@ -27,6 +45,24 @@ test('boots into a keyboard-accessible menu without layout overflow', async ({ p
   );
   expect(overflow).toBe(false);
   expect(errors).toEqual([]);
+});
+
+test('stages the prologue and starts the Garden of First Dawn', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Новая игра' }).click();
+
+  await expect(page.getByRole('main', { name: 'Пролог: Между двумя ударами' })).toHaveAttribute(
+    'data-panel',
+    '1',
+  );
+  for (let index = 0; index < 7; index += 1) {
+    await page.getByRole('button', { name: 'Далее' }).click();
+  }
+  await expect(page.getByText('ECLIPSE PAWS')).toBeVisible();
+  await page.getByRole('button', { name: 'Начать уровень' }).click();
+  await expect(page.getByRole('dialog', { name: 'Хотите пройти обучение?' })).toBeVisible({
+    timeout: 15_000,
+  });
 });
 
 test('crosses the first platform with a forgiving buffered jump', async ({ page }) => {
@@ -62,12 +98,13 @@ test('reflects the automatic phase change in the HUD', async ({ page }) => {
 test('reaches the finish and shows a level result', async ({ page }) => {
   await page.goto('/?startNearFinish=1');
   await startGame(page);
-  await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
-    timeout: 15_000,
-  });
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(3_000);
-  await page.keyboard.up('KeyD');
+  // The tutorial question pauses the already loaded scene. At this debug spawn the finish trigger
+  // can fire immediately when "Нет" releases that pause, so walking is only needed if it has not.
+  if (await page.locator('.game-screen').isVisible()) {
+    await page.keyboard.down('KeyD');
+    await page.waitForTimeout(3_000);
+    await page.keyboard.up('KeyD');
+  }
   await expect(page.getByRole('heading', { name: 'Уровень пройден!' })).toBeVisible({
     timeout: 10_000,
   });
@@ -89,9 +126,6 @@ test('completes all seven campaign levels and reaches the credits', async ({ pag
 
   await page.goto('/?startNearFinish=1');
   await startGame(page);
-  await expect(page.locator('.game-screen')).toHaveAttribute('data-game-state', 'playing', {
-    timeout: 15_000,
-  });
 
   // 1. Сад первой зари -> 2. Лес шепчущих фонарей
   await finishAndAdvance('Лес шепчущих фонарей');
@@ -154,7 +188,7 @@ test('plays the platformer through combat, pause and checkpoint restart', async 
   });
   await expect(page.locator('.phase-clock')).toContainText('Фаза: День');
 
-  // Луч света only fires when something is actually in front of Лумус, and how far a fixed walk
+  // Луч света only fires when something is actually in front of Люмус, and how far a fixed walk
   // gets depends on the frame pacing of the machine running the test — so approach in short bursts
   // until the beam lands instead of assuming one 1.3s walk was enough.
   const beam = page.locator('[aria-label^="Луч света"]');

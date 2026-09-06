@@ -18,6 +18,9 @@ export interface CreatePrototypeGameOptions {
   nightBrightness: number;
   startNearFinish: boolean;
   startNearCombat: boolean;
+  tutorialActive: boolean;
+  tutorialStartStep: number;
+  onTutorialStepChange: (step: number, completed: boolean) => void;
 }
 
 export function createPrototypeGame(options: CreatePrototypeGameOptions): Phaser.Game {

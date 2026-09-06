@@ -95,40 +95,8 @@ export class GardenScenery implements Destroyable {
       water.strokePath();
     }
 
-    // Greenhouse and gardener's cottage are deliberately large silhouettes: landmarks anchor
-    // nearby props and make the zone readable before the player reaches it.
-    const greenhouseArea = this.#requiredLandscapeObject(landscape, 'greenhouse');
-    const greenhouse = this.#track(this.#scene.add.graphics().setDepth(-1));
-    greenhouse.fillStyle(0xddecc5, 0.16);
-    greenhouse.fillRoundedRect(
-      greenhouseArea.x,
-      greenhouseArea.y,
-      greenhouseArea.width,
-      greenhouseArea.height,
-      24,
-    );
-    greenhouse.lineStyle(9, 0x566b4d, 0.65);
-    greenhouse.strokeRoundedRect(
-      greenhouseArea.x,
-      greenhouseArea.y,
-      greenhouseArea.width,
-      greenhouseArea.height,
-      24,
-    );
-    for (let x = greenhouseArea.x + 110; x < greenhouseArea.x + greenhouseArea.width; x += 145)
-      greenhouse.lineBetween(
-        x,
-        greenhouseArea.y + 7,
-        x,
-        greenhouseArea.y + greenhouseArea.height - 2,
-      );
-    greenhouse.lineBetween(
-      greenhouseArea.x + 6,
-      greenhouseArea.y + greenhouseArea.height / 2,
-      greenhouseArea.x + greenhouseArea.width - 6,
-      greenhouseArea.y + greenhouseArea.height / 2,
-    );
-
+    // The painted background already contains the greenhouse. Only the cottage needs a separate
+    // authored landmark sprite; duplicating the greenhouse with vector lines breaks the art style.
     const cottage = this.#requiredLandscapeObject(landscape, 'cottage');
     this.#track(
       this.#scene.add

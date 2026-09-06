@@ -29,8 +29,8 @@ function beatLines(id: BeatId): readonly GardenLine[] {
  * The shape of the level follows the scenario's rhythm exactly — a long safe stretch with no
  * enemies at all, the Gardener, the sundial that the two cats turn together, and only then the
  * turning point: the sleep notices them, the ground shakes and the hounds of Silence arrive. Time
- * snaps back to day in the middle of that fight, which is what hands the fight from Нокс to Лумус
- * ("днём главным бойцом является Лумус, ночью — Нокс").
+ * snaps back to day in the middle of that fight, which is what hands the fight from Нокс to Люмус
+ * ("днём главным бойцом является Люмус, ночью — Нокс").
  */
 export class GardenLevelSystem implements Destroyable {
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
@@ -128,6 +128,7 @@ export class GardenLevelSystem implements Destroyable {
     activeX: number;
     beats: readonly string[];
     canFinish: boolean;
+    dialogueBusy: boolean;
     houndsAwake: boolean;
     houndsDown: number;
     sundialHalves: number;
@@ -139,6 +140,7 @@ export class GardenLevelSystem implements Destroyable {
       activeX: Math.round(this.#actors[this.#gameplay.getSnapshot().activeCat].x),
       beats: [...this.#done],
       canFinish: this.canFinish,
+      dialogueBusy: this.dialogueBusy,
       houndsAwake: HOUND_IDS.every((id) => !this.#enemies.isDormant(id)),
       houndsDown: this.#houndsDown(),
       sundialHalves: this.#props.sundialHalves,
@@ -158,7 +160,7 @@ export class GardenLevelSystem implements Destroyable {
     this.#onTutorialStep?.(4);
   }
 
-  /** Called when Лумус uses Оглушающий крик, so the garden bells can answer it (§12). */
+  /** Called when Люмус uses Оглушающий крик, so the garden bells can answer it (§12). */
   onShout(x: number, y: number): void {
     const reaction = this.#props.shoutAt(x, y);
     if (!reaction) return;
@@ -183,7 +185,7 @@ export class GardenLevelSystem implements Destroyable {
     this.#dialogue.say([
       observation
         ? {
-            speaker: catId === 'luma' ? 'Лумус' : 'Нокс',
+            speaker: catId === 'luma' ? 'Люмус' : 'Нокс',
             text: reaction.line,
             emotion: reaction.role === 'gate' ? 'resolve' : 'worry',
           }
@@ -234,7 +236,7 @@ export class GardenLevelSystem implements Destroyable {
     if (!this.#done.has('nightfall') && this.#props.sundialReady) {
       this.#play('nightfall');
       this.#gameplay.setPhase('night');
-      // "днём главным бойцом является Лумус, ночью — Нокс" (§12): the level hands control over
+      // "днём главным бойцом является Люмус, ночью — Нокс" (§12): the level hands control over
       // itself at each turn of the dream's time, so the change of rules is never missed.
       this.#onHandOver?.('nox');
       if (!this.#reducedMotion) this.#scene.cameras.main.flash(420, 26, 22, 60);

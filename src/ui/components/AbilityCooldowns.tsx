@@ -6,6 +6,7 @@ interface AbilityCooldownsProps {
   activeCat: CatId;
   cooldowns: GameplaySnapshot['cooldowns'];
   heroLevel: number;
+  tutorialActive?: boolean;
 }
 
 type CooldownSlot = Exclude<AbilitySlot, 'ultimate'>;
@@ -18,7 +19,12 @@ const SLOTS: readonly { key: CooldownSlot; label: string }[] = [
   { key: 'support', label: '3' },
 ];
 
-export function AbilityCooldowns({ activeCat, cooldowns, heroLevel }: AbilityCooldownsProps) {
+export function AbilityCooldowns({
+  activeCat,
+  cooldowns,
+  heroLevel,
+  tutorialActive,
+}: AbilityCooldownsProps) {
   const abilitiesBySlot: Readonly<Record<CooldownSlot, AbilityConfig>> = {
     primary: PRIMARY_ABILITIES[activeCat],
     special: SPECIAL_ABILITIES[activeCat],
@@ -26,7 +32,15 @@ export function AbilityCooldowns({ activeCat, cooldowns, heroLevel }: AbilityCoo
   };
 
   return (
-    <div className="ability-cooldowns" aria-label="Кулдауны способностей">
+    <div
+      className={`ability-cooldowns ${tutorialActive ? 'tutorial-focus' : ''}`}
+      aria-label="Кулдауны способностей"
+    >
+      {tutorialActive ? (
+        <span className="tutorial-dom-mark" aria-hidden="true">
+          !
+        </span>
+      ) : null}
       {SLOTS.map(({ key, label }) => {
         const ability = abilitiesBySlot[key];
         const unlockLevel = ABILITY_UNLOCK_LEVEL[key];

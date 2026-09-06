@@ -87,8 +87,8 @@ function ensureCutoutTexture(scene: Phaser.Scene): void {
  * parchment holds the line, and the moon corner holds the prompt.
  *
  * It lives in the scene rather than in React because garden lines are triggered by world
- * positions and props. Input is never blocked (§14 keeps the game playable and pausable while
- * someone is talking): [E] first finishes the line being typed, then moves to the next one.
+ * positions and props. While it is visible, the scene pauses gameplay and accepts only [E]: the
+ * first press finishes the line being typed, then the next one moves to the following line.
  */
 export class GardenDialoguePanel implements Destroyable {
   readonly #container: Phaser.GameObjects.Container;

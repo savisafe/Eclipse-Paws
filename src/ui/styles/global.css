@@ -326,9 +326,28 @@ button:focus-visible {
   translate: 0 -0.15rem;
 }
 
+.menu-button--new-game {
+  background-image: url('../../assets/ui/button-focus-v1.png');
+  translate: none;
+  transition: filter 150ms ease;
+}
+
+.menu-button--new-game:not(:disabled):hover,
+.menu-button--new-game:not(:disabled):focus-visible {
+  background-image: url('../../assets/ui/button-focus-v1.png');
+  filter: brightness(1.08) drop-shadow(0 0 0.4rem rgb(255 196 52 / 45%));
+  translate: none;
+}
+
 .menu-button:not(:disabled):active {
   background-image: url('../../assets/ui/button-pressed-v1.png');
   translate: 0 0.05rem;
+}
+
+.menu-button--new-game:not(:disabled):active {
+  background-image: url('../../assets/ui/button-focus-v1.png');
+  filter: brightness(0.92) drop-shadow(0 0 0.2rem rgb(255 196 52 / 30%));
+  translate: none;
 }
 
 .menu-button:disabled {
