@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { Destroyable } from '../destroyable';
+import { sceneViewport, type UiViewport } from '../viewport';
 import frameUrl from '../../../assets/ui/dialogue-frame-card-v1.png?url';
 import {
   portraitForSpeaker,
@@ -20,7 +21,9 @@ const CUTOUT_KEY = 'garden-dialogue-portrait-cutout';
 const MIST_KEY = 'garden-dialogue-portrait-mist';
 const FRAME_WIDTH = 980;
 const FRAME_HEIGHT = 327;
-const CARD_Y = 542;
+// The card hangs this far above the bottom of the view, wherever the bottom happens to be — the
+// authored frame put it at y = 542 of 720.
+const CARD_BOTTOM_GAP = 178;
 
 // Where the drawn frame puts its own parts, as fractions of the artwork: the round portrait socket
 // held by the sun-cat on the left, and the parchment field the text sits on.
@@ -91,7 +94,9 @@ function ensureCutoutTexture(scene: Phaser.Scene): void {
  * first press finishes the line being typed, then the next one moves to the following line.
  */
 export class GardenDialoguePanel implements Destroyable {
+  readonly #compactFrame: Phaser.GameObjects.Graphics;
   readonly #container: Phaser.GameObjects.Container;
+  readonly #frame: Phaser.GameObjects.Image;
   readonly #hint: Phaser.GameObjects.Text;
   readonly #portrait: Phaser.GameObjects.RenderTexture;
   readonly #portraitMist: Phaser.GameObjects.Image;
@@ -104,16 +109,19 @@ export class GardenDialoguePanel implements Destroyable {
   // swallowed by the card and restart the fade — mashing [E] next to a prop then looked like the
   // prop was ignoring the player.
   #closing = false;
+  #cardY = 542;
   #fullText = '';
   #queue: GardenLine[] = [];
   #typer: Phaser.Time.TimerEvent | null = null;
+  #view: UiViewport = { width: FRAME_WIDTH, height: FRAME_HEIGHT, ui: 1 };
 
   constructor(scene: Phaser.Scene, reducedMotion: boolean) {
     this.#scene = scene;
     this.#reducedMotion = reducedMotion;
 
     ensureCutoutTexture(scene);
-    const frame = scene.add.image(0, 0, FRAME_KEY).setDisplaySize(FRAME_WIDTH, FRAME_HEIGHT);
+    this.#compactFrame = scene.add.graphics().setVisible(false);
+    this.#frame = scene.add.image(0, 0, FRAME_KEY).setDisplaySize(FRAME_WIDTH, FRAME_HEIGHT);
     this.#portrait = scene.add
       .renderTexture(frameX(SOCKET.x), frameY(SOCKET.y), SOCKET_SIZE, SOCKET_SIZE)
       .setOrigin(0.5)
@@ -147,10 +155,121 @@ export class GardenDialoguePanel implements Destroyable {
       .setOrigin(1, 1);
 
     this.#container = scene.add
-      .container(640, CARD_Y, [frame, this.#portrait, this.#speaker, this.#text, this.#hint])
+      .container(0, 0, [
+        this.#compactFrame,
+        this.#frame,
+        this.#portrait,
+        this.#speaker,
+        this.#text,
+        this.#hint,
+      ])
       .setScrollFactor(0)
       .setDepth(42)
       .setVisible(false);
+    this.layout(sceneViewport(scene));
+  }
+
+  /** Re-lays the card out for the current field of view (see `../viewport.ts`). */
+  layout(view: UiViewport): void {
+    this.#view = view;
+    this.#applyCardLayout();
+  }
+
+  /**
+   * Two shapes of card, chosen by whether the drawn frame can carry readable text on this screen.
+   *
+   * Wide screens keep the authored artwork and simply scale the whole container: the line wraps
+   * exactly where it was designed to, just larger. A phone cannot do that — it squeezes 1280
+   * design units into ~390 CSS pixels, so 20-unit type lands at 6 px no matter how the card is
+   * scaled, and the card itself can only grow to the width of the screen. Stretching the frame
+   * tall enough to hold full-size type would flatten the sun-cat and turn its round portrait ring
+   * into an ellipse, so below that threshold the card becomes a plain parchment panel instead,
+   * sized to the text it actually has to show.
+   */
+  #applyCardLayout(): void {
+    const view = this.#view;
+    const ui = view.ui;
+    // Capped by the height too: on a phone held sideways the screen is ~360 px tall and an
+    // uncapped card would swallow it whole.
+    const scale = Math.min(
+      ui,
+      (view.width * 0.96) / FRAME_WIDTH,
+      (view.height * 0.62) / FRAME_HEIGHT,
+    );
+    const compact = ui > scale * 1.4;
+    this.#frame.setVisible(!compact);
+    this.#compactFrame.setVisible(compact);
+
+    if (!compact) {
+      this.#container.setScale(scale);
+      this.#portrait
+        .setDisplaySize(SOCKET_SIZE, SOCKET_SIZE)
+        .setPosition(frameX(SOCKET.x), frameY(SOCKET.y));
+      this.#speaker.setFontSize(21).setPosition(frameX(TEXT_AREA.left), frameY(TEXT_AREA.top));
+      this.#text
+        .setFontSize(20)
+        .setLineSpacing(7)
+        .setWordWrapWidth((TEXT_AREA.right - TEXT_AREA.left) * FRAME_WIDTH - 18)
+        .setPosition(frameX(TEXT_AREA.left), frameY(TEXT_AREA.top) + 36);
+      // On touch the bottom-right corner of the card sits under the action buttons, so the
+      // "continue" hint moves to the other end of the parchment where nothing covers it.
+      const touch = this.#scene.game.device.input.touch;
+      this.#hint
+        .setFontSize(16)
+        .setOrigin(touch ? 0 : 1, 1)
+        .setPosition(frameX(touch ? TEXT_AREA.left : TEXT_AREA.right), frameY(TEXT_AREA.bottom));
+      this.#cardY = view.height - CARD_BOTTOM_GAP * scale;
+      this.#container.setPosition(view.width / 2, this.#cardY);
+      return;
+    }
+
+    this.#container.setScale(1);
+    const width = view.width * 0.96;
+    const pad = 22 * ui;
+    const socket = 104 * ui;
+    const speakerSize = 21 * ui;
+    const textLeft = -width / 2 + pad * 2 + socket;
+    this.#speaker.setFontSize(speakerSize);
+    this.#text
+      .setFontSize(20 * ui)
+      .setLineSpacing(6 * ui)
+      .setWordWrapWidth(width / 2 - pad - textLeft);
+    this.#hint.setFontSize(15 * ui);
+
+    // Measured against the whole line, not the few characters the typewriter has revealed so far,
+    // so the panel does not grow under the player while the line is being typed.
+    const shown = this.#text.text;
+    this.#text.setText(this.#fullText);
+    const bodyHeight = this.#text.height;
+    this.#text.setText(shown);
+
+    const height = Math.max(
+      pad * 2 + speakerSize * 1.35 + bodyHeight + this.#hint.height,
+      socket + pad * 2,
+    );
+    const top = -height / 2;
+    this.#compactFrame
+      .clear()
+      .fillStyle(0x171638, 0.5)
+      .fillRoundedRect(
+        -width / 2 - 5 * ui,
+        top - 5 * ui,
+        width + 10 * ui,
+        height + 10 * ui,
+        26 * ui,
+      )
+      .fillStyle(0xfff0c4, 0.97)
+      .fillRoundedRect(-width / 2, top, width, height, 22 * ui)
+      .lineStyle(3 * ui, 0xd99b3c, 0.95)
+      .strokeRoundedRect(-width / 2, top, width, height, 22 * ui);
+    this.#portrait
+      .setDisplaySize(socket, socket)
+      .setPosition(-width / 2 + pad + socket / 2, top + pad + socket / 2);
+    this.#speaker.setPosition(textLeft, top + pad);
+    this.#text.setPosition(textLeft, top + pad + speakerSize * 1.35);
+    this.#hint.setOrigin(1, 1).setPosition(width / 2 - pad, height / 2 - pad * 0.5);
+    this.#cardY = view.height - height / 2 - 34 * ui;
+    this.#container.setPosition(view.width / 2, this.#cardY);
   }
 
   static preload(scene: Phaser.Scene): void {
@@ -168,7 +287,7 @@ export class GardenDialoguePanel implements Destroyable {
     if (this.#closing) {
       this.#scene.tweens.killTweensOf(this.#container);
       this.#closing = false;
-      this.#container.setVisible(false).setAlpha(1).setY(CARD_Y);
+      this.#container.setVisible(false).setAlpha(1).setY(this.#cardY);
     }
     if (!this.#container.visible) this.#showNext();
   }
@@ -203,7 +322,20 @@ export class GardenDialoguePanel implements Destroyable {
 
     this.#speaker.setText(line.speaker);
     this.#fullText = line.text;
-    this.#hint.setText(this.#queue.length > 0 ? '[E] далее' : '[E] закрыть');
+    // A touch player is told to tap; there is no [E] key to name, and the card's own hint is the
+    // only place that says how to continue.
+    const more = this.#queue.length > 0;
+    this.#hint.setText(
+      this.#scene.game.device.input.touch
+        ? more
+          ? 'Далее ›'
+          : 'Закрыть ›'
+        : more
+          ? '[E] далее'
+          : '[E] закрыть',
+    );
+    // A new line can be a different number of rows, and the compact panel is sized to its text.
+    this.#applyCardLayout();
 
     const firstLine = !this.#container.visible;
     this.#container.setVisible(true);
@@ -258,14 +390,14 @@ export class GardenDialoguePanel implements Destroyable {
 
   #slideIn(): void {
     if (this.#reducedMotion) {
-      this.#container.setAlpha(1).setY(CARD_Y);
+      this.#container.setAlpha(1).setY(this.#cardY);
       return;
     }
-    this.#container.setAlpha(0).setY(CARD_Y + 30);
+    this.#container.setAlpha(0).setY(this.#cardY + 30);
     this.#scene.tweens.add({
       targets: this.#container,
       alpha: 1,
-      y: CARD_Y,
+      y: this.#cardY,
       duration: 260,
       ease: 'Back.out',
     });
@@ -295,11 +427,11 @@ export class GardenDialoguePanel implements Destroyable {
     this.#scene.tweens.add({
       targets: this.#container,
       alpha: 0,
-      y: CARD_Y + 20,
+      y: this.#cardY + 20,
       duration: 180,
       onComplete: () => {
         this.#closing = false;
-        this.#container.setVisible(false).setAlpha(1).setY(CARD_Y);
+        this.#container.setVisible(false).setAlpha(1).setY(this.#cardY);
       },
     });
   }

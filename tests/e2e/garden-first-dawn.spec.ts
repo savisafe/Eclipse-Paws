@@ -121,11 +121,12 @@ test('turns the sundial with both cats, which brings the night and the hounds', 
   // The debug checkpoint drops the cats onto the night path, just past the sundial square.
   expect((await gardenState(page)).activeX).toBeGreaterThan(5_280);
 
-  // Both halves of the sundial are in reach from the middle of the square: Люмус wakes the light,
+  // The sundial square comes before the Gardener's house. Both halves are in reach from its
+  // middle: Люмус wakes the light,
   // Нокс frees the shadow, and only together do they move the dream's time (§12).
   for (let round = 0; round < 3; round += 1) {
     if ((await gardenState(page)).sundialReady) break;
-    await walkTo(page, 4_944, 40);
+    await walkTo(page, 4_104, 40);
     await interactUntil(page, (state) => state.sundialHalves > round);
     await page.keyboard.press('Tab');
     await page.waitForTimeout(400);

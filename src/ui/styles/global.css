@@ -30,6 +30,10 @@ body,
 body {
   min-height: 100svh;
   overflow-x: hidden;
+  /* Stops a mobile browser from turning a swipe over the game into pull-to-refresh or a
+     rubber-band scroll of the page behind it. */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 button {
@@ -151,7 +155,7 @@ button:focus-visible {
 
 .hero-panel {
   width: min(38rem, 100%);
-  padding: clamp(1.25rem, 4vw, 2.5rem);
+  padding: clamp(0.75rem, min(4vw, 2.6svh), 2.5rem);
   border: 1px solid rgb(255 255 255 / 18%);
   border-radius: 2rem;
   background: linear-gradient(145deg, rgb(20 24 57 / 82%), rgb(30 25 69 / 91%));
@@ -163,7 +167,7 @@ button:focus-visible {
 .hero-panel__eyebrow {
   margin: 0;
   color: var(--gold);
-  font-size: 0.76rem;
+  font-size: clamp(0.58rem, min(2.4vw, 1.7svh), 0.76rem);
   font-weight: 800;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -172,7 +176,9 @@ button:focus-visible {
 .hero-panel h1 {
   margin: 0.3rem 0 0;
   color: var(--cream);
-  font-size: clamp(2.2rem, 8vw, 4.3rem);
+  /* Height-aware as well as width-aware: a phone held sideways is wide and very short, and a
+     purely `vw` title pushed the menu buttons off the bottom of it. */
+  font-size: clamp(1.75rem, min(8vw, 7.6svh), 4.3rem);
   line-height: 0.98;
   letter-spacing: -0.04em;
   text-shadow: 0 0.1em 0 #604a55;
@@ -181,7 +187,7 @@ button:focus-visible {
 .hero-panel__subtitle {
   margin: 0.5rem 0 0;
   color: var(--silver);
-  font-size: clamp(1rem, 3vw, 1.25rem);
+  font-size: clamp(0.8rem, min(3vw, 2.6svh), 1.25rem);
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -190,14 +196,14 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: clamp(7rem, 20vw, 9rem);
-  margin: 0.7rem auto;
+  min-height: clamp(3.4rem, min(20vw, 13svh), 9rem);
+  margin: clamp(0.15rem, 1svh, 0.7rem) auto;
 }
 
 .guardians__eclipse {
   z-index: 1;
   display: grid;
-  width: 3.4rem;
+  width: clamp(2rem, min(8vw, 5.5svh), 3.4rem);
   aspect-ratio: 1;
   place-items: center;
   margin: 0 -0.4rem;
@@ -210,7 +216,7 @@ button:focus-visible {
 
 .cat-sigil {
   position: relative;
-  width: clamp(6rem, 19vw, 8.5rem);
+  width: clamp(3.2rem, min(19vw, 12svh), 8.5rem);
   aspect-ratio: 1.05;
   filter: drop-shadow(0 0.8rem 0.8rem rgb(4 6 24 / 35%));
 }
@@ -285,7 +291,9 @@ button:focus-visible {
 .menu-actions {
   display: grid;
   gap: 0.65rem;
-  width: min(22rem, 100%, max(10rem, calc((100svh - 19rem) * 0.72)));
+  /* The four 3:1 frames have to fit the height that is left after the title block, so the
+     column is width-capped by the space below it rather than by the viewport width alone. */
+  width: min(22rem, 100%, calc((100svh - 24rem) / 4 * 3));
   margin: 0 auto;
 }
 
@@ -297,10 +305,17 @@ button:focus-visible {
   flex-direction: column;
   justify-content: center;
   gap: 0.05rem;
-  padding: 0.45rem 16%;
-  font-size: clamp(0.72rem, 2.2vw, 1rem);
+  padding: 0.3rem 11%;
+  /* The frame is only as tall as the screen allows, so the label has to follow the height too —
+     on a 320×568 phone the fixed sizes wrapped "В РАЗРАБОТКЕ" and spilled out of the parchment. */
+  font-size: clamp(0.6rem, min(2.6vw, 2.4svh), 1rem);
   line-height: 1.05;
   text-align: center;
+}
+
+.menu-actions .menu-button small {
+  font-size: clamp(0.45rem, min(2vw, 1.8svh), 0.65rem);
+  letter-spacing: 0.07em;
 }
 
 .menu-button {
@@ -363,10 +378,10 @@ button:focus-visible {
 }
 
 .hero-panel__hint {
-  margin: 1.3rem auto 0;
+  margin: clamp(0.45rem, 2.2svh, 1.3rem) auto 0;
   color: #d9d9f1;
-  font-size: 0.85rem;
-  line-height: 1.5;
+  font-size: clamp(0.68rem, min(2.8vw, 2svh), 0.85rem);
+  line-height: 1.45;
 }
 
 .dialog-overlay {
@@ -600,19 +615,6 @@ button:focus-visible {
 }
 
 @media (max-height: 700px) {
-  .hero-panel {
-    padding-block: 1rem;
-  }
-
-  .guardians {
-    min-height: 5.3rem;
-    margin: 0.25rem auto;
-  }
-
-  .cat-sigil {
-    width: 5.2rem;
-  }
-
   .menu-actions {
     gap: 0.45rem;
   }
@@ -623,6 +625,62 @@ button:focus-visible {
 
   .menu-actions .menu-button {
     min-height: 0;
+  }
+}
+
+/* A phone held sideways: ~390 px tall and twice as wide. Stacking title over buttons cannot fit
+   there, so the branding and the buttons sit side by side and the whole menu stays on screen. */
+@media (max-height: 560px) and (min-aspect-ratio: 1/1) {
+  .main-menu {
+    padding: max(0.6rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+      max(0.6rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
+
+  .hero-panel {
+    display: grid;
+    width: min(46rem, 100%);
+    align-items: center;
+    column-gap: clamp(0.9rem, 4vw, 2.5rem);
+    border-radius: 1.4rem;
+  }
+
+  /* The side-by-side split gives the branding column its height back, so the type follows the
+     screen height again instead of the cramped shared-column sizes above. */
+  .hero-panel__eyebrow {
+    grid-area: 1 / 1;
+    font-size: clamp(0.58rem, 2.2svh, 0.76rem);
+  }
+
+  .hero-panel h1 {
+    grid-area: 2 / 1;
+    font-size: clamp(1.6rem, min(6vw, 15svh), 3.4rem);
+  }
+
+  .hero-panel__subtitle {
+    grid-area: 3 / 1;
+    font-size: clamp(0.78rem, 3.4svh, 1.1rem);
+  }
+
+  .guardians {
+    grid-area: 4 / 1;
+    min-height: clamp(3.4rem, 22svh, 7rem);
+  }
+
+  .cat-sigil {
+    width: clamp(3rem, 18svh, 6rem);
+  }
+
+  .guardians__eclipse {
+    width: clamp(1.8rem, 8svh, 3.4rem);
+  }
+
+  .menu-actions {
+    grid-area: 1 / 2 / 5 / 3;
+    width: min(13rem, calc((100svh - 8.5rem) / 4 * 3));
+  }
+
+  .hero-panel__hint {
+    grid-area: 5 / 1 / 6 / 3;
   }
 }
 

@@ -79,7 +79,7 @@
         },
         {
           "id": 5,
-          "name": "cottage-bank",
+          "name": "sundial-bank",
           "type": "terrain",
           "x": 3670,
           "y": 598,
@@ -96,7 +96,7 @@
         },
         {
           "id": 6,
-          "name": "sundial-bank",
+          "name": "cottage-bank",
           "type": "terrain",
           "x": 4510,
           "y": 590,
@@ -156,10 +156,19 @@
           "id": 11,
           "name": "gardener-cottage",
           "type": "cottage",
-          "x": 3830,
+          "x": 4670,
           "y": 251,
           "width": 560,
           "height": 373
+        },
+        {
+          "id": 12,
+          "name": "sundial-plaza",
+          "type": "plaza",
+          "x": 3750,
+          "y": 535,
+          "width": 708,
+          "height": 122
         }
       ],
       "opacity": 1,
@@ -211,7 +220,7 @@
         },
         {
           "id": 34,
-          "name": "gardener-house",
+          "name": "sundial-square",
           "type": "zone",
           "x": 3670,
           "y": 0,
@@ -220,7 +229,7 @@
         },
         {
           "id": 35,
-          "name": "sundial-square",
+          "name": "gardener-house",
           "type": "zone",
           "x": 4510,
           "y": 0,
@@ -245,7 +254,7 @@
     }
   ],
   "nextlayerid": 4,
-  "nextobjectid": 37,
+  "nextobjectid": 38,
   "orientation": "orthogonal",
   "renderorder": "right-down",
   "tiledversion": "1.11.2",

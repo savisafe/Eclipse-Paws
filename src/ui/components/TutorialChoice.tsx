@@ -38,7 +38,8 @@ export function TutorialChoice({ onAccept, onDecline }: TutorialChoiceProps) {
             Нет, пропустить
           </button>
         </div>
-        <small>Обучение всегда можно запустить из меню паузы по Escape.</small>
+        {/* No "по Escape": a touch player reaches the same menu through the HUD's pause button. */}
+        <small>Обучение всегда можно запустить из меню паузы.</small>
       </div>
     </section>
   );

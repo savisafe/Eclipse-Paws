@@ -95,6 +95,60 @@ export class GardenScenery implements Destroyable {
       water.strokePath();
     }
 
+    // The sundial is not standing on an anonymous stretch of garden soil: it has its own broad,
+    // old paved square in front of the Gardener's cottage (§12, "Площадь солнечных
+    // часов"). A strip of untouched garden between the cottage and the first paving stones keeps
+    // the two landmarks clearly separate instead of making the clock look like house decoration.
+    const plaza = this.#requiredLandscapeObject(landscape, 'plaza');
+    const paving = this.#track(this.#scene.add.graphics().setDepth(2));
+    const centerX = plaza.x + plaza.width / 2;
+    const centerY = plaza.y + plaza.height / 2;
+
+    // A short procession of inset stones makes the distance from the cottage readable.
+    paving.fillStyle(0xb8a989, 0.78);
+    for (let step = 0; step < 4; step += 1) {
+      paving.fillEllipse(plaza.x - 150 + step * 48, centerY + 8 - step * 2, 35, 14);
+    }
+
+    // Warm, time-worn paving with a darker stone rim. The flattened ellipse gives the square the
+    // perspective of a ground plane while keeping the cats and the clock unobscured.
+    paving.fillStyle(0x8b765e, 0.96);
+    paving.fillEllipse(centerX, centerY + 8, plaza.width + 22, plaza.height + 24);
+    paving.lineStyle(7, 0xd2c49d, 0.94);
+    paving.strokeEllipse(centerX, centerY + 4, plaza.width, plaza.height);
+    paving.fillStyle(0xc5b68f, 0.98);
+    paving.fillEllipse(centerX, centerY, plaza.width - 18, plaza.height - 18);
+
+    // Concentric rings and radial seams read as hand-laid flagstones and visually anchor the two
+    // interactive halves of the sundial at the centre of one plaza.
+    paving.lineStyle(3, 0x8d8068, 0.72);
+    paving.strokeEllipse(centerX, centerY, plaza.width * 0.68, plaza.height * 0.64);
+    paving.strokeEllipse(centerX, centerY, plaza.width * 0.29, plaza.height * 0.38);
+    for (let spoke = 0; spoke < 12; spoke += 1) {
+      const angle = (Math.PI * 2 * spoke) / 12;
+      paving.beginPath();
+      paving.moveTo(
+        centerX + Math.cos(angle) * plaza.width * 0.16,
+        centerY + Math.sin(angle) * plaza.height * 0.18,
+      );
+      paving.lineTo(
+        centerX + Math.cos(angle) * plaza.width * 0.47,
+        centerY + Math.sin(angle) * plaza.height * 0.45,
+      );
+      paving.strokePath();
+    }
+
+    // Small tufts soften the border without shrinking the clear playable space around the clock.
+    const borderPlants = this.#track(this.#scene.add.graphics().setDepth(3));
+    borderPlants.fillStyle(0x496b3f, 0.9);
+    [plaza.x + 26, plaza.x + plaza.width - 26].forEach((x) => {
+      borderPlants.fillEllipse(x, centerY + 35, 62, 25);
+      borderPlants.fillStyle(0xe8ce73, 0.88);
+      borderPlants.fillCircle(x - 12, centerY + 27, 4);
+      borderPlants.fillCircle(x + 10, centerY + 31, 3);
+      borderPlants.fillStyle(0x496b3f, 0.9);
+    });
+
     // The painted background already contains the greenhouse. Only the cottage needs a separate
     // authored landmark sprite; duplicating the greenhouse with vector lines breaks the art style.
     const cottage = this.#requiredLandscapeObject(landscape, 'cottage');

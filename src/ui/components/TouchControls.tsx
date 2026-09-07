@@ -26,6 +26,9 @@ function TouchButton({ action, inputState, label, symbol }: TouchButtonProps) {
       className={`touch-button touch-button--${action}`}
       onPointerCancel={release}
       onPointerDown={press}
+      // A system gesture (the iOS home indicator, a notification pulling focus) can take the
+      // capture away without ever sending pointerup — without this the cat would keep running.
+      onLostPointerCapture={release}
       onPointerUp={release}
       type="button"
     >
@@ -37,6 +40,8 @@ function TouchButton({ action, inputState, label, symbol }: TouchButtonProps) {
 export function TouchControls({ inputState }: TouchControlsProps) {
   return (
     <div className="touch-controls" aria-label="Сенсорное управление">
+      {/* Hiding is a movement, so it sits under the thumb that moves — and it leaves the two
+          clusters the same three rows tall, which is what lets them fill the portrait deck. */}
       <div className="touch-dpad">
         <TouchButton action="jump" inputState={inputState} label="Прыгнуть" symbol="▲" />
         <TouchButton
@@ -51,10 +56,10 @@ export function TouchControls({ inputState }: TouchControlsProps) {
           label="Двигаться вправо"
           symbol="▶"
         />
+        <TouchButton action="move-down" inputState={inputState} label="Спрятаться" symbol="◒" />
       </div>
       <div className="touch-actions">
         <TouchButton action="switch-cat" inputState={inputState} label="Сменить кота" symbol="↔" />
-        <TouchButton action="move-down" inputState={inputState} label="Спрятаться" symbol="◒" />
         <TouchButton
           action="interact"
           inputState={inputState}

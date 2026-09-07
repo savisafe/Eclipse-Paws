@@ -105,7 +105,11 @@ export function GameScreen({
         tutorialRunId={tutorialRunId}
         onTutorialStepChange={handleTutorialStepChange}
       />
-      <GameHud gameplay={gameplay} tutorialStep={tutorial.enabled ? tutorial.step : null} />
+      <GameHud
+        gameplay={gameplay}
+        onPause={onPauseToggle}
+        tutorialStep={tutorial.enabled ? tutorial.step : null}
+      />
       {/* Level 1 carries its own authored, world-triggered dialogue inside the scene
           (`garden/garden-level-system.ts`), so the generic level-intro card would only repeat it. */}
       {level.id === 'garden-first-dawn' ? null : (

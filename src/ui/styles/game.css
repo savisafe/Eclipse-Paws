@@ -5,6 +5,12 @@
   min-height: 100svh;
   place-items: center;
   overflow: hidden;
+  /* A game surface, not a document: no text selection on a long press, no iOS callout menu and
+     no grey flash under a tapped control. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
   padding: max(0.65rem, env(safe-area-inset-top)) max(0.65rem, env(safe-area-inset-right))
     max(0.65rem, env(safe-area-inset-bottom)) max(0.65rem, env(safe-area-inset-left));
   background: #0e1028;
@@ -15,23 +21,24 @@
   inset: 0;
   display: grid;
   place-items: center;
+  touch-action: none;
 }
 
+/* Hard-sized rather than content-sized: Phaser measures this element to decide how far to scale
+   the canvas, so a box that can grow to fit the canvas it contains feeds the measurement back
+   into itself and the canvas never scales down at all. */
 .game-canvas {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 
+/* The canvas is sized by Phaser's scale manager, which already matches the shell exactly: the
+   game size is derived from this element's aspect ratio (see `adapters/phaser/viewport.ts`), so
+   forcing a 16:9 box here would put back the letterbox bars the adaptive viewport removes. */
 .game-canvas canvas {
-  position: absolute;
-  top: 50%;
-  left: 50%;
   display: block;
-  width: min(100vw, calc(100svh * 16 / 9)) !important;
-  height: min(100svh, calc(100vw * 9 / 16)) !important;
-  margin: 0 !important;
-  translate: -50% -50%;
+  touch-action: none;
 }
 
 .game-load-error {
@@ -269,6 +276,35 @@
   transition: width 180ms ease;
 }
 
+/* Touch-only escape hatch: with no keyboard there is no Escape, so the pause menu (and the way
+   back to the main menu) would be unreachable. Keyboard players keep the uncluttered HUD. */
+.hud-pause {
+  display: none;
+  width: 2.6rem;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid rgb(255 232 178 / 36%);
+  border-radius: 50%;
+  background: rgb(20 21 53 / 91%);
+  box-shadow: 0 0.5rem 1.5rem rgb(5 7 28 / 40%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.hud-pause span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: url('../../assets/ui/icons/pause-v1.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 62%;
+}
+
+.hud-pause:active {
+  background: rgb(106 226 220 / 60%);
+}
+
 .restart-notice {
   position: fixed;
   bottom: max(5.2rem, calc(env(safe-area-inset-bottom) + 5.2rem));
@@ -439,9 +475,11 @@
 
 .pause-card {
   display: grid;
+  /* Height-aware: a phone held sideways is ~360 px tall and the card has to fit inside it whole,
+     buttons included — three fixed 3.8rem rows plus 2rem padding did not. */
   width: min(22rem, calc(100vw - 2rem));
-  gap: 0.9rem;
-  padding: 2rem;
+  gap: clamp(0.45rem, 2.2svh, 0.9rem);
+  padding: clamp(0.9rem, 4svh, 2rem);
   border: 1px solid rgb(255 225 151 / 42%);
   border-radius: 1.7rem;
   background: linear-gradient(145deg, #29275b, #171834);
@@ -459,15 +497,15 @@
 }
 
 .pause-card h2 {
-  margin: 0 0 0.6rem;
-  font-size: 2.1rem;
+  margin: 0 0 clamp(0.1rem, 1.4svh, 0.6rem);
+  font-size: clamp(1.4rem, min(7vw, 8svh), 2.1rem);
 }
 
 .pause-card__primary,
 .pause-card__secondary,
 .pause-card__tutorial {
   width: 100%;
-  min-height: 3.8rem;
+  min-height: clamp(2.6rem, 11svh, 3.8rem);
   border-radius: 1rem;
   font-weight: 900;
 }
@@ -544,10 +582,12 @@
 
 .tutorial-choice__card {
   display: grid;
+  /* Height-aware throughout: on a phone held sideways (~360 px tall) the fixed sizes pushed the
+     two answer buttons off the bottom of the screen, and the question could not be answered. */
   width: min(31rem, 100%);
   justify-items: center;
-  gap: 0.8rem;
-  padding: clamp(1.4rem, 4vw, 2.4rem);
+  gap: clamp(0.4rem, 2.2svh, 0.8rem);
+  padding: clamp(0.9rem, min(4vw, 4svh), 2.4rem);
   border: 1px solid rgb(255 224 138 / 55%);
   border-radius: 1.8rem;
   background: linear-gradient(145deg, rgb(43 39 91 / 98%), rgb(20 23 54 / 98%));
@@ -569,10 +609,10 @@
 }
 
 .tutorial-choice__mark {
-  width: 3.5rem;
+  width: clamp(2rem, 10svh, 3.5rem);
   aspect-ratio: 1;
   border: 3px solid #fff4ce;
-  font-size: 2.25rem;
+  font-size: clamp(1.2rem, 6svh, 2.25rem);
 }
 
 .tutorial-choice__card p,
@@ -590,13 +630,14 @@
 }
 
 .tutorial-choice__card h2 {
-  font-size: clamp(1.55rem, 5vw, 2.25rem);
+  font-size: clamp(1.2rem, min(5vw, 8svh), 2.25rem);
 }
 
 .tutorial-choice__description {
   max-width: 25rem;
   color: var(--silver);
-  line-height: 1.5;
+  font-size: clamp(0.78rem, min(3vw, 4svh), 1rem);
+  line-height: 1.4;
 }
 
 .tutorial-choice__actions {
@@ -611,7 +652,7 @@
   display: grid;
   width: 100%;
   min-width: 0;
-  height: 4rem;
+  height: clamp(2.5rem, 12svh, 4rem);
   place-items: center;
   overflow: hidden;
   padding: 0.65rem 1rem;
@@ -687,10 +728,12 @@
   filter: drop-shadow(0 0 0.8rem rgb(255 213 96 / 95%));
 }
 
+/* Only the top edge is pulled in: on a phone the HUD already sits at the top of the screen and
+   the badge was being clipped by the viewport, while hanging off the right stays on screen. */
 .tutorial-dom-mark {
   position: absolute;
   z-index: 3;
-  top: -0.65rem;
+  top: -0.3rem;
   right: -0.55rem;
   width: 1.85rem;
   aspect-ratio: 1;
@@ -730,6 +773,8 @@
   }
 }
 
+/* Touch controls overlay the picture in landscape (the canvas fills the screen) and drop into
+   their own deck below it in portrait — see the portrait block further down. */
 .touch-controls {
   position: absolute;
   z-index: 18;
@@ -740,21 +785,25 @@
   align-items: end;
   justify-content: space-between;
   pointer-events: none;
+  touch-action: none;
 }
 
 .orientation-hint {
   display: none;
 }
 
+/* Rows spread, columns stay together: the cross has to read as one control, and a column gap
+   would also push the two clusters past the width of a narrow phone. */
 .touch-dpad {
   display: grid;
-  grid-template: repeat(2, 3rem) / repeat(3, 3rem);
+  grid-template: repeat(3, var(--touch-size)) / repeat(3, var(--touch-size));
+  row-gap: var(--touch-gap, 0);
 }
 
 .touch-button {
   display: grid;
-  width: 3rem;
-  min-height: 3rem;
+  width: var(--touch-size);
+  min-height: var(--touch-size);
   place-items: center;
   border: 1px solid rgb(255 255 255 / 32%);
   border-radius: 50%;
@@ -782,11 +831,16 @@
   grid-area: 2 / 3;
 }
 
+.touch-button--move-down {
+  grid-area: 3 / 2;
+}
+
 .touch-actions {
   display: grid;
-  grid-template-columns: repeat(3, 2.75rem);
+  grid-template-columns: repeat(3, var(--touch-size));
   align-items: end;
-  gap: 0.35rem;
+  column-gap: 0.35rem;
+  row-gap: var(--touch-gap, 0.35rem);
 }
 
 .touch-button--support-ability {
@@ -795,8 +849,8 @@
 }
 
 .touch-actions .touch-button:last-child {
-  width: 3.6rem;
-  min-height: 3.6rem;
+  width: calc(var(--touch-size) * 1.2);
+  min-height: calc(var(--touch-size) * 1.2);
   color: #25234e;
   background: rgb(255 219 124 / 88%);
   font-size: 1.5rem;
@@ -809,6 +863,11 @@
 }
 
 @media (pointer: coarse), (max-width: 760px) {
+  .game-screen {
+    /* Touch targets: 3.15rem ≈ 50 px, above the 44 px both platforms ask for. */
+    --touch-size: 3.15rem;
+  }
+
   .touch-controls {
     display: flex;
   }
@@ -888,6 +947,11 @@
   .hud-status {
     grid-column: 2;
     grid-row: 1;
+    justify-items: end;
+  }
+
+  .hud-pause {
+    display: block;
   }
 
   .hero-health {
@@ -895,39 +959,140 @@
   }
 }
 
+/* Portrait is a layout of its own, not a squeezed landscape one. The picture keeps the widest
+   shape the adaptive viewport can fill without bars (1280×1120 world units — see
+   `adapters/phaser/viewport.ts`, MAX_HEIGHT/MAX_WIDTH), and the screen below it, which used to be
+   a black letterbox bar, becomes the control deck. Nothing is cropped and nothing is wasted. */
 @media (orientation: portrait) and (pointer: coarse) {
+  .game-screen {
+    /* Five columns of buttons plus their gaps have to fit across the narrowest phone, so the
+       deck's targets are capped by the screen width before a comfortable absolute size. */
+    --touch-size: min(4.4rem, 16.5vw);
+    /* The rows breathe a little with the deck, but stay close enough to read as one controller;
+       the rest of the spare height goes to the picture instead (viewport.ts, MAX_HEIGHT). */
+    --touch-gap: clamp(0.3rem, 1.7svh, 1rem);
+    /* 9.2rem covers the rotate hint, the ability row and the deck's own padding. */
+    --deck-min: calc(3 * var(--touch-size) + 2 * var(--touch-gap) + 9.2rem);
+    /* 1500 / 1280 — the aspect at which the canvas fills this band edge to edge (viewport.ts).
+       The band takes all it can get, but never so much that the deck cannot hold its controls. */
+    --play-band: min(calc(100vw * 1.171875), calc(100svh - var(--deck-min)));
+
+    /* Without a fixed column the deck's own width would size the track, and everything laid out
+       against it — the canvas band included — would overflow the screen with it. */
+    grid-template-columns: 100%;
+    grid-template-rows: var(--play-band) 1fr;
+    align-content: start;
+    padding: 0;
+  }
+
+  /* Two columns rather than three: the freed width is what pays for bigger buttons. */
+  .touch-actions {
+    grid-template-columns: repeat(2, var(--touch-size));
+  }
+
+  .game-canvas-shell {
+    position: relative;
+    inset: auto;
+    grid-row: 1;
+    width: 100%;
+    height: var(--play-band);
+  }
+
+  .touch-controls {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    grid-row: 2;
+    align-self: stretch;
+    justify-self: stretch;
+    /* Centred in what is left under the rotate hint and the ability row, with the button rows
+       themselves stretching (--touch-gap) so the deck is filled rather than merely occupied. */
+    align-items: center;
+    width: 100%;
+    padding: 7rem max(0.9rem, env(safe-area-inset-left))
+      max(1rem, calc(env(safe-area-inset-bottom) + 0.6rem)) max(0.9rem, env(safe-area-inset-right));
+    border-top: 1px solid rgb(255 231 167 / 14%);
+    background: linear-gradient(180deg, #171a3b 0%, #0d1028 100%);
+  }
+
+  /* The HUD paints above the deck here: the ability row moves down into it, and the deck's own
+     background is opaque. */
+  .game-hud {
+    z-index: 19;
+  }
+
+  /* The picture is only a band tall here, so the readouts that hang off the bottom of the screen
+     move into the deck instead of covering the game — the deck has the room to spare. */
+  .ability-cooldowns {
+    position: absolute;
+    top: calc(var(--play-band) + 3.4rem);
+    bottom: auto;
+  }
+
+  .restart-notice {
+    position: absolute;
+    top: calc(var(--play-band) + 7.4rem);
+    bottom: auto;
+  }
+
+  .dialogue-overlay {
+    position: absolute;
+    bottom: calc(100% - var(--play-band) + 0.6rem);
+  }
+
   .orientation-hint {
-    position: fixed;
+    position: absolute;
     z-index: 22;
-    top: 10rem;
+    top: calc(var(--play-band) + 0.5rem);
     left: 50%;
     display: block;
-    width: min(18rem, calc(100vw - 2rem));
-    padding: 0.55rem 0.8rem;
+    width: min(20rem, calc(100vw - 2rem));
+    padding: 0.4rem 0.8rem;
     translate: -50% 0;
     border: 1px solid rgb(255 222 143 / 45%);
     border-radius: 999px;
     color: var(--cream);
     background: rgb(20 20 52 / 86%);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     text-align: center;
     pointer-events: none;
   }
 }
 
+/* On a phone-width screen the centred phase clock and the right-hand health card sit on the same
+   line and clip each other, so the clock drops below the top HUD row. */
+@media (max-width: 430px) {
+  .phase-clock {
+    top: max(4.4rem, calc(env(safe-area-inset-top) + 4.4rem));
+    min-width: 0;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.74rem;
+  }
+}
+
+/* A phone held sideways is only ~390 px tall. Shrinking the buttons below the platform minimum
+   made them miss more than they hit, so the room comes out of the spacing instead. */
 @media (max-height: 520px) and (pointer: coarse) {
-  .touch-dpad {
-    grid-template: repeat(3, 2.65rem) / repeat(3, 2.65rem);
+  .game-screen {
+    --touch-size: 2.85rem;
   }
 
-  .touch-button {
-    width: 2.65rem;
-    min-height: 2.65rem;
+  .touch-actions {
+    gap: 0.28rem;
   }
 
-  .touch-actions .touch-button:last-child {
-    width: 3.7rem;
-    min-height: 3.7rem;
+  /* Under the hero portraits rather than along the bottom: the bottom of a landscape phone
+     belongs to the thumbs and to the dialogue card, which is nearly two thirds of the height. */
+  .ability-cooldowns {
+    top: max(4.6rem, calc(env(safe-area-inset-top) + 4.6rem));
+    bottom: auto;
+    left: max(0.75rem, env(safe-area-inset-left));
+    translate: none;
+  }
+
+  .restart-notice {
+    bottom: max(7.6rem, calc(env(safe-area-inset-bottom) + 7.6rem));
   }
 }
 
@@ -937,12 +1102,14 @@
   }
 }
 
+/* Both of these are full-screen cards that a phone held sideways has ~360 px of height for, so
+   every fixed size below is clamped against `svh` as well. */
 .level-result,
 .story-screen {
   display: grid;
   min-height: 100svh;
   place-items: center;
-  padding: 1.5rem;
+  padding: clamp(0.6rem, 3svh, 1.5rem);
   color: var(--cream);
   background:
     radial-gradient(circle at 50% 35%, rgb(255 212 101 / 28%), transparent 24%),
@@ -952,8 +1119,8 @@
 .story-card {
   display: grid;
   width: min(34rem, 100%);
-  gap: 1rem;
-  padding: clamp(1.5rem, 5vw, 3rem);
+  gap: clamp(0.4rem, 2svh, 1rem);
+  padding: clamp(0.9rem, min(5vw, 4svh), 3rem);
   border: 1px solid rgb(255 227 158 / 45%);
   border-radius: 2rem;
   background: rgb(21 22 55 / 90%);
@@ -976,12 +1143,13 @@
 
 .story-card blockquote {
   color: #e5e5f5;
-  font-size: 1.05rem;
-  line-height: 1.65;
+  font-size: clamp(0.82rem, min(3vw, 3.6svh), 1.05rem);
+  line-height: 1.45;
 }
 
 .story-meow {
-  padding: 0.7rem;
+  padding: clamp(0.3rem, 1.6svh, 0.7rem);
+  font-size: clamp(0.78rem, min(3vw, 3.4svh), 1rem);
   border-radius: 0.9rem;
   color: var(--turquoise);
   background: rgb(106 226 220 / 9%);
@@ -991,8 +1159,8 @@
 .result-card {
   display: grid;
   width: min(32rem, 100%);
-  gap: 1rem;
-  padding: clamp(1.5rem, 5vw, 3rem);
+  gap: clamp(0.4rem, 2svh, 1rem);
+  padding: clamp(0.9rem, min(5vw, 4svh), 3rem);
   border: 1px solid rgb(255 227 158 / 45%);
   border-radius: 2rem;
   background: rgb(21 22 55 / 88%);
@@ -1014,8 +1182,14 @@
   margin: 0;
 }
 
+.result-card h1,
+.story-card h1 {
+  font-size: clamp(1.25rem, min(6vw, 8svh), 2rem);
+  line-height: 1.1;
+}
+
 .result-shard {
-  width: 6rem;
+  width: clamp(2.4rem, 13svh, 6rem);
   aspect-ratio: 1;
   margin: 0 auto;
   background-image: url('../../assets/ui/loading-emblem-v1.png');
@@ -1028,7 +1202,7 @@
 .result-card__primary,
 .result-card__secondary {
   width: 100%;
-  min-height: 3.8rem;
+  min-height: clamp(2.5rem, 10svh, 3.8rem);
   border-radius: 1rem;
   font-weight: 900;
   cursor: pointer;
@@ -1484,12 +1658,13 @@
 .result-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: clamp(0.35rem, 2svh, 0.75rem);
   margin: 0;
+  font-size: clamp(0.75rem, min(3vw, 3.2svh), 1rem);
 }
 
 .result-stats div {
-  padding: 0.8rem;
+  padding: clamp(0.35rem, 1.8svh, 0.8rem);
   border-radius: 1rem;
   background: rgb(255 255 255 / 8%);
 }

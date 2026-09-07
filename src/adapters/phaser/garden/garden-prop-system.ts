@@ -262,6 +262,10 @@ export class GardenPropSystem implements Destroyable {
     this.#pulse(gate.view);
   }
 
+  setUiScale(scale: number): void {
+    this.#prompt.setUiScale(scale);
+  }
+
   destroy(): void {
     this.#props.forEach((prop) => {
       this.#scene.tweens.killTweensOf(prop.view);

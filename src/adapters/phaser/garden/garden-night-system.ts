@@ -8,8 +8,6 @@ const HOLE_KEY = 'garden-night-hole';
 const GLOW_KEY = 'garden-night-glow';
 const HOLE_SIZE = 1024;
 const GLOW_SIZE = 256;
-const VIEW_WIDTH = 1280;
-const VIEW_HEIGHT = 720;
 
 // The darkness is one pre-baked sprite with a soft hole in the middle plus four plain rectangles
 // that fill the rest of the screen. That keeps the night at a handful of draw calls per frame —
@@ -85,11 +83,7 @@ export class GardenNightSystem implements Destroyable {
     ensureHoleTexture(scene);
     ensureGlowTexture(scene);
 
-    this.#hole = scene.add
-      .image(640, 360, HOLE_KEY)
-      .setScrollFactor(0)
-      .setDepth(24)
-      .setVisible(false);
+    this.#hole = scene.add.image(0, 0, HOLE_KEY).setScrollFactor(0).setDepth(24).setVisible(false);
     this.#edges = Array.from({ length: 4 }, () =>
       scene.add
         .rectangle(0, 0, 10, 10, 0x05060f, 1)
@@ -137,6 +131,10 @@ export class GardenNightSystem implements Destroyable {
     // свечению, но не освещает весь экран").
     const visionScale = activeCat === 'nox' ? 0.5 : 0.4;
 
+    // Measured against the live view, not the authored 1280×720: the darkness has to reach the
+    // edges of whatever screen the player is holding (see `../viewport.ts`).
+    const viewWidth = camera.width;
+    const viewHeight = camera.height;
     const screenX = active.x - camera.scrollX;
     const screenY = active.y - camera.scrollY;
     this.#hole.setAlpha(darkness).setScale(visionScale).setPosition(screenX, screenY);
@@ -146,14 +144,14 @@ export class GardenNightSystem implements Destroyable {
     const right = screenX + half;
     const top = screenY - half;
     const bottom = screenY + half;
-    this.#placeEdge(0, 0, 0, VIEW_WIDTH, Math.max(0, top), darkness);
-    this.#placeEdge(1, 0, bottom, VIEW_WIDTH, Math.max(0, VIEW_HEIGHT - bottom), darkness);
+    this.#placeEdge(0, 0, 0, viewWidth, Math.max(0, top), darkness);
+    this.#placeEdge(1, 0, bottom, viewWidth, Math.max(0, viewHeight - bottom), darkness);
     this.#placeEdge(2, 0, Math.max(0, top), Math.max(0, left), bottom - top, darkness);
     this.#placeEdge(
       3,
       right,
       Math.max(0, top),
-      Math.max(0, VIEW_WIDTH - right),
+      Math.max(0, viewWidth - right),
       bottom - top,
       darkness,
     );

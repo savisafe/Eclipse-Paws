@@ -3,6 +3,7 @@ import type { GameplayController } from '@application/index';
 import { GARDEN_BEATS, GARDEN_ZONES, type CampaignLevelDefinition } from '@content/index';
 import type { CatId, Phase } from '@core/index';
 import type { Destroyable } from '../destroyable';
+import { hudSafeTop, type UiViewport } from '../viewport';
 import type { PlatformerEnemySystem } from '../platformer-enemy-system';
 import { GardenDialoguePanel, type GardenLine } from './garden-dialogue-panel';
 import { GardenNightSystem } from './garden-night-system';
@@ -83,7 +84,7 @@ export class GardenLevelSystem implements Destroyable {
     this.#zoneBanner = options.scene.add
       // Left-aligned under the level's objective line: the centre of the screen belongs to the
       // tutorial card during the garden's first minutes.
-      .text(95, 132, '', {
+      .text(0, 0, '', {
         color: '#fff3cf',
         fontFamily: 'system-ui, sans-serif',
         fontSize: '18px',
@@ -198,6 +199,23 @@ export class GardenLevelSystem implements Destroyable {
     this.#night.setActive(phase === 'night');
   }
 
+  /** Re-anchors the garden's screen-space cards to a new field of view (`../viewport.ts`). */
+  layout(view: UiViewport): void {
+    this.#dialogue.layout(view);
+    this.#props.setUiScale(view.ui);
+    this.#npcs.setUiScale(view.ui);
+    // Left-aligned under the level's objective line, as before — the centre of the screen still
+    // belongs to the tutorial card during the garden's first minutes.
+    // Capped below the full UI scale and wrapped: a zone name is a long line, and at the phone's
+    // full scale it would run the whole width of the screen instead of reading as a caption.
+    const bannerScale = Math.min(view.ui, 1.7);
+    this.#zoneBanner
+      .setPosition(60 * bannerScale, hudSafeTop(view))
+      .setFontSize(18 * bannerScale)
+      .setStroke('#1a2436', 5 * bannerScale)
+      .setWordWrapWidth(view.width - 120 * bannerScale);
+  }
+
   setNightBrightness(nightBrightness: number): void {
     this.#night.setBrightness(nightBrightness);
   }
@@ -303,8 +321,9 @@ export class GardenLevelSystem implements Destroyable {
   #breakTheSky(): void {
     const cracks = this.#scene.add.graphics().setScrollFactor(0).setDepth(23);
     cracks.lineStyle(3, 0xe6f0ff, 0.85);
+    const spacing = this.#scene.scale.width / 7;
     for (let index = 0; index < 7; index += 1) {
-      const originX = 120 + index * 165;
+      const originX = spacing * (index + 0.5) - 32;
       cracks.beginPath();
       cracks.moveTo(originX, 0);
       cracks.lineTo(originX + 34, 90 + (index % 3) * 30);

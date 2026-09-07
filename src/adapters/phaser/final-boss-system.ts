@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { GameplayController } from '@application/index';
 import { BossPhaseTracker } from '@core/index';
+import { hudSafeTop, sceneViewport } from './viewport';
 
 export class FinalBossSystem {
   readonly #bossId: string;
@@ -24,7 +25,7 @@ export class FinalBossSystem {
     this.#reducedMotion = reducedMotion;
     this.#tracker = new BossPhaseTracker(maximumHealth);
     this.#label = scene.add
-      .text(640, 135, 'Пожиратель Зари · Фаза 1', {
+      .text(0, 0, 'Пожиратель Зари · Фаза 1', {
         color: '#fff2c2',
         fontFamily: 'system-ui, sans-serif',
         fontSize: '19px',
@@ -38,6 +39,13 @@ export class FinalBossSystem {
   }
 
   update(deltaMs: number): void {
+    // Re-anchored and re-sized every frame instead of once: the view changes shape whenever the
+    // device rotates or a mobile browser's toolbar slides away (see `viewport.ts`).
+    const view = sceneViewport(this.#scene);
+    this.#label
+      .setPosition(view.width / 2, hudSafeTop(view))
+      .setFontSize(19 * view.ui)
+      .setStroke('#201537', 5 * view.ui);
     const snapshot = this.#gameplay.getSnapshot();
     const health = snapshot.enemies.find((enemy) => enemy.id === this.#bossId)?.health ?? 0;
     const result = this.#tracker.update(health);

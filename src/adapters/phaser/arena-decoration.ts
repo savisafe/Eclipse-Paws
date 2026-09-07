@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { CampaignLevelDefinition } from '@content/index';
 import gardenPlatformUrl from '../../assets/environments/garden-stone-platform-tile-v1.png?url';
 import { environmentForLevel } from './dream-environment-manifest';
+import { sceneViewport, type UiViewport } from './viewport';
 
 export const PLATFORMER_WORLD_HEIGHT = 720;
 
@@ -10,70 +11,94 @@ export function preloadEnvironment(scene: Phaser.Scene, level: CampaignLevelDefi
   scene.load.image('garden-platform-tile', gardenPlatformUrl);
 }
 
+/**
+ * Everything behind the level is screen-space (scroll factor 0 or near it), so it has to be laid
+ * out against the current field of view rather than the authored 1280×720 — otherwise a wide
+ * phone shows the painted backdrop ending mid-screen. `layout` re-runs on every viewport change.
+ */
 function addParallax(
   scene: Phaser.Scene,
   level: CampaignLevelDefinition,
   reducedMotion: boolean,
-): void {
+): (view: UiViewport) => void {
   const art = environmentForLevel(level.index);
-  const background = scene.add
-    .image(640, 360, 'level-background')
-    .setDisplaySize(1296, 729)
-    .setScrollFactor(0)
-    .setDepth(-30);
+  const background = scene.add.image(0, 0, 'level-background').setScrollFactor(0).setDepth(-30);
   const glow = scene.add
-    .ellipse(640, 315, 900, 430, art.accent, 0.045)
+    .ellipse(0, 0, 900, 430, art.accent, 0.045)
     .setScrollFactor(0.035)
     .setBlendMode(Phaser.BlendModes.ADD)
     .setDepth(-25);
   const motes = Array.from({ length: 18 }, (_, index) =>
     scene.add
-      .circle(
-        70 + ((index * 137) % 1160),
-        80 + ((index * 83) % 520),
-        1.5 + (index % 3),
-        art.accent,
-        0.28,
-      )
+      .circle(0, 0, 1.5 + (index % 3), art.accent, 0.28)
       .setScrollFactor(0.06 + (index % 4) * 0.025)
       .setDepth(-22),
   );
-  if (!reducedMotion) {
-    scene.tweens.add({
-      targets: background,
-      scaleX: background.scaleX * 1.012,
-      scaleY: background.scaleY * 1.012,
-      duration: art.motion === 'pulse' ? 6200 : 9800,
-      ease: 'Sine.InOut',
-      yoyo: true,
-      repeat: -1,
-    });
-    scene.tweens.add({
-      targets: glow,
-      alpha: 0.1,
-      duration: 3600,
-      ease: 'Sine.InOut',
-      yoyo: true,
-      repeat: -1,
-    });
+  const tint = scene.add.rectangle(0, 0, 10, 10, 0x173447, 0.08).setScrollFactor(0).setDepth(-20);
+  // Tweens are rebuilt on every layout because each of them animates away from a base value the
+  // layout has just changed (the backdrop's cover scale, a mote's seeded position).
+  let drifts: Phaser.Tweens.Tween[] = [];
+
+  return (view: UiViewport) => {
+    const source = background.texture.getSourceImage();
+    // Cover, not stretch: the painted backdrop keeps its own proportions and overflows the short
+    // axis. The 1.5 % overscan hides the seam the breathing tween would otherwise open up.
+    const cover =
+      Math.max(view.width / source.width, view.height / source.height) *
+      (reducedMotion ? 1 : 1.015);
+    background
+      .setPosition(view.width / 2, view.height / 2)
+      .setDisplaySize(source.width * cover, source.height * cover);
+    glow.setPosition(view.width / 2, view.height * 0.44);
+    tint.setPosition(view.width / 2, view.height / 2).setSize(view.width, view.height);
     motes.forEach((mote, index) => {
+      mote.setPosition(
+        (view.width / 18) * (index + 0.5) + ((index * 137) % 90),
+        70 + ((index * 83) % Math.max(120, view.height - 160)),
+      );
+    });
+
+    drifts.forEach((tween) => tween.remove());
+    drifts = [];
+    if (reducedMotion) return;
+    drifts.push(
       scene.tweens.add({
-        targets: mote,
-        x: mote.x + 24 + (index % 4) * 9,
-        y: mote.y - 18 - (index % 5) * 7,
-        alpha: 0.08,
-        duration: 3600 + (index % 6) * 620,
-        delay: index * 90,
+        targets: background,
+        scaleX: background.scaleX * 1.012,
+        scaleY: background.scaleY * 1.012,
+        duration: art.motion === 'pulse' ? 6200 : 9800,
         ease: 'Sine.InOut',
         yoyo: true,
         repeat: -1,
-      });
-    });
-  }
-  scene.add.rectangle(640, 360, 1280, 720, 0x173447, 0.08).setScrollFactor(0).setDepth(-20);
+      }),
+      scene.tweens.add({
+        targets: glow,
+        alpha: 0.1,
+        duration: 3600,
+        ease: 'Sine.InOut',
+        yoyo: true,
+        repeat: -1,
+      }),
+      ...motes.map((mote, index) =>
+        scene.tweens.add({
+          targets: mote,
+          x: mote.x + 24 + (index % 4) * 9,
+          y: mote.y - 18 - (index % 5) * 7,
+          alpha: 0.08,
+          duration: 3600 + (index % 6) * 620,
+          delay: index * 90,
+          ease: 'Sine.InOut',
+          yoyo: true,
+          repeat: -1,
+        }),
+      ),
+    );
+  };
 }
 
 export interface PlatformerWorldView {
+  /** Re-anchors every screen-space piece of the arena to a new field of view. */
+  layout: (view: UiViewport) => void;
   phaseOverlay: Phaser.GameObjects.Rectangle;
   platforms: Phaser.Physics.Arcade.StaticGroup;
 }
@@ -143,7 +168,7 @@ export function drawArena(
   level: CampaignLevelDefinition,
   reducedMotion = false,
 ): PlatformerWorldView {
-  addParallax(scene, level, reducedMotion);
+  const layoutParallax = addParallax(scene, level, reducedMotion);
   const platforms = scene.physics.add.staticGroup();
 
   level.platforms.forEach((platform, index) => {
@@ -224,11 +249,19 @@ export function drawArena(
       .setDepth(5);
   });
 
+  // Screen-space rather than world-space: the night tint has to cover the whole view, including
+  // the sky and ground a screen squarer than 16:9 reveals beyond the authored band.
   const phaseOverlay = scene.add
-    .rectangle(0, 0, level.worldWidth, PLATFORMER_WORLD_HEIGHT, 0x251c52, 0)
+    .rectangle(0, 0, 10, 10, 0x251c52, 0)
     .setOrigin(0)
+    .setScrollFactor(0)
     .setDepth(20);
-  return { phaseOverlay, platforms };
+  const layout = (view: UiViewport): void => {
+    layoutParallax(view);
+    phaseOverlay.setSize(view.width, view.height);
+  };
+  layout(sceneViewport(scene));
+  return { layout, phaseOverlay, platforms };
 }
 
 export function drawCheckpoints(scene: Phaser.Scene, level: CampaignLevelDefinition): void {

@@ -5,10 +5,11 @@ import { AbilityCooldowns } from './AbilityCooldowns';
 
 interface GameHudProps {
   gameplay: GameplayController;
+  onPause?: () => void;
   tutorialStep?: number | null;
 }
 
-export function GameHud({ gameplay, tutorialStep = null }: GameHudProps) {
+export function GameHud({ gameplay, onPause, tutorialStep = null }: GameHudProps) {
   const snapshot = useGameplaySnapshot(gameplay);
   const seconds = Math.max(0, Math.ceil(snapshot.phaseRemainingMs / 1000));
   const dominantCat = dominantCatForPhase(snapshot.phase);
@@ -80,6 +81,13 @@ export function GameHud({ gameplay, tutorialStep = null }: GameHudProps) {
             <span style={{ width: `${(snapshot.bondHealth / snapshot.maxBondHealth) * 100}%` }} />
           </div>
         </div>
+        {/* A touch device has no Escape key, so without this there is no way out of a level at
+            all. Hidden where a keyboard is the primary input (see `.hud-pause` in game.css). */}
+        {onPause ? (
+          <button aria-label="Пауза" className="hud-pause" onClick={onPause} type="button">
+            <span aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
 
       {snapshot.checkpointRestartCount > 0 ? (
