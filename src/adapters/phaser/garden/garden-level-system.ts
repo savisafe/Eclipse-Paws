@@ -3,12 +3,14 @@ import type { GameplayController } from '@application/index';
 import { GARDEN_BEATS, GARDEN_ZONES, type CampaignLevelDefinition } from '@content/index';
 import type { CatId, Phase } from '@core/index';
 import type { Destroyable } from '../destroyable';
+import { hudSafeTop, type UiViewport } from '../viewport';
 import type { PlatformerEnemySystem } from '../platformer-enemy-system';
 import { GardenDialoguePanel, type GardenLine } from './garden-dialogue-panel';
 import { GardenNightSystem } from './garden-night-system';
 import { GardenNpcSystem } from './garden-npc-system';
 import { GardenPropSystem } from './garden-prop-system';
 import { GardenScenery } from './garden-scenery';
+import { preloadGardenMap } from './garden-map-layout';
 import seedIconUrl from '../../../assets/icons/cards/garden-golden-seed-v1.png?url';
 import handprintUrl from '../../../assets/decorations/heart/elias-real-hand-dream-wall-v1.png?url';
 
@@ -28,8 +30,8 @@ function beatLines(id: BeatId): readonly GardenLine[] {
  * The shape of the level follows the scenario's rhythm exactly — a long safe stretch with no
  * enemies at all, the Gardener, the sundial that the two cats turn together, and only then the
  * turning point: the sleep notices them, the ground shakes and the hounds of Silence arrive. Time
- * snaps back to day in the middle of that fight, which is what hands the fight from Нокс to Лумус
- * ("днём главным бойцом является Лумус, ночью — Нокс").
+ * snaps back to day in the middle of that fight, which is what hands the fight from Нокс to Люмус
+ * ("днём главным бойцом является Люмус, ночью — Нокс").
  */
 export class GardenLevelSystem implements Destroyable {
   readonly #actors: Record<CatId, Phaser.Physics.Arcade.Sprite>;
@@ -72,7 +74,7 @@ export class GardenLevelSystem implements Destroyable {
     this.#reducedMotion = options.reducedMotion;
     this.#scene = options.scene;
     // Dressing first, so flower beds and dew sit behind the interactive props.
-    this.#scenery = new GardenScenery(options.scene, options.level, options.reducedMotion);
+    this.#scenery = new GardenScenery(options.scene, options.level);
     this.#props = new GardenPropSystem(options.scene, options.actors);
     this.#npcs = new GardenNpcSystem(options.scene, options.reducedMotion);
     this.#night = new GardenNightSystem(options.scene, options.level, options.nightBrightness);
@@ -82,7 +84,7 @@ export class GardenLevelSystem implements Destroyable {
     this.#zoneBanner = options.scene.add
       // Left-aligned under the level's objective line: the centre of the screen belongs to the
       // tutorial card during the garden's first minutes.
-      .text(95, 132, '', {
+      .text(0, 0, '', {
         color: '#fff3cf',
         fontFamily: 'system-ui, sans-serif',
         fontSize: '18px',
@@ -99,6 +101,7 @@ export class GardenLevelSystem implements Destroyable {
   }
 
   static preload(scene: Phaser.Scene): void {
+    preloadGardenMap(scene);
     GardenPropSystem.preload(scene);
     GardenNpcSystem.preload(scene);
     GardenScenery.preload(scene);
@@ -126,6 +129,7 @@ export class GardenLevelSystem implements Destroyable {
     activeX: number;
     beats: readonly string[];
     canFinish: boolean;
+    dialogueBusy: boolean;
     houndsAwake: boolean;
     houndsDown: number;
     sundialHalves: number;
@@ -137,6 +141,7 @@ export class GardenLevelSystem implements Destroyable {
       activeX: Math.round(this.#actors[this.#gameplay.getSnapshot().activeCat].x),
       beats: [...this.#done],
       canFinish: this.canFinish,
+      dialogueBusy: this.dialogueBusy,
       houndsAwake: HOUND_IDS.every((id) => !this.#enemies.isDormant(id)),
       houndsDown: this.#houndsDown(),
       sundialHalves: this.#props.sundialHalves,
@@ -156,7 +161,7 @@ export class GardenLevelSystem implements Destroyable {
     this.#onTutorialStep?.(4);
   }
 
-  /** Called when Лумус uses Оглушающий крик, so the garden bells can answer it (§12). */
+  /** Called when Люмус uses Оглушающий крик, so the garden bells can answer it (§12). */
   onShout(x: number, y: number): void {
     const reaction = this.#props.shoutAt(x, y);
     if (!reaction) return;
@@ -176,13 +181,12 @@ export class GardenLevelSystem implements Destroyable {
 
     const reaction = this.#props.interact(active, catId, phase);
     if (!reaction) return;
-    // What a cat notices (a statue, the gate) is said by that cat; what a mechanism does is
-    // narrated by the dream itself.
-    const observation = reaction.role === 'statue' || reaction.role === 'gate';
+    // The gate is observed by the active cat; mechanisms are narrated by the dream itself.
+    const observation = reaction.role === 'gate';
     this.#dialogue.say([
       observation
         ? {
-            speaker: catId === 'luma' ? 'Лумус' : 'Нокс',
+            speaker: catId === 'luma' ? 'Люмус' : 'Нокс',
             text: reaction.line,
             emotion: reaction.role === 'gate' ? 'resolve' : 'worry',
           }
@@ -195,6 +199,23 @@ export class GardenLevelSystem implements Destroyable {
     this.#night.setActive(phase === 'night');
   }
 
+  /** Re-anchors the garden's screen-space cards to a new field of view (`../viewport.ts`). */
+  layout(view: UiViewport): void {
+    this.#dialogue.layout(view);
+    this.#props.setUiScale(view.ui);
+    this.#npcs.setUiScale(view.ui);
+    // Left-aligned under the level's objective line, as before — the centre of the screen still
+    // belongs to the tutorial card during the garden's first minutes.
+    // Capped below the full UI scale and wrapped: a zone name is a long line, and at the phone's
+    // full scale it would run the whole width of the screen instead of reading as a caption.
+    const bannerScale = Math.min(view.ui, 1.7);
+    this.#zoneBanner
+      .setPosition(60 * bannerScale, hudSafeTop(view))
+      .setFontSize(18 * bannerScale)
+      .setStroke('#1a2436', 5 * bannerScale)
+      .setWordWrapWidth(view.width - 120 * bannerScale);
+  }
+
   setNightBrightness(nightBrightness: number): void {
     this.#night.setBrightness(nightBrightness);
   }
@@ -203,7 +224,6 @@ export class GardenLevelSystem implements Destroyable {
     const snapshot = this.#gameplay.getSnapshot();
     const catId = snapshot.activeCat;
     const active = this.#actors[catId];
-    this.#scenery.update(active);
     this.#props.update(active, catId, deltaMs);
     this.#npcs.update(active.x, active.y, snapshot.phase);
     this.#night.update(this.#actors, catId, this.#enemies.targets());
@@ -234,7 +254,7 @@ export class GardenLevelSystem implements Destroyable {
     if (!this.#done.has('nightfall') && this.#props.sundialReady) {
       this.#play('nightfall');
       this.#gameplay.setPhase('night');
-      // "днём главным бойцом является Лумус, ночью — Нокс" (§12): the level hands control over
+      // "днём главным бойцом является Люмус, ночью — Нокс" (§12): the level hands control over
       // itself at each turn of the dream's time, so the change of rules is never missed.
       this.#onHandOver?.('nox');
       if (!this.#reducedMotion) this.#scene.cameras.main.flash(420, 26, 22, 60);
@@ -301,8 +321,9 @@ export class GardenLevelSystem implements Destroyable {
   #breakTheSky(): void {
     const cracks = this.#scene.add.graphics().setScrollFactor(0).setDepth(23);
     cracks.lineStyle(3, 0xe6f0ff, 0.85);
+    const spacing = this.#scene.scale.width / 7;
     for (let index = 0; index < 7; index += 1) {
-      const originX = 120 + index * 165;
+      const originX = spacing * (index + 0.5) - 32;
       cracks.beginPath();
       cracks.moveTo(originX, 0);
       cracks.lineTo(originX + 34, 90 + (index % 3) * 30);

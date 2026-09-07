@@ -68,7 +68,7 @@ export class CombatAbilitySystem implements Destroyable {
     );
   }
 
-  // Level-1 pair (§12): Лумус — Оглушающий крик, Нокс — Теневой наскок. The two share a slot but
+  // Level-1 pair (§12): Люмус — Оглушающий крик, Нокс — Теневой наскок. The two share a slot but
   // not a shape: the shout is an area control move, the dash is a single-target strike at range.
   primary(): void {
     const catId = this.#activeCat();

@@ -2,7 +2,7 @@ export type CatId = 'luma' | 'nox';
 export type Phase = 'day' | 'night';
 
 // Canon ability set from ECLIPSE_PAWS_SCENARIO.md §12 ("Система развития способностей"):
-// Лумус — Оглушающий крик, Луч света, Световой круг; Нокс — Теневой наскок, Теневые иглы,
+// Люмус — Оглушающий крик, Луч света, Световой круг; Нокс — Теневой наскок, Теневые иглы,
 // Теневой покров; совместная способность — Затмение.
 export type AbilityEffect =
   | 'stunning-shout'

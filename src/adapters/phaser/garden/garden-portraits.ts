@@ -67,7 +67,7 @@ export function preloadGardenPortraits(scene: Phaser.Scene): void {
 }
 
 export function portraitForSpeaker(speaker: string): PortraitSpeaker | null {
-  if (speaker.startsWith('Лумус')) return 'lumus';
+  if (speaker.startsWith('Люмус')) return 'lumus';
   if (speaker.startsWith('Нокс')) return 'nox';
   if (speaker.startsWith('Садовник')) return 'gardener';
   if (speaker.startsWith('Тень')) return 'shadow';

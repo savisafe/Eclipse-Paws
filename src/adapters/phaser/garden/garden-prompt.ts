@@ -49,6 +49,11 @@ export class GardenPrompt implements Destroyable {
     return this.#container.visible;
   }
 
+  /** Keeps the plaque the same physical size on a phone as on a desktop (`../viewport.ts`). */
+  setUiScale(scale: number): void {
+    this.#container.setScale(scale);
+  }
+
   hide(): void {
     this.#container.setVisible(false);
   }

@@ -38,7 +38,7 @@ export function MainMenu({ onContinue, onNewGame, onSelectLevel, unlockedLevels 
           </button>
           {menuItems.map((item) => (
             <button
-              className="menu-button"
+              className="menu-button menu-button--new-game"
               disabled={item.disabled}
               key={item.label}
               onClick={item.label === 'Новая игра' ? onNewGame : undefined}

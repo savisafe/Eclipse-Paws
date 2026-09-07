@@ -6,6 +6,8 @@ import { readDebugLaunchParams } from '@ui/debug-launch';
 
 interface NightBrightnessScene {
   setNightBrightness?: (value: number) => void;
+  startTutorial?: (step?: number) => void;
+  stopTutorial?: () => void;
 }
 
 interface PhaserGameHandle {
@@ -24,6 +26,10 @@ interface GameCanvasProps {
   effectsVolume: number;
   vibration: boolean;
   nightBrightness: number;
+  tutorialActive: boolean;
+  tutorialStartStep: number;
+  tutorialRunId: number;
+  onTutorialStepChange: (step: number, completed: boolean) => void;
 }
 
 export function GameCanvas({
@@ -37,6 +43,10 @@ export function GameCanvas({
   effectsVolume,
   vibration,
   nightBrightness,
+  tutorialActive,
+  tutorialStartStep,
+  tutorialRunId,
+  onTutorialStepChange,
 }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Night brightness is the one setting that must apply без перезапуска сцены: it is an
@@ -45,6 +55,8 @@ export function GameCanvas({
   // Held in a ref so changing it never re-creates the Phaser game (which would restart the level);
   // the effect below pushes new values into the running scene instead.
   const nightBrightnessRef = useRef(nightBrightness);
+  const tutorialActiveRef = useRef(tutorialActive);
+  const tutorialStartStepRef = useRef(tutorialStartStep);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -80,6 +92,9 @@ export function GameCanvas({
           nightBrightness: nightBrightnessRef.current,
           startNearFinish,
           startNearCombat,
+          tutorialActive: tutorialActiveRef.current,
+          tutorialStartStep: tutorialStartStepRef.current,
+          onTutorialStepChange,
         });
         gameRef.current = game ?? null;
       })
@@ -104,6 +119,7 @@ export function GameCanvas({
     onReady,
     reducedMotion,
     vibration,
+    onTutorialStepChange,
   ]);
 
   useEffect(() => {
@@ -112,6 +128,15 @@ export function GameCanvas({
       NightBrightnessScene | null | undefined;
     scene?.setNightBrightness?.(nightBrightness);
   }, [nightBrightness]);
+
+  useEffect(() => {
+    tutorialActiveRef.current = tutorialActive;
+    tutorialStartStepRef.current = tutorialStartStep;
+    const scene = gameRef.current?.scene.getScene('prototype-platformer') as
+      NightBrightnessScene | null | undefined;
+    if (tutorialActive) scene?.startTutorial?.(tutorialStartStep);
+    else scene?.stopTutorial?.();
+  }, [tutorialActive, tutorialRunId, tutorialStartStep]);
 
   return (
     <div className="game-canvas-shell">

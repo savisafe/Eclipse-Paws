@@ -5,18 +5,28 @@ import { AbilityCooldowns } from './AbilityCooldowns';
 
 interface GameHudProps {
   gameplay: GameplayController;
+  onPause?: () => void;
+  tutorialStep?: number | null;
 }
 
-export function GameHud({ gameplay }: GameHudProps) {
+export function GameHud({ gameplay, onPause, tutorialStep = null }: GameHudProps) {
   const snapshot = useGameplaySnapshot(gameplay);
   const seconds = Math.max(0, Math.ceil(snapshot.phaseRemainingMs / 1000));
   const dominantCat = dominantCatForPhase(snapshot.phase);
 
   return (
     <header className="game-hud" aria-label="Игровой интерфейс">
-      <div className="hud-portraits" aria-label="Хранители">
+      <div
+        className={`hud-portraits ${tutorialStep === 2 ? 'tutorial-focus' : ''}`}
+        aria-label="Хранители"
+      >
+        {tutorialStep === 2 ? (
+          <span className="tutorial-dom-mark" aria-hidden="true">
+            !
+          </span>
+        ) : null}
         <div
-          aria-label={`Лумус: ${dominantCat === 'luma' ? 'усилен' : 'ослаблен'}`}
+          aria-label={`Люмус: ${dominantCat === 'luma' ? 'усилен' : 'ослаблен'}`}
           aria-current={snapshot.activeCat === 'luma' ? 'true' : undefined}
           className={`hud-cat hud-cat--luma ${snapshot.activeCat === 'luma' ? 'is-active' : ''} ${dominantCat === 'luma' ? 'is-empowered' : 'is-weakened'}`}
         >
@@ -24,7 +34,7 @@ export function GameHud({ gameplay }: GameHudProps) {
             ☀
           </span>
           <span className="hud-cat__copy">
-            <strong>Лумус</strong>
+            <strong>Люмус</strong>
             <small>{dominantCat === 'luma' ? 'СИЛА ×1.5' : 'СЛАБО ×0.25'}</small>
           </span>
         </div>
@@ -51,13 +61,18 @@ export function GameHud({ gameplay }: GameHudProps) {
         <strong>{seconds}</strong>
       </div>
 
-      <div className="hud-status">
+      <div className={`hud-status ${tutorialStep === 0 ? 'tutorial-focus' : ''}`}>
+        {tutorialStep === 0 ? (
+          <span className="tutorial-dom-mark" aria-hidden="true">
+            !
+          </span>
+        ) : null}
         <div
           className="hero-health"
           aria-label={`HP героев: ${snapshot.bondHealth} из ${snapshot.maxBondHealth}`}
         >
           <div className="hero-health__label">
-            <span>Лумус + Нокс</span>
+            <span>Люмус + Нокс</span>
             <strong>
               {snapshot.bondHealth}/{snapshot.maxBondHealth} HP
             </strong>
@@ -66,6 +81,13 @@ export function GameHud({ gameplay }: GameHudProps) {
             <span style={{ width: `${(snapshot.bondHealth / snapshot.maxBondHealth) * 100}%` }} />
           </div>
         </div>
+        {/* A touch device has no Escape key, so without this there is no way out of a level at
+            all. Hidden where a keyboard is the primary input (see `.hud-pause` in game.css). */}
+        {onPause ? (
+          <button aria-label="Пауза" className="hud-pause" onClick={onPause} type="button">
+            <span aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
 
       {snapshot.checkpointRestartCount > 0 ? (
@@ -77,6 +99,7 @@ export function GameHud({ gameplay }: GameHudProps) {
         activeCat={snapshot.activeCat}
         cooldowns={snapshot.cooldowns}
         heroLevel={snapshot.heroLevel}
+        tutorialActive={tutorialStep === 3 || tutorialStep === 4 || tutorialStep === 5}
       />
     </header>
   );

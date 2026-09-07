@@ -54,6 +54,7 @@ import {
 } from './stage5-enemy-atlas';
 import { GARDEN_TUTORIAL_STEPS, TutorialSystem } from './tutorial-system';
 import { GardenLevelSystem } from './garden/garden-level-system';
+import { hudSafeTop, resolveCameraBounds, sceneViewport, type UiViewport } from './viewport';
 
 const FIXED_STEP_MS = 1000 / 60;
 
@@ -70,6 +71,9 @@ export interface PrototypeSceneOptions {
   nightBrightness: number;
   startNearFinish: boolean;
   startNearCombat: boolean;
+  tutorialActive: boolean;
+  tutorialStartStep: number;
+  onTutorialStepChange: (step: number, completed: boolean) => void;
 }
 
 export class PrototypeScene extends Phaser.Scene {
@@ -87,6 +91,9 @@ export class PrototypeScene extends Phaser.Scene {
   readonly #nightBrightness: number;
   readonly #startNearFinish: boolean;
   readonly #startNearCombat: boolean;
+  readonly #tutorialActive: boolean;
+  readonly #tutorialStartStep: number;
+  readonly #onTutorialStepChange: (step: number, completed: boolean) => void;
   #accumulatorMs = 0;
   #actors!: Record<CatId, Phaser.Physics.Arcade.Sprite>;
   #enemySystem!: PlatformerEnemySystem;
@@ -104,6 +111,7 @@ export class PrototypeScene extends Phaser.Scene {
   #tagSwitchSystem!: TagSwitchSystem;
   #tutorialSystem: TutorialSystem | null = null;
   #gardenSystem: GardenLevelSystem | null = null;
+  #layoutWorld?: (view: UiViewport) => void;
   #unsubscribeEvents?: () => void;
 
   constructor(options: PrototypeSceneOptions) {
@@ -120,6 +128,9 @@ export class PrototypeScene extends Phaser.Scene {
     this.#nightBrightness = options.nightBrightness;
     this.#startNearFinish = options.startNearFinish;
     this.#startNearCombat = options.startNearCombat;
+    this.#tutorialActive = options.tutorialActive;
+    this.#tutorialStartStep = options.tutorialStartStep;
+    this.#onTutorialStepChange = options.onTutorialStepChange;
   }
 
   // Which sprite atlases a level needs follows from the enemies it actually spawns, not from its
@@ -152,10 +163,10 @@ export class PrototypeScene extends Phaser.Scene {
     const world = drawArena(this, this.#level, this.#reducedMotion);
     this.#phaseOverlay = world.phaseOverlay;
     this.#platforms = world.platforms;
+    this.#layoutWorld = world.layout;
 
     this.physics.world.setBounds(0, 0, this.#level.worldWidth, PLATFORMER_WORLD_HEIGHT + 180);
     this.physics.world.setBoundsCollision(true, true, true, false);
-    this.cameras.main.setBounds(0, 0, this.#level.worldWidth, PLATFORMER_WORLD_HEIGHT);
 
     this.#actors = { luma: this.#createCat('luma'), nox: this.#createCat('nox') };
     const finish = this.#level.checkpoints[2];
@@ -187,7 +198,7 @@ export class PrototypeScene extends Phaser.Scene {
       this.#level.dormantEnemyIds,
     );
     this.#hidingStatus = this.add
-      .text(640, 165, 'УКРЫТИЕ · враги потеряли след', {
+      .text(0, 0, 'УКРЫТИЕ · враги потеряли след', {
         color: '#b9ffe4',
         fontFamily: 'system-ui, sans-serif',
         fontSize: '16px',
@@ -202,7 +213,13 @@ export class PrototypeScene extends Phaser.Scene {
       .setDepth(35)
       .setVisible(false);
     if (this.#level.index === 1 && !this.#startNearCombat && !this.#startNearFinish) {
-      this.#tutorialSystem = new TutorialSystem(this, this.#reducedMotion, GARDEN_TUTORIAL_STEPS);
+      this.#tutorialSystem = new TutorialSystem(
+        this,
+        this.#reducedMotion,
+        GARDEN_TUTORIAL_STEPS,
+        this.#onTutorialStepChange,
+      );
+      if (this.#tutorialActive) this.#tutorialSystem.start(this.#tutorialStartStep);
     }
     if (this.#isGarden) {
       this.#gardenSystem = new GardenLevelSystem({
@@ -263,11 +280,38 @@ export class PrototypeScene extends Phaser.Scene {
       this.#showProgressEvent(event),
     );
     this.cameras.main.startFollow(this.#actors.luma, true, 0.09, 0.09);
-    this.cameras.main.setDeadzone(260, 130);
 
+    this.#applyViewport();
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.#applyViewport, this);
     this.input.on('pointerdown', this.#handlePointerDown, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.#shutdown, this);
     this.#onReady();
+  }
+
+  /**
+   * Re-frames the level for the current field of view. Called once on create and again whenever
+   * the canvas changes shape — rotating a phone, a browser toolbar sliding away, a window drag.
+   * See `viewport.ts`: the view is never smaller than the authored 1280×720, so this only ever
+   * hands the player more world, never less.
+   */
+  #applyViewport(): void {
+    const view = sceneViewport(this);
+    const bounds = resolveCameraBounds(view, this.#level.worldWidth);
+    this.cameras.main.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+    // The dead zone is a fraction of the view so the cats stay as far from the screen edge on a
+    // wide phone as they do in the authored frame.
+    this.cameras.main.setDeadzone(
+      Phaser.Math.Clamp(view.width * 0.2, 180, 420),
+      Phaser.Math.Clamp(view.height * 0.18, 110, 260),
+    );
+    this.#layoutWorld?.(view);
+    this.#hidingStatus
+      .setPosition(view.width / 2, hudSafeTop(view) + 40 * view.ui)
+      .setFontSize(16 * view.ui)
+      .setStroke('#10152e', 4 * view.ui)
+      .setPadding(12 * view.ui, 6 * view.ui);
+    this.#tutorialSystem?.layout(view);
+    this.#gardenSystem?.layout(view);
   }
 
   // Dev-only, read-only window hook used by the level-1 end-to-end test (see `debugState`).
@@ -282,10 +326,41 @@ export class PrototypeScene extends Phaser.Scene {
     this.#gardenSystem?.setNightBrightness(nightBrightness);
   }
 
+  startTutorial(step = 0): void {
+    this.#tutorialSystem?.start(step);
+  }
+
+  stopTutorial(): void {
+    this.#tutorialSystem?.stop();
+  }
+
   override update(_time: number, deltaMs: number): void {
     if (this.#inputState.consume('pause')) this.#onPauseRequested();
     if (this.#gameplay.getSnapshot().paused) {
       this.#stopAllActors();
+      return;
+    }
+    const garden = this.#gardenSystem;
+    const dialogueBusy = garden?.dialogueBusy ?? false;
+    this.#tutorialSystem?.setOccluded(dialogueBusy);
+    if (dialogueBusy) {
+      // Dialogue is modal for gameplay, but not for the scene clock: the typewriter and card
+      // animations must keep running. Only [E] is accepted here, and it advances the card without
+      // ticking movement, combat, enemies, phase timers, triggers or checkpoint progress.
+      if (this.#inputState.consume('interact')) {
+        const snapshot = this.#gameplay.getSnapshot();
+        garden?.interact(this.#actors[snapshot.activeCat], snapshot.activeCat);
+      }
+      this.#inputState.consume('switch-cat');
+      this.#inputState.consume('primary-ability');
+      this.#inputState.consume('special-ability');
+      this.#inputState.consume('support-ability');
+      this.#inputState.consume('ultimate');
+      this.#inputState.consume('restart-checkpoint');
+      this.#accumulatorMs = 0;
+      this.#hidingStatus.setVisible(false);
+      this.#stopAllActors();
+      this.#updateSelection();
       return;
     }
 
@@ -439,12 +514,21 @@ export class PrototypeScene extends Phaser.Scene {
   }
 
   #handlePointerDown(): void {
+    // While a dialogue card is open a tap continues it. On touch the card can cover most of the
+    // screen and "tap to continue" is what a player reaches for; without this the only way on is
+    // the [E] button hidden under the card.
+    if (this.#gardenSystem?.dialogueBusy) {
+      this.#inputState.press('interact');
+      this.#inputState.release('interact');
+      return;
+    }
     this.#inputState.press('primary-ability');
     this.#inputState.release('primary-ability');
   }
 
   #shutdown(): void {
     delete (window as unknown as { __eclipsePawsGarden?: () => unknown }).__eclipsePawsGarden;
+    this.scale.off(Phaser.Scale.Events.RESIZE, this.#applyViewport, this);
     this.input.off('pointerdown', this.#handlePointerDown, this);
     this.#inputState.reset();
     // ARC-010: every owned system implements Destroyable — call all of them uniformly, not just
@@ -463,21 +547,23 @@ export class PrototypeScene extends Phaser.Scene {
   #showProgressEvent(event: GameEvent): void {
     if (event.type !== 'HeroLevelUp') return;
     const message = `УРОВЕНЬ ${event.level} · СИЛА ПАРЫ ВОЗРОСЛА`;
+    const view = sceneViewport(this);
+    const ui = view.ui;
     const label = this.add
-      .text(640, 190, message, {
+      .text(this.scale.width / 2, hudSafeTop(view) + 95 * ui, message, {
         color: '#ffe291',
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '25px',
+        fontSize: `${25 * ui}px`,
         fontStyle: 'bold',
         stroke: '#17152f',
-        strokeThickness: 6,
+        strokeThickness: 6 * ui,
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(40);
     this.tweens.add({
       targets: label,
-      y: label.y - 30,
+      y: label.y - 30 * ui,
       alpha: 0,
       duration: this.#reducedMotion ? 1 : 1300,
       hold: this.#reducedMotion ? 800 : 350,

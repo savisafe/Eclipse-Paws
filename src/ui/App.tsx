@@ -16,6 +16,7 @@ import { GameScreen } from '@ui/components/GameScreen';
 import { MainMenu } from '@ui/components/MainMenu';
 import { LevelResult } from '@ui/components/LevelResult';
 import { Slideshow } from '@ui/components/Slideshow';
+import { Prologue } from '@ui/components/Prologue';
 import { StoryIntro } from '@ui/components/StoryIntro';
 import { Credits } from '@ui/components/Credits';
 import { useAppController } from '@ui/hooks/use-app-controller';
@@ -73,6 +74,7 @@ export function App() {
     createCampaignGameplay(initialLevelFromLocation()),
   );
   const [showIntro, setShowIntro] = useState(false);
+  const [tutorialPromptRequested, setTutorialPromptRequested] = useState(false);
   useAppController(appController);
   const appState = useSessionStore((state) => state.appState);
 
@@ -109,6 +111,7 @@ export function App() {
   }, [progressService]);
 
   const startNewGame = useCallback(() => {
+    setTutorialPromptRequested(false);
     inputState.reset();
     setGameplay(createCampaignGameplay(selectedLevel, heroProgress));
     appController.startNewGame();
@@ -122,6 +125,7 @@ export function App() {
     // not through another intro card ("skip ведёт в уровень 1 без двойной загрузки").
     inputState.reset();
     setGameplay(createCampaignGameplay(CAMPAIGN_LEVEL_ORDER[0]!, heroProgress));
+    setTutorialPromptRequested(true);
     appController.prologueFinished();
   }, [appController, heroProgress, inputState]);
   const startEpilogue = useCallback(() => appController.showEpilogue(), [appController]);
@@ -177,13 +181,7 @@ export function App() {
   if (appState === 'boot') return <BootScreen />;
   if (appState === 'credits') return <Credits onMenu={returnToMenu} />;
   if (appState === 'prologue') {
-    return (
-      <Slideshow
-        onComplete={handlePrologueComplete}
-        panels={PROLOGUE_PANELS}
-        title="Пролог: Между двумя ударами"
-      />
-    );
+    return <Prologue onComplete={handlePrologueComplete} panels={PROLOGUE_PANELS} />;
   }
   if (appState === 'epilogue') {
     return (
@@ -250,6 +248,7 @@ export function App() {
       onLevelCompleted={completeLevel}
       onReady={levelReady}
       onReturnToMenu={returnToMenu}
+      tutorialPromptRequested={tutorialPromptRequested}
     />
   );
 }

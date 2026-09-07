@@ -142,6 +142,10 @@ export class GardenNpcSystem implements Destroyable {
     );
   }
 
+  setUiScale(scale: number): void {
+    this.#prompt.setUiScale(scale);
+  }
+
   destroy(): void {
     this.#npcs.forEach((npc) => {
       this.#scene.tweens.killTweensOf(npc.view);
