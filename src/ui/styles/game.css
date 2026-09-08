@@ -815,7 +815,11 @@
   touch-action: none;
 }
 
-.touch-button:active {
+/* The pressed state is driven by the component as well as by `:active`: the deck refuses the
+   browser's default touch behaviour (see TouchControls.tsx), and `:active` does not survive that
+   on every engine. */
+.touch-button:active,
+.touch-button[data-pressed='true'] {
   background: rgb(106 226 220 / 75%);
 }
 
@@ -965,14 +969,25 @@
    a black letterbox bar, becomes the control deck. Nothing is cropped and nothing is wasted. */
 @media (orientation: portrait) and (pointer: coarse) {
   .game-screen {
-    /* Five columns of buttons plus their gaps have to fit across the narrowest phone, so the
-       deck's targets are capped by the screen width before a comfortable absolute size. */
-    --touch-size: min(4.4rem, 16.5vw);
+    /* Five columns of buttons plus their gaps have to fit across the narrowest phone, and three
+       rows of them plus the deck's own chrome have to leave the picture more than half the
+       screen — so the targets are capped by both axes before a comfortable absolute size, and
+       floored at 2.8rem ≈ 45 px, above the 44 px both platforms ask for. */
+    --touch-size: clamp(2.8rem, min(13.2vw, 7.6svh), 3.5rem);
     /* The rows breathe a little with the deck, but stay close enough to read as one controller;
        the rest of the spare height goes to the picture instead (viewport.ts, MAX_HEIGHT). */
-    --touch-gap: clamp(0.3rem, 1.7svh, 1rem);
-    /* 9.2rem covers the rotate hint, the ability row and the deck's own padding. */
-    --deck-min: calc(3 * var(--touch-size) + 2 * var(--touch-gap) + 9.2rem);
+    --touch-gap: clamp(0.2rem, 1.2svh, 0.7rem);
+    /* The band above the buttons, which carries the rotate hint and the ability row. It is what
+       the deck pads itself by at the top, so the two can never drift apart and leave the dead
+       strip that used to push the deck over half the screen. */
+    --deck-chrome: 6.3rem;
+    --deck-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.4rem));
+    /* The six actions are the taller cluster: two rows at 1× plus the attack row at 1.2×. The
+       trailing 1px is the deck's own top border, which is part of its height and, left out, made
+       the deck a pixel taller than the row it was given — enough to leave the page scrollable. */
+    --deck-min: calc(
+      3.2 * var(--touch-size) + 2 * var(--touch-gap) + var(--deck-chrome) + var(--deck-bottom) + 1px
+    );
     /* 1500 / 1280 — the aspect at which the canvas fills this band edge to edge (viewport.ts).
        The band takes all it can get, but never so much that the deck cannot hold its controls. */
     --play-band: min(calc(100vw * 1.171875), calc(100svh - var(--deck-min)));
@@ -980,7 +995,10 @@
     /* Without a fixed column the deck's own width would size the track, and everything laid out
        against it — the canvas band included — would overflow the screen with it. */
     grid-template-columns: 100%;
-    grid-template-rows: var(--play-band) 1fr;
+    /* minmax(0, …) rather than a bare 1fr: a deck a pixel or two taller than its share must be
+       trimmed, never allowed to push the screen past the viewport and make the page scroll —
+       a scrollable page is also what lets a phone read a thumb on the deck as a pan. */
+    grid-template-rows: var(--play-band) minmax(0, 1fr);
     align-content: start;
     padding: 0;
   }
@@ -1010,8 +1028,8 @@
        themselves stretching (--touch-gap) so the deck is filled rather than merely occupied. */
     align-items: center;
     width: 100%;
-    padding: 7rem max(0.9rem, env(safe-area-inset-left))
-      max(1rem, calc(env(safe-area-inset-bottom) + 0.6rem)) max(0.9rem, env(safe-area-inset-right));
+    padding: var(--deck-chrome) max(0.9rem, env(safe-area-inset-left)) var(--deck-bottom)
+      max(0.9rem, env(safe-area-inset-right));
     border-top: 1px solid rgb(255 231 167 / 14%);
     background: linear-gradient(180deg, #171a3b 0%, #0d1028 100%);
   }
@@ -1023,17 +1041,20 @@
   }
 
   /* The picture is only a band tall here, so the readouts that hang off the bottom of the screen
-     move into the deck instead of covering the game — the deck has the room to spare. */
+     move into the deck instead of covering the game — the deck has the room to spare.
+     They stay `fixed` rather than becoming `absolute`: the HUD is itself an absolutely positioned
+     box inset from the top and the sides, so anchoring to it would offset the row from the band
+     it is measured against and knock it off centre. */
   .ability-cooldowns {
-    position: absolute;
-    top: calc(var(--play-band) + 3.4rem);
+    top: calc(var(--play-band) + 2.75rem);
     bottom: auto;
   }
 
+  /* Over the foot of the picture: the deck's own band is spoken for, and a checkpoint notice
+     belongs next to the cats it is about. */
   .restart-notice {
-    position: absolute;
-    top: calc(var(--play-band) + 7.4rem);
-    bottom: auto;
+    top: auto;
+    bottom: calc(100svh - var(--play-band) + 0.6rem);
   }
 
   .dialogue-overlay {
@@ -1044,11 +1065,13 @@
   .orientation-hint {
     position: absolute;
     z-index: 22;
-    top: calc(var(--play-band) + 0.5rem);
+    top: calc(var(--play-band) + 0.45rem);
     left: 50%;
     display: block;
-    width: min(20rem, calc(100vw - 2rem));
-    padding: 0.4rem 0.8rem;
+    /* The line has to fit on one row down to a 320 px phone: wrapped, the hint cost the picture
+       another 13 px of band (and the copy is trimmed to the same end). */
+    width: min(22rem, calc(100vw - 1.6rem));
+    padding: 0.35rem 0.7rem;
     translate: -50% 0;
     border: 1px solid rgb(255 222 143 / 45%);
     border-radius: 999px;
@@ -1072,8 +1095,10 @@
 }
 
 /* A phone held sideways is only ~390 px tall. Shrinking the buttons below the platform minimum
-   made them miss more than they hit, so the room comes out of the spacing instead. */
-@media (max-height: 520px) and (pointer: coarse) {
+   made them miss more than they hit, so the room comes out of the spacing instead.
+   Landscape only: a short *portrait* screen is still the deck layout above, and this block used to
+   reach it too and drop the ability row back onto the picture, off centre. */
+@media (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
   .game-screen {
     --touch-size: 2.85rem;
   }
