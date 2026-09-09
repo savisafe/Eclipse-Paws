@@ -117,7 +117,7 @@ export function GameScreen({
       )}
       <TouchControls inputState={inputState} />
       <div className="orientation-hint" role="status">
-        ↻ Поверните устройство горизонтально для лучшего обзора
+        ↻ Поверните устройство горизонтально
       </div>
       {appState === 'loading-level' ? (
         <div className="level-loading" role="status">
