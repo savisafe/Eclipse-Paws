@@ -447,6 +447,79 @@
 }
 
 .level-loading,
+/* The drawing surface is gone and the scene is on hold (see RendererLostOverlay.tsx). It sits
+   above the pause card: the two can never both be open, and this one is not dismissible. */
+.renderer-lost {
+  position: fixed;
+  z-index: 44;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: 1rem;
+  color: var(--cream);
+  background: rgb(12 13 36 / 92%);
+  backdrop-filter: blur(8px);
+}
+
+.renderer-lost__card {
+  display: grid;
+  width: min(22rem, calc(100vw - 2rem));
+  justify-items: center;
+  gap: clamp(0.5rem, 2.2svh, 0.9rem);
+  padding: clamp(0.9rem, 4svh, 2rem);
+  border: 1px solid rgb(255 225 151 / 42%);
+  border-radius: 1.7rem;
+  background: linear-gradient(145deg, #29275b, #171834);
+  box-shadow: 0 2rem 5rem rgb(4 5 19 / 62%);
+  text-align: center;
+}
+
+.renderer-lost__card h2 {
+  margin: 0;
+  color: var(--gold);
+  font-size: 1.05rem;
+}
+
+.renderer-lost__card p {
+  margin: 0;
+  color: rgb(255 244 206 / 82%);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.renderer-lost__card button {
+  min-height: 2.75rem;
+  padding: 0 1.2rem;
+  border: 1px solid rgb(139 246 237 / 68%);
+  border-radius: 999px;
+  color: #172b3a;
+  background: linear-gradient(180deg, #a6f4ec, #5ed8d2);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+/* The eclipse sigil, dimmed: the dream itself has gone dark for a moment. */
+.renderer-lost__mark {
+  width: 2.6rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, transparent 46%, rgb(255 206 99 / 70%) 47%);
+  animation: renderer-lost-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes renderer-lost-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .renderer-lost__mark {
+    animation: none;
+  }
+}
+
 .pause-overlay {
   position: fixed;
   z-index: 40;

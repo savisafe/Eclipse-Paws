@@ -6,6 +6,7 @@ import type { CampaignLevelDefinition } from '@content/index';
 import { GameCanvas } from './GameCanvas';
 import { GameHud } from './GameHud';
 import { PauseOverlay } from './PauseOverlay';
+import { RendererLostOverlay } from './RendererLostOverlay';
 import { TouchControls } from './TouchControls';
 import { useSettingsStore } from '@ui/store/settings-store';
 import { DialogueOverlay } from './DialogueOverlay';
@@ -50,9 +51,27 @@ export function GameScreen({
     return tutorialPromptRequested ? { ...saved, enabled: false } : saved;
   });
   const [tutorialRunId, setTutorialRunId] = useState(0);
+  // The browser can take the drawing surface away mid-level to reclaim memory. Phaser stops
+  // rendering but keeps stepping the scene, so without this the picture freezes while the phase
+  // clock runs, the hounds keep biting and the player cannot see any of it (see
+  // `adapters/phaser/renderer-context.ts`).
+  const [rendererLost, setRendererLost] = useState(false);
+  const [rendererStalled, setRendererStalled] = useState(false);
+  const handleRendererLost = useCallback(() => setRendererLost(true), []);
+  const handleRendererRestored = useCallback(() => {
+    setRendererLost(false);
+    setRendererStalled(false);
+  }, []);
+  useEffect(() => {
+    if (!rendererLost) return;
+    // Usually the context is handed back within a frame or two. When it is not, the only way out
+    // is a reload, and the player needs to be told that rather than left waiting.
+    const timeoutId = window.setTimeout(() => setRendererStalled(true), 6_000);
+    return () => window.clearTimeout(timeoutId);
+  }, [rendererLost]);
   useEffect(
-    () => gameplay.setPaused(appState === 'paused' || showTutorialChoice),
-    [appState, gameplay, showTutorialChoice],
+    () => gameplay.setPaused(appState === 'paused' || showTutorialChoice || rendererLost),
+    [appState, gameplay, rendererLost, showTutorialChoice],
   );
 
   const acceptTutorial = useCallback(() => {
@@ -104,6 +123,8 @@ export function GameScreen({
         tutorialStartStep={tutorial.step}
         tutorialRunId={tutorialRunId}
         onTutorialStepChange={handleTutorialStepChange}
+        onRendererLost={handleRendererLost}
+        onRendererRestored={handleRendererRestored}
       />
       <GameHud
         gameplay={gameplay}
@@ -135,6 +156,9 @@ export function GameScreen({
       ) : null}
       {showTutorialChoice && appState === 'playing' ? (
         <TutorialChoice onAccept={acceptTutorial} onDecline={declineTutorial} />
+      ) : null}
+      {rendererLost ? (
+        <RendererLostOverlay onReload={() => window.location.reload()} stalled={rendererStalled} />
       ) : null}
     </main>
   );

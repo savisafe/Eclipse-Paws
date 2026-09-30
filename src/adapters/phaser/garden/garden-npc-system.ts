@@ -8,13 +8,16 @@ import gardenerIdleUrl from '../../../assets/sprites/npcs/gardener-idle-v1.png?u
 import gardenerNightUrl from '../../../assets/sprites/npcs/gardener-night-reaction-v1.png?url';
 import littleOneDayUrl from '../../../assets/sprites/npcs/sun-little-one-day-v1.png?url';
 import littleOneNightUrl from '../../../assets/sprites/npcs/sun-little-one-night-v1.png?url';
+import { loadCappedImage } from '../capped-texture';
 
-const TEXTURES = {
-  'garden-npc-gardener': gardenerIdleUrl,
-  'garden-npc-gardener-night': gardenerNightUrl,
-  'garden-npc-little-one': littleOneDayUrl,
-  'garden-npc-little-one-night': littleOneNightUrl,
-} as const;
+// The caps are the heights these are drawn at with room to spare: the Gardener stands 218 units
+// tall in the clearing, the Little One 117. They arrived at 793 and 1024.
+const TEXTURES: Readonly<Record<string, { maxSize: number; url: string }>> = {
+  'garden-npc-gardener': { maxSize: 512, url: gardenerIdleUrl },
+  'garden-npc-gardener-night': { maxSize: 512, url: gardenerNightUrl },
+  'garden-npc-little-one': { maxSize: 256, url: littleOneDayUrl },
+  'garden-npc-little-one-night': { maxSize: 256, url: littleOneNightUrl },
+};
 
 const TALK_RANGE = 130;
 
@@ -78,7 +81,9 @@ export class GardenNpcSystem implements Destroyable {
   }
 
   static preload(scene: Phaser.Scene): void {
-    Object.entries(TEXTURES).forEach(([key, url]) => scene.load.image(key, url));
+    Object.entries(TEXTURES).forEach(([key, { maxSize, url }]) =>
+      loadCappedImage(scene, key, url, maxSize),
+    );
   }
 
   applyPhase(phase: Phase): void {

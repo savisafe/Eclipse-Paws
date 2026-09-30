@@ -23,6 +23,13 @@ export class SfxSynth {
         );
         gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + durationMs / 1000);
         oscillator.connect(gain).connect(context.destination);
+        // Every sound leaves a gain node wired to the destination behind it. A level's worth of
+        // hits, jumps and abilities is thousands of them, and on a phone that memory is the same
+        // memory the renderer is about to be asked to give back (`capped-texture.ts`).
+        oscillator.onended = () => {
+          oscillator.disconnect();
+          gain.disconnect();
+        };
         oscillator.start();
         oscillator.stop(context.currentTime + durationMs / 1000 + 0.02);
       })

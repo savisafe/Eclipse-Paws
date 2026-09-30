@@ -187,7 +187,12 @@ test('walks the cat with a held touch on the deck', async ({ page }, testInfo) =
   // Tap-to-continue on the picture is how a touch player gets past a card: there is no [E] key,
   // and on a phone the card covers most of the band.
   const picture = (await page.locator('.game-canvas-shell').boundingBox())!;
-  await expect.poll(async () => (await gardenState(page)).dialogueBusy).toBe(true);
+  // The opening card is a scene-clock beat, and that clock crawls while a cold level is still
+  // warming up — on a slow machine it can be ten seconds of wall clock away, so it gets the same
+  // room to arrive as every other beat in this file.
+  await expect
+    .poll(async () => (await gardenState(page)).dialogueBusy, { timeout: 20_000 })
+    .toBe(true);
   for (let tap = 0; tap < 12 && (await gardenState(page)).dialogueBusy; tap += 1) {
     await page.touchscreen.tap(picture.x + picture.width / 2, picture.y + picture.height / 2);
     await page.waitForTimeout(150);

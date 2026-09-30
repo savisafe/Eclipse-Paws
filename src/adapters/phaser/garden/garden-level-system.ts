@@ -13,6 +13,7 @@ import { GardenScenery } from './garden-scenery';
 import { preloadGardenMap } from './garden-map-layout';
 import seedIconUrl from '../../../assets/icons/cards/garden-golden-seed-v1.png?url';
 import handprintUrl from '../../../assets/decorations/heart/elias-real-hand-dream-wall-v1.png?url';
+import { loadCappedImage } from '../capped-texture';
 
 const HOUND_IDS = ['hound-1', 'hound-2', 'hound-3', 'hound-alpha'] as const;
 
@@ -106,8 +107,9 @@ export class GardenLevelSystem implements Destroyable {
     GardenNpcSystem.preload(scene);
     GardenScenery.preload(scene);
     GardenDialoguePanel.preload(scene);
-    scene.load.image('garden-golden-seed', seedIconUrl);
-    scene.load.image('garden-handprint', handprintUrl);
+    // Drawn 56 and 240 units wide respectively (`#showSeed`, `#revealHandprint`).
+    loadCappedImage(scene, 'garden-golden-seed', seedIconUrl, 128);
+    loadCappedImage(scene, 'garden-handprint', handprintUrl, 512);
   }
 
   /** The level ends at the gate, and the gate only opens once the hounds are gone (§12). */

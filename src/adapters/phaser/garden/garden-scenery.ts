@@ -3,6 +3,7 @@ import type { CampaignLevelDefinition } from '@content/index';
 import type { Destroyable } from '../destroyable';
 import gardenerCottageUrl from '../../../assets/decorations/garden/gardener-cottage-v1.png?url';
 import { gardenMapObjects, type GardenMapObject } from './garden-map-layout';
+import { loadCappedImage } from '../capped-texture';
 
 /**
  * The dressing of «Сад первой зари» (ECLIPSE_PAWS_SCENARIO.md §12, «Визуальный образ» /
@@ -23,7 +24,9 @@ export class GardenScenery implements Destroyable {
   }
 
   static preload(scene: Phaser.Scene): void {
-    scene.load.image('garden-cottage', gardenerCottageUrl);
+    // The cottage is the largest thing the garden draws from a painting — 560 units across the
+    // Gardener's clearing — and arrives at 1536x1024.
+    loadCappedImage(scene, 'garden-cottage', gardenerCottageUrl, 1024);
   }
 
   destroy(): void {

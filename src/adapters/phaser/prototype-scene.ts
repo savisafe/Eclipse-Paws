@@ -314,9 +314,20 @@ export class PrototypeScene extends Phaser.Scene {
     this.#gardenSystem?.layout(view);
   }
 
-  // Dev-only, read-only window hook used by the level-1 end-to-end test (see `debugState`).
+  // Dev-only, read-only window hooks used by the end-to-end tests (see `debugState`).
   #exposeDebugState(): void {
-    if (!import.meta.env.DEV || !this.#gardenSystem) return;
+    if (!import.meta.env.DEV) return;
+    // What the level is holding in texture memory. A phone takes the WebGL context away when it
+    // wants that memory back, which freezes the picture (`capped-texture.ts`), so the budget is
+    // worth a regression test of its own.
+    const textures = this.textures.list as Record<string, Phaser.Textures.Texture>;
+    (window as unknown as { __eclipsePawsTextureBytes?: () => number }).__eclipsePawsTextureBytes =
+      () =>
+        Object.values(textures).reduce((bytes, texture) => {
+          const source = texture.source[0];
+          return source ? bytes + source.width * source.height * 4 : bytes;
+        }, 0);
+    if (!this.#gardenSystem) return;
     const garden = this.#gardenSystem;
     (window as unknown as { __eclipsePawsGarden?: () => unknown }).__eclipsePawsGarden = () =>
       garden.debugState();
@@ -528,6 +539,8 @@ export class PrototypeScene extends Phaser.Scene {
 
   #shutdown(): void {
     delete (window as unknown as { __eclipsePawsGarden?: () => unknown }).__eclipsePawsGarden;
+    delete (window as unknown as { __eclipsePawsTextureBytes?: () => number })
+      .__eclipsePawsTextureBytes;
     this.scale.off(Phaser.Scale.Events.RESIZE, this.#applyViewport, this);
     this.input.off('pointerdown', this.#handlePointerDown, this);
     this.#inputState.reset();
