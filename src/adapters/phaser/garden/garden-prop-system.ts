@@ -3,6 +3,7 @@ import { GARDEN_PROPS, type GardenProp } from '@content/index';
 import type { CatId, Phase } from '@core/index';
 import type { Destroyable } from '../destroyable';
 import { JUMP_SPEED } from '../movement-constants';
+import { loadCappedImage } from '../capped-texture';
 import { GardenPrompt } from './garden-prompt';
 import sundialUrl from '../../../assets/decorations/garden/ancient-sundial-v1.png?url';
 import sundialNightUrl from '../../../assets/decorations/garden/ancient-sundial-night-active-v1.png?url';
@@ -13,16 +14,20 @@ import hedgeClosedUrl from '../../../assets/decorations/garden/living-hedge-gate
 import hedgeOpenUrl from '../../../assets/decorations/garden/living-hedge-gate-open-v1.png?url';
 import gateUrl from '../../../assets/icons/items/garden-memory-gate-v1.png?url';
 
-const TEXTURES = {
-  'garden-sundial': sundialUrl,
-  'garden-sundial-night': sundialNightUrl,
-  'garden-bells': bellsUrl,
-  'garden-flower-closed': flowerClosedUrl,
-  'garden-flower-open': flowerOpenUrl,
-  'garden-hedge': hedgeClosedUrl,
-  'garden-hedge-open': hedgeOpenUrl,
-  'garden-gate': gateUrl,
-} as const;
+// Each prop's painting next to the resolution it is kept at. The caps are the widths below
+// (`displayWidthFor`) with better than twice the headroom: the canvas is measured in world units,
+// so a prop drawn 360 units wide is never rasterised above 360 pixels. Uncapped, these eight
+// paintings alone held 48 MB of texture memory to draw at most 360 units of garden.
+const TEXTURES: Readonly<Record<string, { maxSize: number; url: string }>> = {
+  'garden-sundial': { maxSize: 384, url: sundialUrl },
+  'garden-sundial-night': { maxSize: 384, url: sundialNightUrl },
+  'garden-bells': { maxSize: 256, url: bellsUrl },
+  'garden-flower-closed': { maxSize: 256, url: flowerClosedUrl },
+  'garden-flower-open': { maxSize: 256, url: flowerOpenUrl },
+  'garden-hedge': { maxSize: 768, url: hedgeClosedUrl },
+  'garden-hedge-open': { maxSize: 768, url: hedgeOpenUrl },
+  'garden-gate': { maxSize: 384, url: gateUrl },
+};
 
 const INTERACT_RANGE = 118;
 const HEDGE_OPEN_MS = 6_000;
@@ -130,7 +135,9 @@ export class GardenPropSystem implements Destroyable {
   }
 
   static preload(scene: Phaser.Scene): void {
-    Object.entries(TEXTURES).forEach(([key, url]) => scene.load.image(key, url));
+    Object.entries(TEXTURES).forEach(([key, { maxSize, url }]) =>
+      loadCappedImage(scene, key, url, maxSize),
+    );
   }
 
   /** How many halves of the sundial are awake (0-2) — the level's one mandatory joint action. */

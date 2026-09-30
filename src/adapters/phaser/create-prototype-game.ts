@@ -3,6 +3,7 @@ import type { GameplayController } from '@application/index';
 import type { GameInputState } from '@adapters/input/index';
 import type { CampaignLevelDefinition } from '@content/index';
 import { PrototypeScene } from './prototype-scene';
+import { watchRendererContext } from './renderer-context';
 import { resolveViewport } from './viewport';
 
 export interface CreatePrototypeGameOptions {
@@ -12,6 +13,8 @@ export interface CreatePrototypeGameOptions {
   onPauseRequested: () => void;
   onLevelCompleted: () => void;
   onReady: () => void;
+  onRendererLost: () => void;
+  onRendererRestored: () => void;
   parent: HTMLElement;
   reducedMotion: boolean;
   effectsVolume: number;
@@ -84,5 +87,13 @@ export function createPrototypeGame(options: CreatePrototypeGameOptions): Phaser
     input: { activePointers: 3 },
   });
   watchParentSize(game, parent);
+  // The renderer exists only once the game has booted; before that there is no context to watch.
+  game.events.once(Phaser.Core.Events.READY, () => {
+    const unwatch = watchRendererContext(game, {
+      onLost: options.onRendererLost,
+      onRestored: options.onRendererRestored,
+    });
+    game.events.once(Phaser.Core.Events.DESTROY, unwatch);
+  });
   return game;
 }

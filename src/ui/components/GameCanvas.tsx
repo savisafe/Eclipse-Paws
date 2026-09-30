@@ -30,6 +30,8 @@ interface GameCanvasProps {
   tutorialStartStep: number;
   tutorialRunId: number;
   onTutorialStepChange: (step: number, completed: boolean) => void;
+  onRendererLost: () => void;
+  onRendererRestored: () => void;
 }
 
 export function GameCanvas({
@@ -47,6 +49,8 @@ export function GameCanvas({
   tutorialStartStep,
   tutorialRunId,
   onTutorialStepChange,
+  onRendererLost,
+  onRendererRestored,
 }: GameCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Night brightness is the one setting that must apply без перезапуска сцены: it is an
@@ -95,6 +99,8 @@ export function GameCanvas({
           tutorialActive: tutorialActiveRef.current,
           tutorialStartStep: tutorialStartStepRef.current,
           onTutorialStepChange,
+          onRendererLost,
+          onRendererRestored,
         });
         gameRef.current = game ?? null;
       })
@@ -120,6 +126,8 @@ export function GameCanvas({
     reducedMotion,
     vibration,
     onTutorialStepChange,
+    onRendererLost,
+    onRendererRestored,
   ]);
 
   useEffect(() => {
